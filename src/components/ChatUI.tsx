@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData } from './chat/types';
@@ -38,13 +37,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
           description: 'Discover relevant questions and insights from our database of business challenges. Explore proven approaches to your refined challenge.',
           payload
         };
-      case 'challengeMapping':
-        return {
-          type: 'challengeMapping',
-          title: 'Challenge Mapping Canvas',
-          description: 'Visual workspace for structuring and refining your business challenge. Let\'s turn vague problems into clear, actionable opportunities.',
-          payload
-        };
       case 'blank':
       case 'canvas':
       default:
@@ -57,11 +49,11 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   };
 
-  // Enhanced detection for when to create canvas previews
+  // Simplified detection - only create Fortune Questions canvas when ready
   const shouldCreateCanvasPreview = (message: string, agentUsed?: string, readyForFortune?: boolean): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // If the Prospect Agent indicates readiness for fortune questions
+    // ONLY trigger Fortune Questions canvas when the Prospect Agent indicates readiness
     if (readyForFortune && agentUsed === 'prospect') {
       // Extract the refined challenge from the conversation
       const lastUserMessage = messages[messages.length - 1]?.text || message;
@@ -73,23 +65,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       });
     }
     
-    // If Prospect Agent was used and it's about challenge refinement (early stages)
-    if (agentUsed === 'prospect' && !readyForFortune) {
-      const challengeKeywords = ['challenge', 'problem', 'issue', 'goal', 'objective', 'stuck', 'unclear'];
-      const hasChallenge = challengeKeywords.some(keyword => lowerInput.includes(keyword));
-      
-      if (hasChallenge) {
-        return createCanvasPreviewData('challengeMapping', {
-          originalChallenge: message,
-          agentContext: 'prospect',
-          refinementStage: 'early',
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-    
-    // Fortune questions trigger (manual)
-    if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
+    // Manual fortune questions trigger (fallback)
+    if (lowerInput.includes('fortune questions') || lowerInput.includes('search questions')) {
       return createCanvasPreviewData('fortuQuestions', {
         challengeSummary: message,
         searchReady: false,
@@ -97,8 +74,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       });
     }
     
-    // General canvas trigger
-    if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
+    // General canvas trigger (blank canvas only)
+    if (lowerInput.includes('open canvas') || lowerInput.includes('blank canvas')) {
       return createCanvasPreviewData('blank', { 
         source: 'chat_trigger',
         timestamp: new Date().toISOString()
@@ -151,11 +128,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
         
-        // Modify response based on canvas type and stage
+        // Only modify response for Fortune Questions when ready for search
         if (canvasPreviewData.type === 'fortuQuestions' && readyForFortune) {
           assistantText += "\n\nBrilliant. I've found some relevant questions in fortu.ai that match your challenge. Click the expand button below to explore these proven approaches and see how other organisations have tackled similar challenges.";
-        } else if (canvasPreviewData.type === 'challengeMapping') {
-          assistantText += "\n\nI've set up a Challenge Mapping canvas to help us structure this properly. Click the expand button below to open it and we can work through this together.";
         } else if (canvasPreviewData.type === 'fortuQuestions') {
           assistantText += "\n\nI've created a Fortune Questions module for you. Click the expand button below to open it and start exploring your challenge.";
         } else {
