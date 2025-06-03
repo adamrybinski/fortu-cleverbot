@@ -1,9 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CanvasTrigger } from './canvas/CanvasContainer';
 
 interface Message {
   id: string;
@@ -13,15 +13,16 @@ interface Message {
 }
 
 interface ChatUIProps {
-  onOpenCanvas?: () => void;
+  onOpenCanvas?: (type?: string, payload?: Record<string, any>) => void;
+  onTriggerCanvas?: (trigger: CanvasTrigger) => void;
 }
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas }) => {
+export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'bot',
-      text: 'Hello! I\'m your AI assistant. I can help you with various tasks and answer questions. How can I assist you today?',
+      text: 'Hello! I\'m your AI assistant. I can help you with various tasks and answer questions. Try saying "open canvas" or "fortune questions" to see different canvas modules!',
       timestamp: new Date(),
     },
   ]);
@@ -40,32 +41,51 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas }) => {
 
     setMessages(prev => [...prev, newMessage]);
 
-    // Check for canvas trigger
-    if (inputValue.toLowerCase().includes('open canvas') || inputValue.toLowerCase().includes('canvas')) {
-      setTimeout(() => {
-        const assistantMessage: Message = {
+    // Enhanced trigger system with pattern matching
+    const lowerInput = inputValue.toLowerCase();
+    
+    setTimeout(() => {
+      let assistantMessage: Message;
+      
+      if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
+        assistantMessage = {
           id: (Date.now() + 1).toString(),
           role: 'bot',
-          text: 'Opening canvas mode! You can now see the canvas on the right side.',
+          text: 'Opening Fortune Questions canvas! This module will help you explore insights and possibilities.',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, assistantMessage]);
-        if (onOpenCanvas) {
-          onOpenCanvas();
+        
+        if (onTriggerCanvas) {
+          onTriggerCanvas({ 
+            type: 'fortuQuestions', 
+            payload: { 
+              challengeSummary: inputValue,
+              timestamp: new Date().toISOString()
+            } 
+          });
         }
-      }, 500);
-    } else {
-      // Simulate bot response
-      setTimeout(() => {
-        const botMessage: Message = {
+      } else if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
+        assistantMessage = {
           id: (Date.now() + 1).toString(),
           role: 'bot',
-          text: 'I understand your message. Try saying "open canvas" to see the canvas feature! I\'m here to help with any questions or tasks you have.',
+          text: 'Opening blank canvas mode! You can now see the canvas on the right side.',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, botMessage]);
-      }, 1000);
-    }
+        
+        if (onOpenCanvas) {
+          onOpenCanvas('blank', { source: 'chat_trigger' });
+        }
+      } else {
+        assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'bot',
+          text: 'I understand your message. Try saying "open canvas" for a blank canvas or "fortune questions" to explore the Fortune Questions module! I\'m here to help with any questions or tasks you have.',
+          timestamp: new Date(),
+        };
+      }
+      
+      setMessages(prev => [...prev, assistantMessage]);
+    }, 500);
 
     setInputValue('');
   };

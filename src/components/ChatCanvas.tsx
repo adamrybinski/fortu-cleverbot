@@ -1,22 +1,22 @@
 
 import React, { useState } from 'react';
 import { ChatInterface } from './ChatInterface';
-import { CanvasArea } from './CanvasArea';
+import { CanvasContainer } from './canvas/CanvasContainer';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Square } from 'lucide-react';
+import { useCanvas } from '@/hooks/useCanvas';
 
 export const ChatCanvas: React.FC = () => {
-  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [activeView, setActiveView] = useState<'chat' | 'canvas'>('chat');
-
-  const handleOpenCanvas = () => {
-    setIsCanvasOpen(true);
-  };
+  const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
 
   const handleCloseCanvas = () => {
-    setIsCanvasOpen(false);
+    closeCanvas();
     setActiveView('chat');
   };
+
+  // Check if mobile viewport
+  const isMobile = window.innerWidth < 768;
 
   return (
     <div className="h-screen bg-gradient-to-br from-[#F1EDFF] via-[#EEFFF3] to-[#FFFFFF] overflow-hidden">
@@ -66,7 +66,8 @@ export const ChatCanvas: React.FC = () => {
           }`}
         >
           <ChatInterface
-            onOpenCanvas={handleOpenCanvas}
+            onOpenCanvas={openCanvas}
+            onTriggerCanvas={triggerCanvas}
             isCanvasOpen={isCanvasOpen}
           />
         </div>
@@ -83,9 +84,11 @@ export const ChatCanvas: React.FC = () => {
             isCanvasOpen && activeView === 'chat' ? 'hidden md:flex' : ''
           }`}
         >
-          <CanvasArea
+          <CanvasContainer
             onClose={handleCloseCanvas}
             isVisible={isCanvasOpen}
+            trigger={currentTrigger}
+            isMobile={isMobile}
           />
         </div>
       </div>
