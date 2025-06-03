@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { CanvasTrigger } from './canvas/CanvasContainer';
 
@@ -30,7 +29,21 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop <= clientHeight + 50; // 50px threshold
+      setUserScrolledUp(!isAtBottom);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -45,6 +58,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
     setMessages(prev => [...prev, newMessage]);
     setInputValue('');
     setIsLoading(true);
+    setUserScrolledUp(false); // Reset scroll state on new message
 
     // Check for canvas triggers first
     const lowerInput = inputValue.toLowerCase();
@@ -137,62 +151,37 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
     }
   };
 
+  // Auto-scroll effect
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (!userScrolledUp) {
+      scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, isLoading, userScrolledUp]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-[#F1EDFF] to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
         <h1 className="text-xl font-semibold text-[#003079] dark:text-white">CleverBot</h1>
         <span className="text-xs text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
           ICS Consultant
         </span>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4 pb-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
-            >
-              {/* Bot Icon */}
-              {message.role === 'bot' && (
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                    <img
-                      src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                      alt="CleverBot"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Message Bubble */}
-              <div
-                className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
-                  message.role === 'user'
-                    ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
-                    : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
-                }`}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          ))}
-          
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start items-start gap-3">
+      {/* Messages Container - Scrollable */}
+      <div 
+        className="flex flex-col overflow-y-auto px-4 py-2 space-y-3 flex-grow" 
+        id="chat-messages"
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+      >
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
+          >
+            {/* Bot Icon */}
+            {message.role === 'bot' && (
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
                   <img
@@ -202,22 +191,51 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
                   />
                 </div>
               </div>
-              <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
+            )}
+            
+            {/* Message Bubble */}
+            <div
+              className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
+                message.role === 'user'
+                  ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
+                  : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
+              }`}
+            >
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+              <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        ))}
+        
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-start items-start gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
+                <img
+                  src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
+                  alt="CleverBot"
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
             </div>
-          )}
-          
-          <div ref={scrollRef} />
-        </div>
-      </ScrollArea>
+            <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      {/* Input Area - Fixed at bottom */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <Input
