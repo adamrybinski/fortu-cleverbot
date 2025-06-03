@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, ChatUIProps, CanvasTrigger } from './chat/types';
@@ -116,7 +115,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col flex-1 bg-white min-h-0">
       <ChatHeader />
       
       <MessagesContainer

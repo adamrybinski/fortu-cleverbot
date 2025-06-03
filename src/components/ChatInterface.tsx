@@ -20,7 +20,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div className="flex flex-col h-full">
       {/* Canvas Toggle Button for when canvas is closed */}
       {!isCanvasOpen && (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
           <Button
             onClick={() => onOpenCanvas()}
             variant="outline"
@@ -33,13 +33,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
       
-      {/* Chat UI */}
-      <div className="flex-1">
-        <ChatUI 
-          onOpenCanvas={onOpenCanvas} 
-          onTriggerCanvas={onTriggerCanvas}
-        />
-      </div>
+      {/* Chat UI - Direct placement with flex-1 for proper height flow */}
+      <ChatUI 
+        onOpenCanvas={onOpenCanvas} 
+        onTriggerCanvas={onTriggerCanvas}
+      />
     </div>
   );
 };
