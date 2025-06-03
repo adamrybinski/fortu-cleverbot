@@ -1,13 +1,28 @@
 
 import React from 'react';
+import { Maximize2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export const ChatHeader: React.FC = () => {
+interface ChatHeaderProps {
+  onOpenCanvas?: (type?: string, payload?: Record<string, any>) => void;
+  isCanvasOpen?: boolean;
+}
+
+export const ChatHeader: React.FC<ChatHeaderProps> = ({ onOpenCanvas, isCanvasOpen }) => {
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F1EDFF]/30 flex-shrink-0">
       <h1 className="text-xl font-semibold text-[#003079]">CleverBot</h1>
-      <span className="text-xs text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
-        ICS Consultant
-      </span>
+      {!isCanvasOpen && onOpenCanvas && (
+        <Button
+          onClick={() => onOpenCanvas()}
+          variant="outline"
+          size="sm"
+          className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20 dark:text-white dark:border-[#6EFFC6]/50"
+        >
+          <Maximize2 className="w-4 h-4 mr-2" />
+          Open Canvas
+        </Button>
+      )}
     </div>
   );
 };

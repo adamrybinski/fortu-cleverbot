@@ -5,7 +5,15 @@ import { ChatHeader } from './chat/ChatHeader';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas }) => {
+interface ExtendedChatUIProps extends ChatUIProps {
+  isCanvasOpen?: boolean;
+}
+
+export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
+  onOpenCanvas, 
+  onTriggerCanvas, 
+  isCanvasOpen 
+}) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -116,7 +124,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
 
   return (
     <div className="flex flex-col flex-1 bg-white min-h-0">
-      <ChatHeader />
+      <ChatHeader 
+        onOpenCanvas={onOpenCanvas}
+        isCanvasOpen={isCanvasOpen}
+      />
       
       <MessagesContainer
         messages={messages}
