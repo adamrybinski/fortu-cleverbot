@@ -25,9 +25,9 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   if (!isVisible || !trigger) return null;
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-[#6EFFC6]/30">
+    <div className="flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3]">
+      <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3] flex-shrink-0">
         <div className="flex items-center gap-3">
           {isMobile && (
             <Button
@@ -57,7 +57,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       </div>
 
       {/* Canvas Content Area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 w-full overflow-hidden">
         <CanvasModule trigger={trigger} />
       </div>
     </div>
