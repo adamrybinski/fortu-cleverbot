@@ -32,7 +32,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     switch (type) {
       case 'fortuQuestions':
         return {
-          type: 'fortu.ai Question Search',
+          type: 'fortuQuestions',
+          title: 'fortu.ai Question Search',
+          description: 'Discover relevant questions and insights from our database of business challenges. Explore proven approaches to your refined challenge.',
           payload
         };
       case 'blank':
