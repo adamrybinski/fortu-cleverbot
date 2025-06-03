@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -44,20 +43,20 @@ const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — t
 
 **Your Multi-Stage Refinement Process:**
 
-**Stage 1: Understanding & Empathy (2-3 exchanges)**
+**Stage 1: Understanding & Empathy (3-4 exchanges)**
 - Acknowledge their challenge with genuine understanding
 - Show you "get" their situation without jumping to solutions
 - Ask clarifying questions that demonstrate deep listening
 - Reference similar patterns ICS has seen (e.g., "ICS has seen this challenge in 40+ organisations")
 
-**Stage 2: Challenge Clarification (3-4 exchanges)**
+**Stage 2: Challenge Clarification (4-5 exchanges)**
 - Help them articulate the real challenge beneath surface symptoms
 - Guide them to think about root causes, not just symptoms
 - Use phrases like "So if I'm hearing this right..." to confirm understanding
 - Dig deeper into context, constraints, and what's been tried before
 - Start shaping towards a "How do we..." formulation but don't rush it
 
-**Stage 3: Question Formation (2-3 exchanges)**
+**Stage 3: Question Formation (3-4 exchanges)**
 - Work with them to create a clear "How do we..." question
 - Ensure the question is specific, actionable, and outcome-focused
 - Test the question with them - "Does this capture what you're really after?"
@@ -69,11 +68,11 @@ const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — t
 - The user must have confirmed the question captures their challenge accurately
 - You must be confident this is a searchable, solvable challenge
 - Use phrases like "Perfect. Now we're cooking" or "That's exactly the right question"
-- Signal readiness for fortune questions search with high confidence
+- Signal readiness for fortu questions search with high confidence
 
 **Key Behaviours:**
 - NEVER rush to Stage 4 - ensure proper progression through ALL stages
-- Spend 6-10 exchanges minimum before considering Stage 4
+- Spend 10-15 exchanges minimum before considering Stage 4
 - Build confidence at every stage with specific ICS experience references
 - Use "What would success look like if..." to clarify outcomes
 - Always confirm understanding before moving forward
@@ -151,12 +150,12 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[]): bo
          isShortUnclear;
 }
 
-// Much more strict function to detect if challenge refinement is complete and ready for fortune questions
-function isReadyForFortuneQuestions(response: string, conversationHistory: any[]): boolean {
+// Much more strict function to detect if challenge refinement is complete and ready for fortu questions
+function isReadyForFortuQuestions(response: string, conversationHistory: any[]): boolean {
   const lowerResponse = response.toLowerCase();
   
-  // Must have sufficient conversation depth (minimum 8-12 exchanges)
-  if (conversationHistory.length < 8) {
+  // Must have sufficient conversation depth (minimum 12-15 exchanges)
+  if (conversationHistory.length < 12) {
     return false;
   }
   
@@ -264,15 +263,15 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // Check if the response indicates readiness for fortune questions (much stricter now)
-    const readyForFortune = useProspectAgent && isReadyForFortuneQuestions(aiResponse, conversationHistory);
-    console.log('Ready for fortune questions:', readyForFortune);
+    // Check if the response indicates readiness for fortu questions (much stricter now)
+    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory);
+    console.log('Ready for fortu questions:', readyForFortu);
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
       usage: data.usage,
       agentUsed: useProspectAgent ? 'prospect' : 'general',
-      readyForFortune: readyForFortune
+      readyForFortu: readyForFortu
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

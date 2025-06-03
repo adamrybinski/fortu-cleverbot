@@ -49,11 +49,11 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   };
 
-  // Simplified detection - only create Fortune Questions canvas when ready
+  // Simplified detection - only create fortu Questions canvas when ready
   const shouldCreateCanvasPreview = (message: string, agentUsed?: string, readyForFortune?: boolean): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // ONLY trigger Fortune Questions canvas when the Prospect Agent indicates readiness
+    // ONLY trigger fortu Questions canvas when the Prospect Agent indicates readiness
     if (readyForFortune && agentUsed === 'prospect') {
       // Extract the refined challenge from the conversation
       const lastUserMessage = messages[messages.length - 1]?.text || message;
@@ -65,8 +65,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       });
     }
     
-    // Manual fortune questions trigger (fallback)
-    if (lowerInput.includes('fortune questions') || lowerInput.includes('search questions')) {
+    // Manual fortu questions trigger (fallback)
+    if (lowerInput.includes('fortu questions') || lowerInput.includes('search questions')) {
       return createCanvasPreviewData('fortuQuestions', {
         challengeSummary: message,
         searchReady: false,
@@ -120,7 +120,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       const readyForFortune = data.readyForFortune;
 
       console.log('Agent used:', agentUsed);
-      console.log('Ready for fortune:', readyForFortune);
+      console.log('Ready for fortu:', readyForFortune);
 
       // Check if we should create a canvas preview
       const canvasPreviewData = shouldCreateCanvasPreview(currentInput, agentUsed, readyForFortune);
@@ -128,11 +128,11 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
         
-        // Only modify response for Fortune Questions when ready for search
+        // Only modify response for fortu Questions when ready for search
         if (canvasPreviewData.type === 'fortuQuestions' && readyForFortune) {
           assistantText += "\n\nBrilliant. I've found some relevant questions in fortu.ai that match your challenge. Click the expand button below to explore these proven approaches and see how other organisations have tackled similar challenges.";
         } else if (canvasPreviewData.type === 'fortuQuestions') {
-          assistantText += "\n\nI've created a Fortune Questions module for you. Click the expand button below to open it and start exploring your challenge.";
+          assistantText += "\n\nI've created a fortu Questions module for you. Click the expand button below to open it and start exploring your challenge.";
         } else {
           assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
         }
