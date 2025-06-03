@@ -24,6 +24,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasCanvasBeenTriggered, setHasCanvasBeenTriggered] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -71,11 +72,13 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         challengeSummary: inputValue,
         timestamp: new Date().toISOString()
       });
+      setHasCanvasBeenTriggered(true);
     } else if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
       canvasPreviewData = createCanvasPreviewData('blank', { 
         source: 'chat_trigger',
         timestamp: new Date().toISOString()
       });
+      setHasCanvasBeenTriggered(true);
     }
 
     try {
@@ -145,6 +148,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       <ChatHeader 
         onOpenCanvas={onOpenCanvas}
         isCanvasOpen={isCanvasOpen}
+        hasCanvasBeenTriggered={hasCanvasBeenTriggered}
       />
       
       <MessagesContainer
