@@ -49,19 +49,35 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
           <h4 className="font-medium text-[#003079] text-sm mb-1">{canvasData.title}</h4>
           <p className="text-[#1D253A]/70 text-xs leading-relaxed mb-2">{canvasData.description}</p>
           
-          {/* Additional Info for Challenge Mapping */}
+          {/* Enhanced info for Challenge Mapping */}
           {canvasData.type === 'challengeMapping' && canvasData.payload?.originalChallenge && (
             <div className="bg-white/60 rounded p-2 text-xs text-[#1D253A]/80 mb-2">
-              <span className="font-medium">Original Input: </span>
+              <span className="font-medium">Working on: </span>
               <span className="line-clamp-2">{canvasData.payload.originalChallenge}</span>
+              {canvasData.payload.refinementStage === 'early' && (
+                <div className="mt-1 text-[#753BBD] font-medium">• Challenge refinement in progress</div>
+              )}
             </div>
           )}
           
-          {/* Additional Info for Fortune Questions */}
-          {canvasData.type === 'fortuQuestions' && canvasData.payload?.challengeSummary && (
+          {/* Enhanced info for Fortune Questions */}
+          {canvasData.type === 'fortuQuestions' && (
             <div className="bg-white/60 rounded p-2 text-xs text-[#1D253A]/80 mb-2">
-              <span className="font-medium">Challenge: </span>
-              <span className="line-clamp-2">{canvasData.payload.challengeSummary}</span>
+              {canvasData.payload?.searchReady ? (
+                <>
+                  <span className="font-medium text-[#753BBD]">✓ Search Ready: </span>
+                  <span className="line-clamp-2">{canvasData.payload.refinedChallenge}</span>
+                  <div className="mt-1 text-[#753BBD] font-medium">• Matching questions available</div>
+                </>
+              ) : canvasData.payload?.challengeSummary ? (
+                <>
+                  <span className="font-medium">Challenge: </span>
+                  <span className="line-clamp-2">{canvasData.payload.challengeSummary}</span>
+                  <div className="mt-1 text-[#1D253A]/60">• Complete refinement to unlock search</div>
+                </>
+              ) : (
+                <div className="text-[#1D253A]/60">• Fortune questions module ready</div>
+              )}
             </div>
           )}
         </div>
