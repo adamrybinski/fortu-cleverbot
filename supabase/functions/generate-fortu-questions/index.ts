@@ -9,6 +9,26 @@ const corsHeaders = {
 
 const QUESTION_STATUSES = ['Discovery', 'Explore', 'Journey', 'Equip'];
 
+// Function to clean markdown formatting from AI response
+function cleanAIResponse(response: string): string {
+  // Remove markdown code block markers
+  let cleaned = response.trim();
+  
+  // Remove ```json at the start
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.substring(7);
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.substring(3);
+  }
+  
+  // Remove ``` at the end
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.substring(0, cleaned.length - 3);
+  }
+  
+  return cleaned.trim();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -41,13 +61,17 @@ serve(async (req) => {
             role: 'system',
             content: `You are an expert business consultant. Generate 6 relevant "How do we..." questions that are similar to or related to the user's challenge. Each question should be practical, actionable, and something that real organisations would face.
 
-Format your response as a JSON array of objects with this structure:
-{
-  "question": "How do we...",
-  "relevance": number (85-98),
-  "context": "brief industry/domain context",
-  "organisations": number (15-50)
-}
+IMPORTANT: Return ONLY a valid JSON array without any markdown formatting or code blocks. Do not wrap your response in \`\`\`json or any other formatting.
+
+Format your response exactly as this JSON array:
+[
+  {
+    "question": "How do we...",
+    "relevance": number (85-98),
+    "context": "brief industry/domain context",
+    "organisations": number (15-50)
+  }
+]
 
 The questions should be realistic variations or related challenges that organisations in similar situations would face.`
           },
@@ -68,16 +92,34 @@ The questions should be realistic variations or related challenges that organisa
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse = data.choices[0].message.content;
 
-    console.log('AI response:', aiResponse);
+    console.log('Raw AI response:', aiResponse);
+
+    // Clean the response to remove markdown formatting
+    aiResponse = cleanAIResponse(aiResponse);
+    console.log('Cleaned AI response:', aiResponse);
 
     // Parse the JSON response
     let questions;
     try {
       questions = JSON.parse(aiResponse);
+      
+      // Validate that it's an array
+      if (!Array.isArray(questions)) {
+        throw new Error('Response is not an array');
+      }
+      
+      // Validate each question object has required fields
+      questions.forEach((q, index) => {
+        if (!q.question || !q.relevance || !q.context || !q.organisations) {
+          throw new Error(`Question ${index + 1} is missing required fields`);
+        }
+      });
+      
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', parseError);
+      console.error('AI response that failed to parse:', aiResponse);
       throw new Error('Failed to generate questions in proper format');
     }
 
