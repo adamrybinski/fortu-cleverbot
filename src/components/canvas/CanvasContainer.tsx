@@ -3,7 +3,9 @@ import { X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CanvasModule } from './CanvasModule';
 
-// ShineBorder Component optimized for Lovable
+// -------------------------------
+// ✅ ShineBorder component (fixed)
+// -------------------------------
 interface ShineBorderProps {
   borderRadius?: number;
   borderWidth?: number;
@@ -14,40 +16,52 @@ interface ShineBorderProps {
 }
 
 function ShineBorder({
-  borderRadius = 8,
-  borderWidth = 1,
-  duration = 14,
-  color = "#000000",
+  borderRadius = 12,
+  borderWidth = 2,
+  duration = 8,
+  color = ["#6EFFC6", "#003079", "#F1EDFF"],
   className = "",
   children,
 }: ShineBorderProps) {
-  const colorGradient = Array.isArray(color) ? color.join(",") : color;
-  
+  const colorGradient = Array.isArray(color) ? color.join(', ') : color;
+
   return (
-    <div
-      className={`relative h-full w-full rounded-xl bg-white p-3 ${className}`}
-      style={{
-        borderRadius: `${borderRadius}px`,
-      }}
-    >
+    <div className={`relative p-[${borderWidth}px] ${className}`}>
+      {/* Animated gradient border */}
       <div
-        className="absolute inset-0 rounded-xl opacity-75"
+        className="absolute inset-0 z-0 pointer-events-none rounded-[inherit]"
         style={{
-          background: `conic-gradient(from 0deg, transparent, ${colorGradient}, transparent)`,
+          background: `conic-gradient(${colorGradient})`,
           animation: `spin ${duration}s linear infinite`,
-          padding: `${borderWidth}px`,
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskImage: 'linear-gradient(#fff 0 0)',
+          maskImage: 'linear-gradient(#fff 0 0)',
           WebkitMaskComposite: 'xor',
           maskComposite: 'exclude',
+          borderRadius: `${borderRadius}px`,
         }}
       />
-      <div className="relative z-10 h-full w-full">
+      {/* Content inside the border */}
+      <div
+        className="relative z-10 bg-white h-full w-full rounded-[inherit]"
+        style={{ borderRadius: `${borderRadius}px` }}
+      >
         {children}
       </div>
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
 
+// -------------------------------
+// 📦 CanvasContainer component
+// -------------------------------
 export interface CanvasTrigger {
   type: string;
   payload?: Record<string, any>;
@@ -61,12 +75,12 @@ interface CanvasContainerProps {
   useShineBorder?: boolean;
 }
 
-export const CanvasContainer: React.FC<CanvasContainerProps> = ({ 
-  onClose, 
-  isVisible, 
+export const CanvasContainer: React.FC<CanvasContainerProps> = ({
+  onClose,
+  isVisible,
   trigger,
   isMobile = false,
-  useShineBorder = false
+  useShineBorder = false,
 }) => {
   if (!isVisible || !trigger) return null;
 
@@ -101,28 +115,27 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
           </Button>
         )}
       </div>
-      {/* Canvas Content Area */}
+
+      {/* Canvas Content */}
       <div className="flex-1 w-full overflow-hidden">
         <CanvasModule trigger={trigger} />
       </div>
     </div>
   );
 
-  if (useShineBorder) {
-    return (
-      <div className="h-full w-full p-2">
-        <ShineBorder
-          borderWidth={2}
-          className="border-0 bg-transparent p-0"
-          color={["#6EFFC6", "#003079", "#F1EDFF"]}
-          duration={8}
-          borderRadius={12}
-        >
-          {content}
-        </ShineBorder>
-      </div>
-    );
-  }
-
-  return content;
+  return useShineBorder ? (
+    <div className="h-full w-full p-2">
+      <ShineBorder
+        borderWidth={2}
+        className="border-0 bg-transparent p-0"
+        color={["#6EFFC6", "#003079", "#F1EDFF"]}
+        duration={8}
+        borderRadius={12}
+      >
+        {content}
+      </ShineBorder>
+    </div>
+  ) : (
+    content
+  );
 };
