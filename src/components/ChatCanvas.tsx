@@ -54,9 +54,9 @@ export const ChatCanvas: React.FC = () => {
         )}
 
         <div className="flex h-full">
-          {/* Chat Panel */}
+          {/* Chat Panel - removed overflow-hidden to allow internal scrolling */}
           <div
-            className={`transition-all duration-500 ease-in-out overflow-hidden ${
+            className={`transition-all duration-500 ease-in-out ${
               isCanvasOpen
                 ? 'hidden md:flex md:w-[30%] lg:w-[35%]'
                 : 'w-full'
