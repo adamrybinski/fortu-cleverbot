@@ -15,7 +15,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
               <span className="text-[#753BBD] font-bold text-lg">?</span>
             </div>
           </div>
-          <h3 className="text-xl font-semibold text-[#003079] mb-3">Fortune Questions</h3>
+          <h3 className="text-xl font-semibold text-[#003079] mb-3">fortu.ai Questions</h3>
           <p className="text-[#1D253A]/70 text-sm max-w-md mx-auto mb-6">
             Interactive question module for exploring insights and possibilities. 
             This module will be expanded with dynamic questions and responses.
