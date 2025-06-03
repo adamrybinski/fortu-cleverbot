@@ -1,169 +1,25 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
-import { CanvasTrigger } from './canvas/CanvasContainer';
-
-interface Message {
-  id: string;
-  role: 'user' | 'bot';
-  text: string;
-  timestamp: Date;
-}
-
-interface ChatUIProps {
-  onOpenCanvas?: (type?: string, payload?: Record<string, any>) => void;
-  onTriggerCanvas?: (trigger: CanvasTrigger) => void;
-}
+import React, { useState } from 'react';
+import { ChatUIProps } from '@/types/chat';
+import { MessagesList } from './chat/MessagesList';
+import { ChatInput } from './chat/ChatInput';
+import { useScrollManager } from '@/hooks/useScrollManager';
+import { useMessageHandler } from '@/hooks/useMessageHandler';
 
 export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'bot',
-      text: 'Right, let\'s get started. What\'s the challenge you\'re looking to crack? Don\'t worry about having it perfectly formed — I\'ll help sharpen it.',
-      timestamp: new Date(),
-    },
-  ]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   
-  const messagesRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Smart scroll detection - check if user is at bottom
-  const handleScroll = useCallback(() => {
-    if (!messagesRef.current) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = messagesRef.current;
-    const threshold = 100; // pixels from bottom
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < threshold;
-    
-    setIsAtBottom(isNearBottom);
-  }, []);
-
-  // Smooth scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, []);
-
-  // Auto-scroll on new messages if user is at bottom
-  useEffect(() => {
-    if (isAtBottom) {
-      scrollToBottom();
-    }
-  }, [messages, isAtBottom, scrollToBottom]);
-
-  // Set up scroll event listener
-  useEffect(() => {
-    const messagesContainer = messagesRef.current;
-    if (!messagesContainer) return;
-
-    messagesContainer.addEventListener('scroll', handleScroll);
-    return () => messagesContainer.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  const { isAtBottom, messagesRef, handleScroll, scrollToBottom } = useScrollManager();
+  const { messages, isLoading, sendMessage } = useMessageHandler({
+    onOpenCanvas,
+    onTriggerCanvas,
+    scrollToBottom,
+    isAtBottom
+  });
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      text: inputValue,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    await sendMessage(inputValue);
     setInputValue('');
-    setIsLoading(true);
-
-    // Check for canvas triggers first
-    const lowerInput = inputValue.toLowerCase();
-    let canvasTriggered = false;
-
-    if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
-      if (onTriggerCanvas) {
-        onTriggerCanvas({ 
-          type: 'fortuQuestions', 
-          payload: { 
-            challengeSummary: inputValue,
-            timestamp: new Date().toISOString()
-          } 
-        });
-        canvasTriggered = true;
-      }
-    } else if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
-      if (onOpenCanvas) {
-        onOpenCanvas('blank', { source: 'chat_trigger' });
-        canvasTriggered = true;
-      }
-    }
-
-    try {
-      // Call the edge function with conversation history
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === 'bot' ? 'assistant' : 'user',
-        text: msg.text
-      }));
-
-      console.log('Calling chat function with message:', inputValue);
-      
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
-          message: inputValue,
-          conversationHistory: conversationHistory
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data.error) {
-        console.error('Edge function error:', data.error);
-        throw new Error(data.error);
-      }
-
-      let assistantText = data.response;
-
-      // Add canvas context if triggered
-      if (canvasTriggered) {
-        if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
-          assistantText += "\n\nI've opened the Fortune Questions module on the right. Let's explore this together.";
-        } else if (lowerInput.includes('canvas')) {
-          assistantText += "\n\nCanvas is now open on the right. Ready to visualise your thinking.";
-        }
-      }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: assistantText,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-    } catch (error) {
-      console.error('Error calling chat function:', error);
-      
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: 'Right, hit a snag there. Technical hiccup on my end. Give it another go?',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -184,96 +40,21 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
       </div>
 
       {/* Scrollable Messages Container */}
-      <div 
+      <MessagesList
         ref={messagesRef}
-        className="flex-1 overflow-y-auto px-4 py-2 space-y-3"
+        messages={messages}
+        isLoading={isLoading}
         onScroll={handleScroll}
-      >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
-          >
-            {/* Bot Icon */}
-            {message.role === 'bot' && (
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                  <img
-                    src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                    alt="CleverBot"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-              </div>
-            )}
-            
-            {/* Message Bubble */}
-            <div
-              className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
-                message.role === 'user'
-                  ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
-                  : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
-              }`}
-            >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-              <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
-        ))}
-        
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex justify-start items-start gap-3">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                <img
-                  src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                  alt="CleverBot"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              </div>
-            </div>
-            <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Scroll anchor at bottom */}
-        <div ref={scrollRef} />
-      </div>
+      />
 
       {/* Fixed Input Area */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="What challenge are you looking to crack?"
-              className="border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none"
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            onClick={handleSendMessage}
-            className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white px-4 py-2 h-10"
-            disabled={!inputValue.trim() || isLoading}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-          Press Enter to send • Shift+Enter for new line
-        </p>
-      </div>
+      <ChatInput
+        value={inputValue}
+        onChange={setInputValue}
+        onSend={handleSendMessage}
+        onKeyPress={handleKeyPress}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
