@@ -4,6 +4,14 @@ export interface Message {
   role: 'user' | 'bot';
   text: string;
   timestamp: Date;
+  canvasData?: CanvasPreviewData;
+}
+
+export interface CanvasPreviewData {
+  type: string;
+  title: string;
+  description: string;
+  payload: Record<string, any>;
 }
 
 export interface CanvasTrigger {

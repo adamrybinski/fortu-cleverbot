@@ -1,12 +1,23 @@
 
 import React from 'react';
-import { Message } from './types';
+import { Message, CanvasTrigger } from './types';
+import { CanvasPreview } from './CanvasPreview';
 
 interface MessageBubbleProps {
   message: Message;
+  onTriggerCanvas?: (trigger: CanvasTrigger) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onTriggerCanvas }) => {
+  const handleExpandCanvas = () => {
+    if (message.canvasData && onTriggerCanvas) {
+      onTriggerCanvas({
+        type: message.canvasData.type,
+        payload: message.canvasData.payload
+      });
+    }
+  };
+
   return (
     <div
       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
@@ -30,6 +41,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         }`}
       >
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+        
+        {/* Canvas Preview */}
+        {message.canvasData && (
+          <CanvasPreview 
+            canvasData={message.canvasData}
+            onExpand={handleExpandCanvas}
+          />
+        )}
+        
         <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>

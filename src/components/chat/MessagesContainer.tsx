@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Message } from './types';
+import { Message, CanvasTrigger } from './types';
 import { MessageBubble } from './MessageBubble';
 import { LoadingIndicator } from './LoadingIndicator';
 
@@ -9,6 +9,7 @@ interface MessagesContainerProps {
   isLoading: boolean;
   messagesContainerRef: React.RefObject<HTMLDivElement>;
   scrollRef: React.RefObject<HTMLDivElement>;
+  onTriggerCanvas?: (trigger: CanvasTrigger) => void;
 }
 
 export const MessagesContainer: React.FC<MessagesContainerProps> = ({
@@ -16,6 +17,7 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
   isLoading,
   messagesContainerRef,
   scrollRef,
+  onTriggerCanvas,
 }) => {
   return (
     <div 
@@ -28,7 +30,11 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
       }}
     >
       {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
+        <MessageBubble 
+          key={message.id} 
+          message={message} 
+          onTriggerCanvas={onTriggerCanvas}
+        />
       ))}
 
       {isLoading && <LoadingIndicator />}

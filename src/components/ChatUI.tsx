@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Message, ChatUIProps, CanvasTrigger } from './chat/types';
+import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
@@ -27,6 +27,27 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  const createCanvasPreviewData = (type: string, payload: Record<string, any>): CanvasPreviewData => {
+    switch (type) {
+      case 'fortuQuestions':
+        return {
+          type: 'fortuQuestions',
+          title: 'fortu.ai Questions Module',
+          description: 'Interactive question module for exploring insights and possibilities. Ready to help you dive deeper into your challenge.',
+          payload
+        };
+      case 'blank':
+      case 'canvas':
+      default:
+        return {
+          type: 'blank',
+          title: 'Blank Canvas Created',
+          description: 'A blank canvas for drawing, brainstorming, and visual thinking. Click to expand and start creating.',
+          payload
+        };
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
@@ -42,24 +63,19 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setIsLoading(true);
 
     const lowerInput = inputValue.toLowerCase();
-    let canvasTriggered = false;
+    let canvasPreviewData: CanvasPreviewData | undefined;
 
+    // Determine if we should create a canvas preview
     if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
-      if (onTriggerCanvas) {
-        onTriggerCanvas({
-          type: 'fortuQuestions',
-          payload: {
-            challengeSummary: inputValue,
-            timestamp: new Date().toISOString()
-          }
-        });
-        canvasTriggered = true;
-      }
+      canvasPreviewData = createCanvasPreviewData('fortuQuestions', {
+        challengeSummary: inputValue,
+        timestamp: new Date().toISOString()
+      });
     } else if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
-      if (onOpenCanvas) {
-        onOpenCanvas('blank', { source: 'chat_trigger' });
-        canvasTriggered = true;
-      }
+      canvasPreviewData = createCanvasPreviewData('blank', { 
+        source: 'chat_trigger',
+        timestamp: new Date().toISOString()
+      });
     }
 
     try {
@@ -79,11 +95,12 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
       let assistantText = data.response;
 
-      if (canvasTriggered) {
-        if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
-          assistantText += "\n\nI've opened the Fortune Questions module on the right. Let's explore this together.";
-        } else if (lowerInput.includes('canvas')) {
-          assistantText += "\n\nCanvas is now open on the right. Ready to visualise your thinking.";
+      // Modify response text when canvas preview is included
+      if (canvasPreviewData) {
+        if (canvasPreviewData.type === 'fortuQuestions') {
+          assistantText += "\n\nI've created a Fortune Questions module for you. Click the expand button below to open it and start exploring your challenge.";
+        } else {
+          assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
         }
       }
 
@@ -92,6 +109,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         role: 'bot',
         text: assistantText,
         timestamp: new Date(),
+        canvasData: canvasPreviewData
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -134,6 +152,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         isLoading={isLoading}
         messagesContainerRef={messagesContainerRef}
         scrollRef={scrollRef}
+        onTriggerCanvas={onTriggerCanvas}
       />
 
       <ChatInput
