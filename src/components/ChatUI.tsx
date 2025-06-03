@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -128,10 +127,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-[#F1EDFF] to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
-        <h1 className="text-xl font-semibold text-[#003079] dark:text-white">CleverBot</h1>
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F1EDFF]/30 flex-shrink-0">
+        <h1 className="text-xl font-semibold text-[#003079]">CleverBot</h1>
         <span className="text-xs text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
           ICS Consultant
         </span>
@@ -199,7 +198,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
       </div>
 
       {/* Input Area - Fixed */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
+      <div className="p-4 border-t border-gray-200 bg-[#F1EDFF]/20 flex-shrink-0">
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <Input
@@ -207,7 +206,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="What challenge are you looking to crack?"
-              className="border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none"
+              className="border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white resize-none"
               disabled={isLoading}
             />
           </div>
@@ -219,7 +218,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+        <p className="text-xs text-gray-500 mt-2 text-center">
           Press Enter to send • Shift+Enter for new line
         </p>
       </div>
