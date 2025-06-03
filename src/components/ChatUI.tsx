@@ -49,23 +49,43 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   };
 
-  // Simplified detection - only create fortu Questions canvas when ready
-  const shouldCreateCanvasPreview = (message: string, agentUsed?: string, readyForFortune?: boolean): CanvasPreviewData | null => {
+  // Simplified detection - create fortu Questions canvas when ready
+  const shouldCreateCanvasPreview = (
+    message: string, 
+    agentUsed?: string, 
+    readyForFortu?: boolean, 
+    refinedChallenge?: string
+  ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // ONLY trigger fortu Questions canvas when the Prospect Agent indicates readiness
-    if (readyForFortune && agentUsed === 'prospect') {
-      // Extract the refined challenge from the conversation
-      const lastUserMessage = messages[messages.length - 1]?.text || message;
+    // Primary trigger: Prospect Agent indicates readiness
+    if (readyForFortu && agentUsed === 'prospect') {
       return createCanvasPreviewData('fortuQuestions', {
-        refinedChallenge: lastUserMessage,
+        refinedChallenge: refinedChallenge || message,
         challengeContext: 'prospect_refined',
         searchReady: true,
         timestamp: new Date().toISOString()
       });
     }
     
-    // Manual fortu questions trigger (fallback)
+    // Fallback triggers for explicit requests
+    if (agentUsed === 'prospect' && messages.length >= 6) {
+      // User explicitly asks for questions/solutions
+      if (lowerInput.includes('question') || 
+          lowerInput.includes('solution') || 
+          lowerInput.includes('example') ||
+          lowerInput.includes('what next') ||
+          lowerInput.includes('how do we proceed')) {
+        return createCanvasPreviewData('fortuQuestions', {
+          challengeSummary: refinedChallenge || message,
+          challengeContext: 'user_request',
+          searchReady: false,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // Manual fortu questions trigger
     if (lowerInput.includes('fortu questions') || lowerInput.includes('search questions')) {
       return createCanvasPreviewData('fortuQuestions', {
         challengeSummary: message,
@@ -117,19 +137,26 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
       let assistantText = data.response;
       const agentUsed = data.agentUsed;
-      const readyForFortune = data.readyForFortune;
+      const readyForFortu = data.readyForFortu;
+      const refinedChallenge = data.refinedChallenge;
 
       console.log('Agent used:', agentUsed);
-      console.log('Ready for fortu:', readyForFortune);
+      console.log('Ready for fortu:', readyForFortu);
+      console.log('Refined challenge:', refinedChallenge);
 
       // Check if we should create a canvas preview
-      const canvasPreviewData = shouldCreateCanvasPreview(currentInput, agentUsed, readyForFortune);
+      const canvasPreviewData = shouldCreateCanvasPreview(
+        currentInput, 
+        agentUsed, 
+        readyForFortu, 
+        refinedChallenge
+      );
       
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
         
         // Only modify response for fortu Questions when ready for search
-        if (canvasPreviewData.type === 'fortuQuestions' && readyForFortune) {
+        if (canvasPreviewData.type === 'fortuQuestions' && readyForFortu) {
           assistantText += "\n\nBrilliant. I've found some relevant questions in fortu.ai that match your challenge. Click the expand button below to explore these proven approaches and see how other organisations have tackled similar challenges.";
         } else if (canvasPreviewData.type === 'fortuQuestions') {
           assistantText += "\n\nI've created a fortu Questions module for you. Click the expand button below to open it and start exploring your challenge.";

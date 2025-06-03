@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -40,20 +39,21 @@ You are deployed at the front end of the consulting lifecycle, especially in ear
 
 Remember: You listen like a strategist, think like a product leader, and respond like a top-tier consultant.`;
 
-const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — the specialist for turning raw, messy client input into structured, solvable challenges through intelligent conversation flow. You are invisible to the user; they just experience better, more consultant-like responses.
+const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — the specialist for turning raw, messy client input into structured, solvable challenges and connecting them to fortu.ai question search.
 
-**Your Intelligent Conversation Flow:**
+**Your Mission:**
+Transform vague business challenges into sharp "How do we..." questions and guide users to fortu.ai for proven solutions.
 
-**Stage 1: Initial Understanding (2-3 exchanges)**
+**Intelligent Conversation Flow:**
+
+**Stage 1: Initial Understanding (1-2 exchanges)**
 - Acknowledge their challenge with genuine understanding
 - Show you "get" their situation without jumping to solutions
-- Ask 1-2 clarifying questions that demonstrate deep listening
 - Reference similar patterns ICS has seen (e.g., "ICS has seen this challenge in 40+ organisations")
 
-**Stage 2: Context Gathering & Challenge Clarification (3-5 exchanges)**
+**Stage 2: Context Gathering & Challenge Clarification (2-4 exchanges)**
 - Help them articulate the real challenge beneath surface symptoms
 - Guide them to think about root causes, not just symptoms
-- Dig deeper into context, constraints, and what's been tried before
 - **Key Intelligence: Watch for signals that the user can't provide more context:**
   - Short responses (under 10 words)
   - "I don't know" or "Not sure" responses
@@ -62,55 +62,51 @@ const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — t
   - "That's all I can think of" type responses
 - **When you detect limited context ability, move to Stage 3 faster**
 
-**Stage 3: Question Formation & Refinement (2-4 exchanges)**
-- Work with them to create a structured question using this format:
+**Stage 3: Question Formation & fortu.ai Readiness (1-2 exchanges)**
+- **AUTOMATICALLY** create a structured question using this format:
   "How do we [specific action/solution] for [target/context] so that [measurable outcome]?"
 - Examples:
   - "How do we reduce customer churn for our SaaS product so that we increase annual retention from 75% to 85%?"
   - "How do we streamline our approval process for marketing campaigns so that we reduce time-to-market from 3 weeks to 1 week?"
-- Ensure the question includes:
+- **ALWAYS** ensure the question includes:
   - Clear action (what needs to be done)
   - Specific context (where/who)
   - Measurable outcome (quantifiable result)
-- Test the question with them - "Does this capture what you're really after?"
-- **Always ask: "Is there any additional context about [specific aspect] that might be relevant?"**
+- **SIGNAL fortu.ai READINESS** with phrases like:
+  - "Perfect. I've got a clear picture of your challenge."
+  - "Right, that's exactly the kind of question fortu.ai excels at."
+  - "I can see some relevant approaches in our database."
 
-**Stage 4: Final Confirmation & Ready for Discovery**
-- Only reach this when you have a crystal-clear, well-tested "How do we..." question
-- The user must have confirmed the question captures their challenge accurately
-- You must have asked about additional context and they've confirmed or provided it
-- Use phrases like "Perfect. Now we're cooking" or "That's exactly the right question"
-- Signal readiness for fortu questions search with high confidence
+**Stage 4: fortu.ai Connection**
+- Once you have a clear "How do we..." question, ALWAYS suggest fortu.ai search
+- Use phrases like: "Let me check fortu.ai for organisations that have tackled this exact challenge"
+- Include confidence-building language about ICS experience
 
 **Intelligence Triggers for Faster Progression:**
-- **Limited Context Signals:** Short responses, "don't know" answers, vague language
-- **Urgency Signals:** "need this fast", "pressure to deliver", "no time"
-- **Clarity Signals:** User provides specific metrics, clear goals, detailed context
-- **Confidence Signals:** User confirms understanding, agrees with summaries
+- **Limited Context Signals:** Move to question formation after 4-6 exchanges
+- **Urgency Signals:** "need this fast", "pressure to deliver", "no time" - accelerate to Stage 3
+- **Solution Requests:** User asks for "questions", "solutions", "examples" - trigger fortu.ai immediately if context exists
 
 **Key Behaviours:**
-- **Adapt conversation length based on user's ability to provide context**
-- Spend 8-12 exchanges minimum, but be flexible based on context richness
+- **Minimum 6 exchanges before fortu.ai trigger, but be flexible based on context richness**
 - Always include measurable outcomes in the final question
 - Build confidence at every stage with specific ICS experience references
-- Use "What would success look like if..." to clarify measurable outcomes
-- Always confirm understanding before moving forward
+- **PROACTIVELY** form "How do we..." questions rather than waiting for user confirmation
+- When context is sufficient, SIGNAL readiness for fortu.ai search
 
-**Stage 4 Triggers (ALL must be present):**
-- Clear "How do we...for...so that..." question with measurable outcome
-- User has confirmed this captures their challenge accurately
-- You've asked about additional context and user has responded
-- Question addresses root causes, not just symptoms
-- Success criteria are quantified and clear
-- You're confident ICS can find relevant solutions
+**fortu.ai Trigger Conditions (ANY of these):**
+- You've formed a clear "How do we...for...so that..." question with measurable outcome
+- User asks for "questions", "solutions", "examples" after 6+ exchanges
+- You've referenced ICS experience and expressed confidence about the challenge
+- User shows signs of being ready to move forward (asks "what next", "how do we proceed")
 
 **Confidence Building Language:**
 - "ICS has tackled this exact challenge in [specific context]"
 - "We've seen this pattern in 40+ organisations"
 - "This reminds me of a client who went from [problem] to [outcome] in 6 months"
-- "Our team has built specific tools for this type of challenge"
+- "fortu.ai has specific approaches for this type of challenge"
 
-**Tone:** Maintain CleverBot's direct, confident, British tone while being progressively more consultative. Be intelligent about when to push forward vs. when to gather more context.`;
+**Tone:** Maintain CleverBot's direct, confident, British tone while being progressively more consultative and moving toward fortu.ai connection.`;
 
 // Enhanced agent detection function
 function shouldUseProspectAgent(message: string, conversationHistory: any[]): boolean {
@@ -126,7 +122,8 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[]): bo
   const challengeIndicators = [
     'churn', 'growth', 'revenue', 'customers', 'retention',
     'problem', 'issue', 'challenge', 'help', 'solution',
-    'strategy', 'direction', 'planning', 'goals', 'objectives'
+    'strategy', 'direction', 'planning', 'goals', 'objectives',
+    'transformation', 'change', 'improve'
   ];
   
   // Vague language indicators
@@ -151,7 +148,7 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[]): bo
   );
   
   // Check conversation context - if early in conversation and asking for help
-  const isEarlyConversation = conversationHistory.length < 8;
+  const isEarlyConversation = conversationHistory.length < 10;
   const isAskingForHelp = lowerMessage.includes('help') || lowerMessage.includes('need');
   
   // Use Prospect Agent if:
@@ -168,61 +165,78 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[]): bo
          isShortUnclear;
 }
 
-// Enhanced function to detect if challenge refinement is complete and ready for fortu questions
-function isReadyForFortuQuestions(response: string, conversationHistory: any[]): boolean {
+// Simplified function to detect if ready for fortu questions
+function isReadyForFortuQuestions(response: string, conversationHistory: any[], userMessage: string): boolean {
   const lowerResponse = response.toLowerCase();
+  const lowerUserMessage = userMessage.toLowerCase();
   
-  // Must have sufficient conversation depth (minimum 8-12 exchanges, flexible based on content)
-  if (conversationHistory.length < 8) {
+  // Must have sufficient conversation depth (minimum 6 exchanges, flexible based on content)
+  if (conversationHistory.length < 6) {
     return false;
   }
   
-  // Look for "how do we" formulations with the complete structure
+  // Strong readiness indicators in bot response
+  const readinessIndicators = [
+    'perfect. i\'ve got a clear picture',
+    'exactly the kind of question fortu.ai excels at',
+    'i can see some relevant approaches',
+    'let me check fortu.ai',
+    'fortu.ai has specific approaches',
+    'organisations that have tackled this',
+    'right, that\'s exactly',
+    'perfect. now we\'re cooking'
+  ];
+  
+  const hasReadinessSignal = readinessIndicators.some(indicator => 
+    lowerResponse.includes(indicator)
+  );
+  
+  // Look for structured "How do we" question in response
   const hasStructuredQuestion = lowerResponse.includes('how do we') && 
                                 (lowerResponse.includes(' for ') || lowerResponse.includes(' in ')) && 
                                 lowerResponse.includes(' so that ');
   
-  // Look for very strong completion indicators (Stage 4 language)
-  const strongCompletionIndicators = [
-    'perfect. now we\'re cooking', 'that\'s exactly the right question',
-    'now we\'re cooking', 'that\'s the right question',
-    'perfect', 'exactly right', 'spot on'
-  ];
+  // User explicitly asking for solutions/questions
+  const userWantsSolutions = lowerUserMessage.includes('question') || 
+                            lowerUserMessage.includes('solution') || 
+                            lowerUserMessage.includes('example') ||
+                            lowerUserMessage.includes('what next') ||
+                            lowerUserMessage.includes('how do we proceed');
   
-  const hasStrongCompletion = strongCompletionIndicators.some(indicator => 
-    lowerResponse.includes(indicator)
-  );
-  
-  // Look for additional context confirmation
-  const hasContextCheck = lowerResponse.includes('additional context') || 
-                         lowerResponse.includes('any other') ||
-                         lowerResponse.includes('anything else');
-  
-  // Look for ICS experience confidence building
-  const hasICSExperience = lowerResponse.includes('ics has') || 
+  // ICS confidence building present
+  const hasICSConfidence = lowerResponse.includes('ics has') || 
                           lowerResponse.includes('we\'ve seen this') ||
                           lowerResponse.includes('pattern') ||
-                          lowerResponse.includes('tackled this');
+                          lowerResponse.includes('tackled this') ||
+                          lowerResponse.includes('organisations');
   
-  // Look for measurable outcomes in the response
-  const hasMeasurableOutcome = lowerResponse.includes('%') || 
-                              lowerResponse.includes('increase') || 
-                              lowerResponse.includes('reduce') ||
-                              lowerResponse.includes('improve') ||
-                              /\d+/.test(lowerResponse); // Contains numbers
+  // Ready if ANY of these conditions are met:
+  // 1. Bot shows clear readiness signals
+  // 2. Bot has formed structured question + shows confidence
+  // 3. User asks for solutions and we have sufficient context + confidence
+  return hasReadinessSignal || 
+         (hasStructuredQuestion && hasICSConfidence) ||
+         (userWantsSolutions && hasICSConfidence && conversationHistory.length >= 6);
+}
+
+// Function to extract the refined challenge from conversation
+function extractRefinedChallenge(conversationHistory: any[], currentResponse: string): string {
+  // Look for "How do we..." in the current response first
+  const howDoWeMatch = currentResponse.match(/"(How do we[^"]+)"/);
+  if (howDoWeMatch) {
+    return howDoWeMatch[1];
+  }
   
-  // Only ready if we have:
-  // 1. Sufficient conversation depth
-  // 2. Structured "How do we...for...so that..." question
-  // 3. Strong completion indicators
-  // 4. ICS confidence building
-  // 5. Measurable outcome referenced
-  // 6. Context check performed OR very strong completion language
-  return hasStructuredQuestion && 
-         hasStrongCompletion && 
-         hasICSExperience && 
-         hasMeasurableOutcome &&
-         (hasContextCheck || lowerResponse.includes('perfect'));
+  // Look for the last user message that describes their challenge
+  for (let i = conversationHistory.length - 1; i >= 0; i--) {
+    const msg = conversationHistory[i];
+    if (msg.role === 'user' && msg.text.length > 20) {
+      return msg.text;
+    }
+  }
+  
+  // Fallback to a generic description
+  return "Business transformation challenge requiring actionable solutions";
 }
 
 serve(async (req) => {
@@ -287,15 +301,23 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // Check if the response indicates readiness for fortu questions (enhanced logic)
-    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory);
+    // Check if the response indicates readiness for fortu questions (simplified logic)
+    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message);
     console.log('Ready for fortu questions:', readyForFortu);
+
+    // Extract refined challenge if ready for fortu
+    let refinedChallenge = '';
+    if (readyForFortu) {
+      refinedChallenge = extractRefinedChallenge(conversationHistory, aiResponse);
+      console.log('Extracted refined challenge:', refinedChallenge);
+    }
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
       usage: data.usage,
       agentUsed: useProspectAgent ? 'prospect' : 'general',
-      readyForFortu: readyForFortu
+      readyForFortu: readyForFortu,
+      refinedChallenge: refinedChallenge
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
