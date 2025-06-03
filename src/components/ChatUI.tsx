@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -128,15 +130,19 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-[#F1EDFF] to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
         <h1 className="text-xl font-semibold text-[#003079] dark:text-white">CleverBot</h1>
         <span className="text-xs text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
           ICS Consultant
         </span>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      {/* Messages Container - Scrollable */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        id="chat-messages"
+      >
         {messages.map((message) => (
           <div
             key={message.id}
@@ -192,8 +198,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
         <div ref={scrollRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      {/* Input Area - Fixed */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex-shrink-0">
         <div className="flex gap-3 items-end">
           <div className="flex-1">
             <Input
