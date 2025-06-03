@@ -15,6 +15,9 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({ trigger }) => {
     case 'fortuQuestions':
       return <FortuQuestionsCanvas payload={trigger.payload} />;
     
+    case 'challengeMapping':
+      return <BlankCanvas payload={trigger.payload} />; // Use BlankCanvas for now, could be specialized later
+    
     case 'blank':
     case 'canvas':
     default:

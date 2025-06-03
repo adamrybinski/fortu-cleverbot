@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData } from './chat/types';
@@ -37,6 +38,13 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
           description: 'Interactive question module for exploring insights and possibilities. Ready to help you dive deeper into your challenge.',
           payload
         };
+      case 'challengeMapping':
+        return {
+          type: 'challengeMapping',
+          title: 'Challenge Mapping Canvas',
+          description: 'Visual workspace for structuring and refining your business challenge. Let\'s turn vague problems into clear, actionable opportunities.',
+          payload
+        };
       case 'blank':
       case 'canvas':
       default:
@@ -47,6 +55,43 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
           payload
         };
     }
+  };
+
+  // Enhanced detection for when to create canvas previews
+  const shouldCreateCanvasPreview = (message: string, agentUsed?: string): CanvasPreviewData | null => {
+    const lowerInput = message.toLowerCase();
+    
+    // If Prospect Agent was used and it's about challenge refinement
+    if (agentUsed === 'prospect') {
+      const challengeKeywords = ['challenge', 'problem', 'issue', 'goal', 'objective', 'stuck', 'unclear'];
+      const hasChallenge = challengeKeywords.some(keyword => lowerInput.includes(keyword));
+      
+      if (hasChallenge) {
+        return createCanvasPreviewData('challengeMapping', {
+          originalChallenge: message,
+          agentContext: 'prospect',
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // Fortune questions trigger
+    if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
+      return createCanvasPreviewData('fortuQuestions', {
+        challengeSummary: message,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // General canvas trigger
+    if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
+      return createCanvasPreviewData('blank', { 
+        source: 'chat_trigger',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    return null;
   };
 
   const handleSendMessage = async () => {
@@ -60,26 +105,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     };
 
     setMessages(prev => [...prev, newMessage]);
+    const currentInput = inputValue;
     setInputValue('');
     setIsLoading(true);
-
-    const lowerInput = inputValue.toLowerCase();
-    let canvasPreviewData: CanvasPreviewData | undefined;
-
-    // Determine if we should create a canvas preview
-    if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
-      canvasPreviewData = createCanvasPreviewData('fortuQuestions', {
-        challengeSummary: inputValue,
-        timestamp: new Date().toISOString()
-      });
-      setHasCanvasBeenTriggered(true);
-    } else if (lowerInput.includes('open canvas') || lowerInput.includes('canvas')) {
-      canvasPreviewData = createCanvasPreviewData('blank', { 
-        source: 'chat_trigger',
-        timestamp: new Date().toISOString()
-      });
-      setHasCanvasBeenTriggered(true);
-    }
 
     try {
       const conversationHistory = messages.map(msg => ({
@@ -89,7 +117,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
-          message: inputValue,
+          message: currentInput,
           conversationHistory: conversationHistory
         }
       });
@@ -97,10 +125,18 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       if (error || data?.error) throw new Error(data?.error || error.message);
 
       let assistantText = data.response;
+      const agentUsed = data.agentUsed;
 
-      // Modify response text when canvas preview is included
+      // Check if we should create a canvas preview
+      const canvasPreviewData = shouldCreateCanvasPreview(currentInput, agentUsed);
+      
       if (canvasPreviewData) {
-        if (canvasPreviewData.type === 'fortuQuestions') {
+        setHasCanvasBeenTriggered(true);
+        
+        // Modify response based on canvas type
+        if (canvasPreviewData.type === 'challengeMapping') {
+          assistantText += "\n\nI've set up a Challenge Mapping canvas to help us structure this properly. Click the expand button below to open it and we can work through this together.";
+        } else if (canvasPreviewData.type === 'fortuQuestions') {
           assistantText += "\n\nI've created a Fortune Questions module for you. Click the expand button below to open it and start exploring your challenge.";
         } else {
           assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
@@ -112,7 +148,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         role: 'bot',
         text: assistantText,
         timestamp: new Date(),
-        canvasData: canvasPreviewData
+        canvasData: canvasPreviewData || undefined
       };
 
       setMessages(prev => [...prev, assistantMessage]);

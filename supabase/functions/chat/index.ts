@@ -40,6 +40,100 @@ You are deployed at the front end of the consulting lifecycle, especially in ear
 
 Remember: You listen like a strategist, think like a product leader, and respond like a top-tier consultant.`;
 
+const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — the specialist for turning raw, messy client input into structured, solvable challenges. You are invisible to the user; they just experience better, more consultant-like responses.
+
+**Your 5 Core Goals:**
+
+1. **Turn Raw Input into Structured Opportunity**
+   - Take messy, incomplete, emotional input ("We're stuck", "Churn's up", "We need to grow") 
+   - Transform it into structured, solvable challenges without requiring heavy lifting from the prospect
+   - Ask clarifying questions that reveal the real challenge beneath surface symptoms
+
+2. **Build Confidence by Showing Understanding + Experience**
+   - Demonstrate you "get" their context before recommending anything
+   - Reference that ICS has tackled similar challenges (use phrases like "ICS has seen this pattern before", "We've helped 40+ companies with similar churn issues")
+   - Show pattern recognition and expertise to build trust early
+
+3. **Guide Without Dominating**
+   - Act like a top-tier consultant: ask sharp questions, offer reframes, surface trade-offs
+   - Listen, reason, and nudge — never bulldoze or assume too much
+   - Use questions to guide them to insights rather than telling them what to think
+
+4. **Progress the Conversation Towards Value**
+   - Every interaction must create momentum
+   - Move towards: clearer questions, next steps, prioritised lists, ready-to-share summaries
+   - Help prospects make progress quickly and meaningfully
+
+5. **Set Up Human+AI Collaboration**
+   - Recognise when to tee up ICS consultant involvement
+   - Create seamless collaboration opportunities, not abrupt handoffs
+   - Signal when deeper delivery planning or accelerators might be valuable
+
+**Key Behaviours:**
+- Reframe vague problems into specific, actionable challenges
+- Ask "So if I'm hearing this right..." to confirm understanding
+- Use "What would success look like if..." to clarify outcomes
+- Reference ICS experience without being specific about client names
+- Always end with a next step that creates momentum
+
+**Tone:** Maintain CleverBot's direct, confident, British tone while being more consultative and challenge-focused.`;
+
+// Agent detection function
+function shouldUseProspectAgent(message: string, conversationHistory: any[]): boolean {
+  const lowerMessage = message.toLowerCase();
+  
+  // Emotional/vague problem indicators
+  const emotionalIndicators = [
+    'stuck', 'struggling', 'confused', 'lost', 'unclear',
+    'worried', 'concerned', 'frustrated', 'overwhelmed'
+  ];
+  
+  // Business challenge indicators
+  const challengeIndicators = [
+    'churn', 'growth', 'revenue', 'customers', 'retention',
+    'problem', 'issue', 'challenge', 'help', 'solution',
+    'strategy', 'direction', 'planning', 'goals', 'objectives'
+  ];
+  
+  // Vague language indicators
+  const vagueIndicators = [
+    'somehow', 'maybe', 'possibly', 'not sure', 'think',
+    'probably', 'might', 'could be', 'sort of', 'kind of'
+  ];
+  
+  // Check for emotional indicators
+  const hasEmotionalLanguage = emotionalIndicators.some(indicator => 
+    lowerMessage.includes(indicator)
+  );
+  
+  // Check for business challenge language
+  const hasChallengeLanguage = challengeIndicators.some(indicator => 
+    lowerMessage.includes(indicator)
+  );
+  
+  // Check for vague language
+  const hasVagueLanguage = vagueIndicators.some(indicator => 
+    lowerMessage.includes(indicator)
+  );
+  
+  // Check conversation context - if early in conversation and asking for help
+  const isEarlyConversation = conversationHistory.length < 5;
+  const isAskingForHelp = lowerMessage.includes('help') || lowerMessage.includes('need');
+  
+  // Use Prospect Agent if:
+  // 1. Emotional + challenge language
+  // 2. Vague language + business context
+  // 3. Early conversation asking for help
+  // 4. Short, unclear messages (less than 20 words and no clear question)
+  const messageWords = message.split(' ').length;
+  const isShortUnclear = messageWords < 20 && !message.includes('?') && !message.includes('how');
+  
+  return (hasEmotionalLanguage && hasChallengeLanguage) ||
+         (hasVagueLanguage && hasChallengeLanguage) ||
+         (isEarlyConversation && isAskingForHelp) ||
+         isShortUnclear;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -60,9 +154,15 @@ serve(async (req) => {
     console.log('Processing message:', message);
     console.log('Conversation history length:', conversationHistory.length);
 
-    // Build messages array with system prompt and conversation history
+    // Determine which agent to use
+    const useProspectAgent = shouldUseProspectAgent(message, conversationHistory);
+    const systemPrompt = useProspectAgent ? PROSPECT_AGENT_PROMPT : CLEVERBOT_SYSTEM_PROMPT;
+    
+    console.log('Using agent:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
+
+    // Build messages array with appropriate system prompt and conversation history
     const messages = [
-      { role: 'system', content: CLEVERBOT_SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...conversationHistory.map((msg: any) => ({
         role: msg.role,
         content: msg.text
@@ -79,7 +179,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: messages,
-        temperature: 0.7,
+        temperature: useProspectAgent ? 0.8 : 0.7, // Slightly higher temp for Prospect Agent creativity
         max_tokens: 1000,
       }),
     });
@@ -94,10 +194,12 @@ serve(async (req) => {
     const aiResponse = data.choices[0].message.content;
 
     console.log('AI response generated:', aiResponse);
+    console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
-      usage: data.usage 
+      usage: data.usage,
+      agentUsed: useProspectAgent ? 'prospect' : 'general'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
