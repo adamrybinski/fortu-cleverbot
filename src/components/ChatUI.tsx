@@ -1,21 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { CanvasTrigger } from './canvas/CanvasContainer';
-
-interface Message {
-  id: string;
-  role: 'user' | 'bot';
-  text: string;
-  timestamp: Date;
-}
-
-interface ChatUIProps {
-  onOpenCanvas?: (type?: string, payload?: Record<string, any>) => void;
-  onTriggerCanvas?: (trigger: CanvasTrigger) => void;
-}
+import { Message, ChatUIProps, CanvasTrigger } from './chat/types';
+import { ChatHeader } from './chat/ChatHeader';
+import { MessagesContainer } from './chat/MessagesContainer';
+import { ChatInput } from './chat/ChatInput';
 
 export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas }) => {
   const [messages, setMessages] = useState<Message[]>([
@@ -128,104 +117,22 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F1EDFF]/30 flex-shrink-0">
-        <h1 className="text-xl font-semibold text-[#003079]">CleverBot</h1>
-        <span className="text-xs text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
-          ICS Consultant
-        </span>
-      </div>
+      <ChatHeader />
+      
+      <MessagesContainer
+        messages={messages}
+        isLoading={isLoading}
+        messagesContainerRef={messagesContainerRef}
+        scrollRef={scrollRef}
+      />
 
-      {/* Messages Container - Enhanced Scrollable with visible scrollbar */}
-      <div 
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-        id="chat-messages"
-        style={{ 
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#d1d5db #f3f4f6'
-        }}
-      >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
-          >
-            {message.role === 'bot' && (
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                  <img
-                    src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                    alt="CleverBot"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-              </div>
-            )}
-            <div
-              className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
-                message.role === 'user'
-                  ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
-                  : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
-              }`}
-            >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-              <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="flex justify-start items-start gap-3">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                <img
-                  src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                  alt="CleverBot"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              </div>
-            </div>
-            <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={scrollRef} />
-      </div>
-
-      {/* Input Area - Fixed */}
-      <div className="p-4 border-t border-gray-200 bg-[#F1EDFF]/20 flex-shrink-0">
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="What challenge are you looking to crack?"
-              className="border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white resize-none"
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            onClick={handleSendMessage}
-            className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white px-4 py-2 h-10"
-            disabled={!inputValue.trim() || isLoading}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Press Enter to send • Shift+Enter for new line
-        </p>
-      </div>
+      <ChatInput
+        inputValue={inputValue}
+        isLoading={isLoading}
+        onInputChange={setInputValue}
+        onSendMessage={handleSendMessage}
+        onKeyPress={handleKeyPress}
+      />
     </div>
   );
 };
