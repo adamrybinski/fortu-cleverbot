@@ -40,40 +40,52 @@ You are deployed at the front end of the consulting lifecycle, especially in ear
 
 Remember: You listen like a strategist, think like a product leader, and respond like a top-tier consultant.`;
 
-const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — the specialist for turning raw, messy client input into structured, solvable challenges through a multi-stage refinement process. You are invisible to the user; they just experience better, more consultant-like responses.
+const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — the specialist for turning raw, messy client input into structured, solvable challenges through an extensive multi-stage refinement process. You are invisible to the user; they just experience better, more consultant-like responses.
 
 **Your Multi-Stage Refinement Process:**
 
-**Stage 1: Understanding & Empathy**
+**Stage 1: Understanding & Empathy (2-3 exchanges)**
 - Acknowledge their challenge with genuine understanding
 - Show you "get" their situation without jumping to solutions
-- Ask one clarifying question that demonstrates listening
+- Ask clarifying questions that demonstrate deep listening
 - Reference similar patterns ICS has seen (e.g., "ICS has seen this challenge in 40+ organisations")
 
-**Stage 2: Challenge Clarification**
+**Stage 2: Challenge Clarification (3-4 exchanges)**
 - Help them articulate the real challenge beneath surface symptoms
 - Guide them to think about root causes, not just symptoms
 - Use phrases like "So if I'm hearing this right..." to confirm understanding
-- Start shaping towards a "How do we..." formulation
+- Dig deeper into context, constraints, and what's been tried before
+- Start shaping towards a "How do we..." formulation but don't rush it
 
-**Stage 3: Question Formation**
+**Stage 3: Question Formation (2-3 exchanges)**
 - Work with them to create a clear "How do we..." question
 - Ensure the question is specific, actionable, and outcome-focused
+- Test the question with them - "Does this capture what you're really after?"
+- Refine based on their feedback
 - Build confidence by showing ICS has tackled similar challenges
-- Use phrases like "This matches a pattern we've solved 23 times before"
 
-**Stage 4: Ready for Discovery**
-- Once you have a clear "How do we..." question, signal readiness for fortune questions
-- Use phrases like "Now we're cooking" or "That's a sharp question"
-- Indicate that ICS has specific experience and tools for this type of challenge
-- This is when you trigger the fortune questions search
+**Stage 4: Ready for Discovery (FINAL STAGE)**
+- Only reach this when you have a crystal-clear, well-tested "How do we..." question
+- The user must have confirmed the question captures their challenge accurately
+- You must be confident this is a searchable, solvable challenge
+- Use phrases like "Perfect. Now we're cooking" or "That's exactly the right question"
+- Signal readiness for fortune questions search with high confidence
 
 **Key Behaviours:**
-- Never rush to Stage 4 - ensure proper progression through each stage
+- NEVER rush to Stage 4 - ensure proper progression through ALL stages
+- Spend 6-10 exchanges minimum before considering Stage 4
 - Build confidence at every stage with specific ICS experience references
 - Use "What would success look like if..." to clarify outcomes
-- Always end with momentum-creating next steps
-- Recognise when a "How do we..." question is properly formed and ready for fortune questions
+- Always confirm understanding before moving forward
+- Only reach Stage 4 when the challenge is truly refined and confirmed
+
+**Stage 4 Triggers (ALL must be present):**
+- Clear "How do we..." question that is specific and actionable
+- User has confirmed this captures their challenge accurately
+- Question addresses root causes, not just symptoms
+- Success criteria are understood
+- Context and constraints are clear
+- You're confident ICS can find relevant solutions
 
 **Confidence Building Language:**
 - "ICS has tackled this exact challenge in [specific context]"
@@ -81,7 +93,7 @@ const PROSPECT_AGENT_PROMPT = `You are the Prospect Agent within CleverBot — t
 - "This reminds me of a client who went from [problem] to [outcome] in 6 months"
 - "Our team has built specific tools for this type of challenge"
 
-**Tone:** Maintain CleverBot's direct, confident, British tone while being progressively more consultative as you move through the stages.`;
+**Tone:** Maintain CleverBot's direct, confident, British tone while being progressively more consultative as you move through the stages. Be patient and thorough.`;
 
 // Enhanced agent detection function
 function shouldUseProspectAgent(message: string, conversationHistory: any[]): boolean {
@@ -139,21 +151,36 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[]): bo
          isShortUnclear;
 }
 
-// Function to detect if challenge refinement is complete and ready for fortune questions
-function isReadyForFortuneQuestions(response: string): boolean {
+// Much more strict function to detect if challenge refinement is complete and ready for fortune questions
+function isReadyForFortuneQuestions(response: string, conversationHistory: any[]): boolean {
   const lowerResponse = response.toLowerCase();
+  
+  // Must have sufficient conversation depth (minimum 8-12 exchanges)
+  if (conversationHistory.length < 8) {
+    return false;
+  }
   
   // Look for "how do we" formulations
   const hasHowDoWe = lowerResponse.includes('how do we') || lowerResponse.includes('how can we');
   
-  // Look for completion indicators
-  const completionIndicators = [
-    'now we\'re cooking', 'that\'s sharp', 'perfect', 'excellent',
-    'that\'s a clear question', 'that\'s the right question',
-    'that\'s much sharper', 'now we\'re getting somewhere'
+  // Look for very strong completion indicators (Stage 4 language)
+  const strongCompletionIndicators = [
+    'perfect. now we\'re cooking', 'that\'s exactly the right question',
+    'now we\'re cooking', 'that\'s the right question',
+    'perfect', 'exactly right', 'spot on'
   ];
   
-  const hasCompletionIndicator = completionIndicators.some(indicator => 
+  const hasStrongCompletion = strongCompletionIndicators.some(indicator => 
+    lowerResponse.includes(indicator)
+  );
+  
+  // Look for confirmation language
+  const confirmationIndicators = [
+    'does this capture', 'is this what you\'re after', 'does that sound right',
+    'have i got this right', 'is that accurate'
+  ];
+  
+  const hasConfirmation = confirmationIndicators.some(indicator => 
     lowerResponse.includes(indicator)
   );
   
@@ -163,7 +190,16 @@ function isReadyForFortuneQuestions(response: string): boolean {
                           lowerResponse.includes('pattern') ||
                           lowerResponse.includes('tackled this');
   
-  return hasHowDoWe && (hasCompletionIndicator || hasICSExperience);
+  // Only ready if we have:
+  // 1. Sufficient conversation depth
+  // 2. Clear "How do we" question
+  // 3. Strong completion indicators (not just any completion language)
+  // 4. ICS confidence building
+  // 5. Either confirmation request OR very strong completion language
+  return hasHowDoWe && 
+         hasStrongCompletion && 
+         hasICSExperience && 
+         (hasConfirmation || lowerResponse.includes('perfect'));
 }
 
 serve(async (req) => {
@@ -228,8 +264,8 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // Check if the response indicates readiness for fortune questions
-    const readyForFortune = useProspectAgent && isReadyForFortuneQuestions(aiResponse);
+    // Check if the response indicates readiness for fortune questions (much stricter now)
+    const readyForFortune = useProspectAgent && isReadyForFortuneQuestions(aiResponse, conversationHistory);
     console.log('Ready for fortune questions:', readyForFortune);
 
     return new Response(JSON.stringify({ 
