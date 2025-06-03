@@ -40,9 +40,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
             </Button>
           )}
           <h2 className="text-lg font-semibold text-[#003079]">Canvas</h2>
-          <span className="text-sm text-[#1D253A]/60 bg-white/50 px-2 py-1 rounded-md">
-            {trigger.type}
-          </span>
         </div>
         {!isMobile && (
           <Button
