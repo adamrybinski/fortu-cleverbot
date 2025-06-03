@@ -1,9 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { CanvasTrigger } from './canvas/CanvasContainer';
 
@@ -46,18 +44,17 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
     setInputValue('');
     setIsLoading(true);
 
-    // Check for canvas triggers first
     const lowerInput = inputValue.toLowerCase();
     let canvasTriggered = false;
 
     if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
       if (onTriggerCanvas) {
-        onTriggerCanvas({ 
-          type: 'fortuQuestions', 
-          payload: { 
+        onTriggerCanvas({
+          type: 'fortuQuestions',
+          payload: {
             challengeSummary: inputValue,
             timestamp: new Date().toISOString()
-          } 
+          }
         });
         canvasTriggered = true;
       }
@@ -69,14 +66,11 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
     }
 
     try {
-      // Call the edge function with conversation history
       const conversationHistory = messages.map(msg => ({
         role: msg.role === 'bot' ? 'assistant' : 'user',
         text: msg.text
       }));
 
-      console.log('Calling chat function with message:', inputValue);
-      
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
           message: inputValue,
@@ -84,19 +78,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
         }
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data.error) {
-        console.error('Edge function error:', data.error);
-        throw new Error(data.error);
-      }
+      if (error || data?.error) throw new Error(data?.error || error.message);
 
       let assistantText = data.response;
 
-      // Add canvas context if triggered
       if (canvasTriggered) {
         if (lowerInput.includes('fortune') || lowerInput.includes('questions')) {
           assistantText += "\n\nI've opened the Fortune Questions module on the right. Let's explore this together.";
@@ -113,17 +98,14 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-
     } catch (error) {
-      console.error('Error calling chat function:', error);
-      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
         text: 'Right, hit a snag there. Technical hiccup on my end. Give it another go?',
         timestamp: new Date(),
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -154,45 +136,13 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4 pb-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
-            >
-              {/* Bot Icon */}
-              {message.role === 'bot' && (
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
-                    <img
-                      src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
-                      alt="CleverBot"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Message Bubble */}
-              <div
-                className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
-                  message.role === 'user'
-                    ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
-                    : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
-                }`}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          ))}
-          
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start items-start gap-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3`}
+          >
+            {message.role === 'bot' && (
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
                   <img
@@ -202,19 +152,45 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onOpenCanvas, onTriggerCanvas })
                   />
                 </div>
               </div>
-              <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
+            )}
+            <div
+              className={`max-w-[80%] md:max-w-[70%] p-3 rounded-lg shadow-sm ${
+                message.role === 'user'
+                  ? 'bg-[#EEFFF3] text-[#1D253A] rounded-br-sm'
+                  : 'bg-white text-[#1D253A] rounded-bl-sm dark:bg-gray-700 dark:text-white'
+              }`}
+            >
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+              <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex justify-start items-start gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 rounded-full shadow-sm overflow-hidden bg-white p-1">
+                <img
+                  src="/lovable-uploads/7fabe412-0da9-4efc-a1d8-ee6ee3349e4d.png"
+                  alt="CleverBot"
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
             </div>
-          )}
-          
-          <div ref={scrollRef} />
-        </div>
-      </ScrollArea>
+            <div className="bg-white text-[#1D253A] rounded-lg rounded-bl-sm p-3 shadow-sm">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-[#753BBD] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={scrollRef} />
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
