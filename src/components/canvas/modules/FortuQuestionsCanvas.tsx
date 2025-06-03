@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FortuQuestionsCanvasProps {
@@ -74,27 +73,17 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
     <div className="w-full h-full p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3]">
       <div className="w-full h-full bg-white rounded-lg border border-[#6EFFC6]/30 overflow-hidden flex flex-col">
         
-        {/* Header */}
-        <div className="p-6 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF]/50 to-[#EEFFF3]/50">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-[#753BBD]/10 flex items-center justify-center">
-              <Search className="w-6 h-6 text-[#753BBD]" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-[#003079]">fortu.ai Question Search</h3>
-              <p className="text-[#1D253A]/70 text-sm">Discover proven approaches to your business challenge</p>
-            </div>
-          </div>
-
-          {refinedChallenge && (
+        {/* Optional Challenge Summary Header */}
+        {refinedChallenge && (
+          <div className="p-6 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF]/50 to-[#EEFFF3]/50">
             <div className="bg-white/80 rounded-lg p-4">
-              <h4 className="font-medium text-[#003079] mb-2">Your Refined Challenge:</h4>
+              <h4 className="font-medium text-[#003079] mb-2">Refined Challenge</h4>
               <p className="text-[#1D253A]/80 text-sm italic">"{refinedChallenge}"</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Content Area */}
+        {/* Content */}
         <div className="flex-1 p-6 overflow-auto">
           {!isSearchReady ? (
             <div className="text-center py-12">
