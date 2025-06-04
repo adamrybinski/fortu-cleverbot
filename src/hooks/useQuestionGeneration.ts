@@ -19,6 +19,12 @@ export const useQuestionGeneration = () => {
   const [isLoadingFortu, setIsLoadingFortu] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Summary-related state
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [questionSummary, setQuestionSummary] = useState<string | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
   const generateFortuQuestions = async (refinedChallenge: string) => {
     if (!refinedChallenge) return [];
@@ -78,6 +84,37 @@ export const useQuestionGeneration = () => {
     }
   };
 
+  const generateQuestionSummary = async (question: Question) => {
+    setSelectedQuestion(question);
+    setQuestionSummary(null);
+    setIsLoadingSummary(true);
+    setIsSummaryDialogOpen(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-question-summary', {
+        body: {
+          question: question.question,
+          source: question.source
+        }
+      });
+
+      if (error) throw error;
+
+      setQuestionSummary(data.summary);
+    } catch (err) {
+      console.error('Summary generation error:', err);
+      setQuestionSummary('Sorry, we could not generate a summary for this question at the moment.');
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
+  const closeSummaryDialog = () => {
+    setIsSummaryDialogOpen(false);
+    setSelectedQuestion(null);
+    setQuestionSummary(null);
+  };
+
   const generateAllQuestions = async (refinedChallenge: string) => {
     if (!refinedChallenge) return;
 
@@ -104,6 +141,13 @@ export const useQuestionGeneration = () => {
     isLoadingAI,
     error,
     generateAllQuestions,
-    setError
+    setError,
+    // Summary-related exports
+    selectedQuestion,
+    questionSummary,
+    isLoadingSummary,
+    isSummaryDialogOpen,
+    generateQuestionSummary,
+    closeSummaryDialog
   };
 };

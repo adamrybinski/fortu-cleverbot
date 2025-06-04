@@ -12,6 +12,7 @@ interface Question {
 interface QuestionCardProps {
   question: Question;
   borderColor?: string;
+  onClick?: (question: Question) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -33,10 +34,22 @@ const getStatusColor = (status: string) => {
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({ 
   question, 
-  borderColor = 'border-[#6EFFC6]/30' 
+  borderColor = 'border-[#6EFFC6]/30',
+  onClick
 }) => {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(question);
+    }
+  };
+
   return (
-    <div className={`bg-white/70 p-4 rounded-lg border ${borderColor} hover:bg-white/90 transition-colors`}>
+    <div 
+      className={`bg-white/70 p-4 rounded-lg border ${borderColor} hover:bg-white/90 transition-colors ${
+        onClick ? 'cursor-pointer hover:shadow-md hover:border-[#6EFFC6]/50' : ''
+      }`}
+      onClick={handleClick}
+    >
       <div className="flex items-start justify-between">
         <h3 className="font-medium text-[#003079] flex-1 mr-4">
           {question.question}

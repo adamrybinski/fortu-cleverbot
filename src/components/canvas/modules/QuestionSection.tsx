@@ -20,6 +20,7 @@ interface QuestionSectionProps {
   borderColor?: string;
   iconColor?: string;
   emptyIconColor?: string;
+  onQuestionClick?: (question: Question) => void;
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -30,7 +31,8 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
   emptyMessage,
   borderColor = 'border-[#6EFFC6]/30',
   iconColor = 'text-[#003079]',
-  emptyIconColor = 'text-[#6EFFC6]'
+  emptyIconColor = 'text-[#6EFFC6]',
+  onQuestionClick
 }) => {
   return (
     <div className="mb-8">
@@ -51,6 +53,7 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
               key={question.id} 
               question={question}
               borderColor={borderColor}
+              onClick={onQuestionClick}
             />
           ))}
         </div>
