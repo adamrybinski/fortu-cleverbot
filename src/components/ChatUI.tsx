@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData, Question } from './chat/types';
@@ -189,19 +188,28 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       let assistantText = data.response;
       const agentUsed = data.agentUsed;
       const readyForFortu = data.readyForFortu;
+      const readyForFortuInstance = data.readyForFortuInstance;
       const refinedChallenge = data.refinedChallenge;
 
       console.log('Agent used:', agentUsed);
       console.log('Ready for fortu:', readyForFortu);
+      console.log('Ready for fortu instance:', readyForFortuInstance);
       console.log('Refined challenge:', refinedChallenge);
 
-      // Check if we should create a canvas preview
-      const canvasPreviewData = shouldCreateCanvasPreview(
+      // Handle fortu.ai instance guidance (Stage 6)
+      if (readyForFortuInstance && refinedChallenge) {
+        assistantText += `\n\n**🎯 Your Refined Challenge for fortu.ai:**\n\n"${refinedChallenge}"\n\n` +
+          "**Next Step:** Take this refined question to your own fortu.ai instance to find specific, actionable solutions from organisations that have tackled this exact challenge.\n\n" +
+          "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies.";
+      }
+
+      // Check if we should create a canvas preview (only for initial fortu search, not instance guidance)
+      const canvasPreviewData = !readyForFortuInstance ? shouldCreateCanvasPreview(
         textToSend, 
         agentUsed, 
         readyForFortu, 
         refinedChallenge
-      );
+      ) : null;
       
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);

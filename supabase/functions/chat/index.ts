@@ -99,11 +99,25 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - **Ask targeted follow-up questions based on the selected questions' themes**
 - **Provide specific next steps or deeper exploration paths**
 
+**Stage 6: fortu.ai Instance Guidance (NEW - After Ultra-Refinement)**
+- **DETECT when you've completed the ultra-refined challenge based on selected questions**
+- **Key indicators:**
+  - You've provided thematic analysis of their selections
+  - You've created an ultra-refined "How do we..." statement
+  - User has confirmed the refined challenge or expressed satisfaction
+- **When detected, provide fortu.ai instance guidance:**
+  - "Perfect! Now you've got a crystal-clear challenge statement that's ready for action."
+  - "Here's your refined challenge for your own fortu.ai search:"
+  - **Present the refined challenge in a clear, copyable format**
+  - "Next step: Take this refined question to your own fortu.ai instance to find specific, actionable solutions from organisations that have tackled this exact challenge."
+  - "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies."
+
 **Intelligence Triggers for Faster Progression:**
 - **Limited Context Signals:** Move to question formation after 4-6 exchanges
 - **Urgency Signals:** "need this fast", "pressure to deliver", "no time" - accelerate to Stage 3
 - **Solution Requests:** User asks for "questions", "solutions", "examples" - trigger fortu.ai immediately if context exists
 - **Canvas Return Signals:** Detect selectedQuestions data - trigger Stage 5 with enhanced refinement
+- **Refinement Complete Signals:** After ultra-refinement, trigger Stage 6 with fortu.ai instance guidance
 
 **Key Behaviours:**
 - **Minimum 4 exchanges before fortu.ai trigger, but be flexible based on context richness**
@@ -113,6 +127,7 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - **WAIT** for user confirmation before triggering fortu.ai search
 - When context is sufficient, PRESENT the question and ASK for confirmation
 - **ENHANCED: When selectedQuestions detected, provide deep analysis and ultra-refined challenge**
+- **NEW: After ultra-refinement completion, guide users to their own fortu.ai instance**
 
 **fortu.ai Trigger Conditions (ALL of these must be met):**
 - You've formed a clear "How do we...for...so that..." question with measurable outcome
@@ -127,6 +142,12 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - Create ultra-refined challenges based on their chosen focus areas
 - Guide towards more targeted solutions and deeper exploration
 
+**fortu.ai Instance Guidance Conditions (Stage 6):**
+- You've completed the ultra-refined challenge based on selected questions
+- You've provided thematic analysis and specific insights
+- You've created a final, refined "How do we..." statement
+- Ready to direct user to take action in their own fortu.ai instance
+
 **Confirmation Language Examples:**
 - "Based on our chat, I'd frame your challenge as: 'How do we...'"
 - "Does this capture what you're trying to solve?"
@@ -138,6 +159,13 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - "Based on your choices, I can see [specific insights about their priorities]."
 - "Your selections suggest you're particularly interested in [specific areas]. Let me refine your challenge to focus on these areas..."
 - "These questions tell me [analytical insight]. Here's how I'd sharpen your challenge based on what you've chosen..."
+
+**fortu.ai Instance Guidance Language Examples (Stage 6):**
+- "Perfect! Now you've got a crystal-clear challenge statement that's ready for action."
+- "Here's your refined challenge for your own fortu.ai search: '[refined How do we question]'"
+- "Next step: Take this refined question to your own fortu.ai instance to find specific, actionable solutions."
+- "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies from organisations that have successfully tackled this challenge."
+- "Your refined challenge is now sharp enough to unlock the most relevant solutions in fortu.ai."
 
 **Confidence Building Language:**
 - "ICS has tackled this exact challenge in [specific context]"
@@ -281,6 +309,43 @@ function isReadyForFortuQuestions(response: string, conversationHistory: any[], 
   return isReady;
 }
 
+// Enhanced function to detect if ready for fortu.ai instance guidance
+function isReadyForFortuInstanceGuidance(response: string, conversationHistory: any[], userMessage: string): boolean {
+  const lowerResponse = response.toLowerCase();
+  const lowerUserMessage = userMessage.toLowerCase();
+  
+  console.log('Checking readiness for fortu.ai instance guidance:');
+  console.log('- Response contains ultra-refinement completion signals');
+  
+  // Check if the bot has completed ultra-refinement and provided next steps
+  const completedRefinement = lowerResponse.includes('ultra-refined challenge') ||
+                             lowerResponse.includes('based on your selections') ||
+                             lowerResponse.includes('refined challenge statement') ||
+                             lowerResponse.includes('here\'s how i\'d sharpen') ||
+                             lowerResponse.includes('these selections tell me');
+  
+  // Check if bot is ready to provide fortu.ai guidance
+  const readyForGuidance = lowerResponse.includes('next steps') ||
+                          lowerResponse.includes('shall i search fortu.ai') ||
+                          lowerResponse.includes('deeper exploration') ||
+                          (lowerUserMessage.includes('yes') && completedRefinement) ||
+                          (lowerUserMessage.includes('looks great') && completedRefinement) ||
+                          (lowerUserMessage.includes('perfect') && completedRefinement);
+  
+  // Check for previous ultra-refinement in conversation
+  const hasRecentRefinement = conversationHistory.slice(-2).some((msg: any) => 
+    msg.role === 'assistant' && 
+    (msg.text.toLowerCase().includes('ultra-refined') || 
+     msg.text.toLowerCase().includes('based on your selections') ||
+     msg.text.toLowerCase().includes('these selections tell me'))
+  );
+  
+  const isReady = (completedRefinement && readyForGuidance) || (hasRecentRefinement && (lowerUserMessage.includes('yes') || lowerUserMessage.includes('looks great')));
+  console.log('Ready for fortu.ai instance guidance:', isReady);
+  
+  return isReady;
+}
+
 // Function to extract the refined challenge from conversation
 function extractRefinedChallenge(conversationHistory: any[], currentResponse: string): string {
   // Look for "How do we..." in the current response first
@@ -394,9 +459,13 @@ serve(async (req) => {
     const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
-    // Extract refined challenge if ready for fortu
+    // Check if ready for fortu.ai instance guidance (Stage 6)
+    const readyForFortuInstance = useProspectAgent && isReadyForFortuInstanceGuidance(aiResponse, conversationHistory, message);
+    console.log('Ready for fortu.ai instance guidance:', readyForFortuInstance);
+
+    // Extract refined challenge if ready for fortu or instance guidance
     let refinedChallenge = '';
-    if (readyForFortu) {
+    if (readyForFortu || readyForFortuInstance) {
       refinedChallenge = extractRefinedChallenge(conversationHistory, aiResponse);
       console.log('Extracted refined challenge:', refinedChallenge);
     }
@@ -406,6 +475,7 @@ serve(async (req) => {
       usage: data.usage,
       agentUsed: useProspectAgent ? 'prospect' : 'general',
       readyForFortu: readyForFortu,
+      readyForFortuInstance: readyForFortuInstance,
       refinedChallenge: refinedChallenge
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
