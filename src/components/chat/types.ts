@@ -6,6 +6,7 @@ export interface Message {
   timestamp: Date;
   canvasData?: CanvasPreviewData;
   selectedQuestions?: Question[];
+  selectedAction?: 'refine' | 'instance' | 'both';
 }
 
 export interface Question {

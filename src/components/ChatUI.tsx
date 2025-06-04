@@ -1,9 +1,12 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData, Question } from './chat/types';
+import { Message, ChatUIProps, Question } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
+import { useCanvasPreview } from '@/hooks/useCanvasPreview';
+import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
+import { useMessageHandler } from '@/hooks/useMessageHandler';
 
 interface ExtendedChatUIProps extends ChatUIProps {
   isCanvasOpen?: boolean;
@@ -29,35 +32,33 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     },
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasCanvasBeenTriggered, setHasCanvasBeenTriggered] = useState(false);
-  const [pendingCanvasGuidance, setPendingCanvasGuidance] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  const {
+    hasCanvasBeenTriggered,
+    setHasCanvasBeenTriggered,
+    pendingCanvasGuidance,
+    setPendingCanvasGuidance,
+    shouldCreateCanvasPreview
+  } = useCanvasPreview();
+
+  const { isLoading, handleSendMessage } = useMessageHandler({
+    messages,
+    setMessages,
+    selectedQuestionsFromCanvas,
+    selectedAction,
+    onClearSelectedQuestions,
+    shouldCreateCanvasPreview,
+    setHasCanvasBeenTriggered
+  });
+
   // Handle selected questions from canvas with different actions
-  useEffect(() => {
-    if (selectedQuestionsFromCanvas.length > 0) {
-      const questionsList = selectedQuestionsFromCanvas.map(q => `• ${q.question}`).join('\n');
-      
-      let autoMessage = '';
-      
-      switch (selectedAction) {
-        case 'refine':
-          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas for challenge refinement:\n\n${questionsList}\n\nPlease provide a summary of these questions and refine my challenge based on these selections. I only want the refinement analysis, no additional question matches.`;
-          break;
-        case 'instance':
-          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas to setup a new fortu.ai instance:\n\n${questionsList}\n\nPlease help me prepare these questions along with my original challenge for setting up a new fortu.ai instance.`;
-          break;
-        case 'both':
-          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas and want both refinement and instance setup:\n\n${questionsList}\n\nPlease first refine my challenge based on these selections, then help me prepare everything for setting up a new fortu.ai instance.`;
-          break;
-      }
-      
-      // Auto-send the message
-      handleSendMessage(autoMessage, true);
-    }
-  }, [selectedQuestionsFromCanvas, selectedAction]);
+  useSelectedQuestions({
+    selectedQuestionsFromCanvas,
+    selectedAction,
+    onSendMessage: handleSendMessage
+  });
 
   // Handle canvas guidance when canvas opens
   useEffect(() => {
@@ -72,229 +73,19 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       setMessages(prev => [...prev, guidanceMessage]);
       setPendingCanvasGuidance(null);
     }
-  }, [isCanvasOpen, pendingCanvasGuidance]);
-
-  const createCanvasPreviewData = (type: string, payload: Record<string, any>): CanvasPreviewData => {
-    switch (type) {
-      case 'fortuQuestions':
-        return {
-          type: 'fortuQuestions',
-          title: 'fortu.ai Question Search',
-          description: 'Discover relevant questions and insights from our database of business challenges. Explore proven approaches to your refined challenge.',
-          payload
-        };
-      case 'blank':
-      case 'canvas':
-      default:
-        return {
-          type: 'blank',
-          title: 'Blank Canvas Created',
-          description: 'A blank canvas for drawing, brainstorming, and visual thinking. Click to expand and start creating.',
-          payload
-        };
-    }
-  };
-
-  // Enhanced detection with confirmation requirement and multi-challenge support
-  const shouldCreateCanvasPreview = (
-    message: string, 
-    agentUsed?: string, 
-    readyForFortu?: boolean, 
-    readyForMultiChallenge?: boolean,
-    refinedChallenge?: string
-  ): CanvasPreviewData | null => {
-    const lowerInput = message.toLowerCase();
-    
-    // Multi-challenge exploration trigger (Stage 7)
-    if (readyForMultiChallenge && agentUsed === 'prospect') {
-      setPendingCanvasGuidance(
-        "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
-        "**Option 1: Explore Remaining Questions**\n" +
-        "- Review questions from your previous canvas session that you didn't select\n" +
-        "- Dive deeper into alternative approaches for the same challenge area\n\n" +
-        "**Option 2: Start a Completely New Challenge**\n" +
-        "- Begin fresh with a different business challenge you're facing\n" +
-        "- Build a comprehensive challenge bank for your organisation\n\n" +
-        "Click the History button in the canvas to see your previous challenges and choose your next exploration path!"
-      );
-
-      return createCanvasPreviewData('challengeHistory', {
-        multiChallengeMode: true,
-        previousChallenge: refinedChallenge,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Primary trigger: Prospect Agent indicates readiness AND user has confirmed
-    if (readyForFortu && agentUsed === 'prospect') {
-      // Set guidance message for when canvas opens
-      setPendingCanvasGuidance(
-        "Perfect! I've opened the fortu.ai question search for you. You'll see questions matched from our database and AI-generated suggestions.\n\n" +
-        "To refine your challenge further:\n" +
-        "1. **Click on any question** to read a detailed summary and insights\n" +
-        "2. **Select multiple questions** by clicking 'Select Questions' button\n" +
-        "3. **Send selected questions back to me** to refine your challenge based on what resonates\n\n" +
-        "Explore the questions and let me know which ones catch your attention!"
-      );
-
-      return createCanvasPreviewData('fortuQuestions', {
-        refinedChallenge: refinedChallenge || message,
-        challengeContext: 'user_confirmed',
-        searchReady: true,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Fallback triggers for explicit requests
-    if (agentUsed === 'prospect' && messages.length >= 6) {
-      // User explicitly asks for questions/solutions after question presentation
-      if (lowerInput.includes('question') || 
-          lowerInput.includes('solution') || 
-          lowerInput.includes('example') ||
-          lowerInput.includes('what next') ||
-          lowerInput.includes('how do we proceed')) {
-        return createCanvasPreviewData('fortuQuestions', {
-          challengeSummary: refinedChallenge || message,
-          challengeContext: 'user_request',
-          searchReady: false,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-    
-    // Manual fortu questions trigger
-    if (lowerInput.includes('fortu questions') || lowerInput.includes('search questions')) {
-      return createCanvasPreviewData('fortuQuestions', {
-        challengeSummary: message,
-        searchReady: false,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // General canvas trigger (blank canvas only)
-    if (lowerInput.includes('open canvas') || lowerInput.includes('blank canvas')) {
-      return createCanvasPreviewData('blank', { 
-        source: 'chat_trigger',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    return null;
-  };
-
-  const handleSendMessage = async (messageText?: string, isAutoMessage = false) => {
-    const textToSend = messageText || inputValue;
-    if (!textToSend.trim() || isLoading) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      text: textToSend,
-      timestamp: new Date(),
-      selectedQuestions: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
-      selectedAction: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedAction : undefined,
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-    if (!isAutoMessage) {
-      setInputValue('');
-    }
-    setIsLoading(true);
-
-    // Clear selected questions after sending (only for manual messages)
-    if (!isAutoMessage && onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
-      onClearSelectedQuestions();
-    }
-
-    try {
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === 'bot' ? 'assistant' : 'user',
-        text: msg.text
-      }));
-
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
-          message: textToSend,
-          conversationHistory: conversationHistory,
-          selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
-          selectedAction: selectedQuestionsFromCanvas.length > 0 ? selectedAction : undefined
-        }
-      });
-
-      if (error || data?.error) throw new Error(data?.error || error.message);
-
-      let assistantText = data.response;
-      const agentUsed = data.agentUsed;
-      const readyForFortu = data.readyForFortu;
-      const readyForFortuInstance = data.readyForFortuInstance;
-      const readyForMultiChallenge = data.readyForMultiChallenge;
-      const refinedChallenge = data.refinedChallenge;
-
-      console.log('Agent used:', agentUsed);
-      console.log('Ready for fortu:', readyForFortu);
-      console.log('Ready for fortu instance:', readyForFortuInstance);
-      console.log('Ready for multi-challenge:', readyForMultiChallenge);
-      console.log('Refined challenge:', refinedChallenge);
-
-      // Handle fortu.ai instance guidance (Stage 6)
-      if (readyForFortuInstance && refinedChallenge) {
-        assistantText += `\n\n**🎯 Your Refined Challenge for fortu.ai:**\n\n"${refinedChallenge}"\n\n` +
-          "**Next Step:** Take this refined question to your own fortu.ai instance to find specific, actionable solutions from organisations that have tackled this exact challenge.\n\n" +
-          "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies.";
-      }
-
-      // Check if we should create a canvas preview (multi-challenge or initial fortu search)
-      const canvasPreviewData = shouldCreateCanvasPreview(
-        textToSend, 
-        agentUsed, 
-        readyForFortu,
-        readyForMultiChallenge,
-        refinedChallenge
-      );
-      
-      if (canvasPreviewData) {
-        setHasCanvasBeenTriggered(true);
-        
-        // Handle different canvas preview types
-        if (canvasPreviewData.type === 'challengeHistory') {
-          assistantText += "\n\nBrilliant! You've got solid foundations now. I've opened your challenge exploration centre where you can choose to dive deeper into remaining questions from your previous exploration or start tackling a completely new challenge. Click the expand button below to explore your options.";
-        } else if (canvasPreviewData.type === 'fortuQuestions' && readyForFortu) {
-          assistantText += "\n\nBrilliant. I've found some relevant questions in fortu.ai that match your challenge. Click the expand button below to explore these proven approaches and see how other organisations have tackled similar challenges.";
-        } else if (canvasPreviewData.type === 'fortuQuestions') {
-          assistantText += "\n\nI've created a fortu Questions module for you. Click the expand button below to open it and start exploring your challenge.";
-        } else {
-          assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
-        }
-      }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: assistantText,
-        timestamp: new Date(),
-        canvasData: canvasPreviewData || undefined
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: 'Right, hit a snag there. Technical hiccup on my end. Give it another go?',
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(inputValue);
+      setInputValue('');
     }
+  };
+
+  const handleSendClick = () => {
+    handleSendMessage(inputValue);
+    setInputValue('');
   };
 
   useEffect(() => {
@@ -323,7 +114,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         inputValue={inputValue}
         isLoading={isLoading}
         onInputChange={setInputValue}
-        onSendMessage={() => handleSendMessage()}
+        onSendMessage={handleSendClick}
         onKeyPress={handleKeyPress}
       />
     </div>
