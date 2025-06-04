@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
 import { ChallengeHistory } from './modules/ChallengeHistory';
 import { useChallengeHistory } from '@/hooks/useChallengeHistory';
+import { Question } from './modules/types';
 
 // ShineBorder Component optimized for Lovable
 interface ShineBorderProps {
@@ -54,13 +56,6 @@ function ShineBorder({
 export interface CanvasTrigger {
   type: string;
   payload?: Record<string, any>;
-}
-
-interface Question {
-  id: string | number;
-  question: string;
-  source: 'fortu' | 'openai';
-  selected?: boolean;
 }
 
 interface CanvasContainerProps {

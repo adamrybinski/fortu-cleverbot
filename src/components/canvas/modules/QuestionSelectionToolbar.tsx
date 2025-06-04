@@ -2,13 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckSquare, Square, Send, X } from 'lucide-react';
-
-interface Question {
-  id: string | number;
-  question: string;
-  source: 'fortu' | 'openai';
-  selected?: boolean;
-}
+import { Question } from './types';
 
 interface QuestionSelectionToolbarProps {
   showSelection: boolean;

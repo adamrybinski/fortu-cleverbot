@@ -3,14 +3,7 @@ import React from 'react';
 import { LucideIcon, Loader2 } from 'lucide-react';
 import { QuestionCard } from './QuestionCard';
 import { EmptyState } from './EmptyState';
-
-interface Question {
-  id: string | number;
-  question: string;
-  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
-  source: 'fortu' | 'openai';
-  selected?: boolean;
-}
+import { Question } from './types';
 
 interface QuestionSectionProps {
   title: string;

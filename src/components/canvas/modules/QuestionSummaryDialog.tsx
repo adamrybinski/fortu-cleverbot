@@ -7,12 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2, Database, Bot } from 'lucide-react';
-
-interface Question {
-  id: string | number;
-  question: string;
-  source: 'fortu' | 'openai';
-}
+import { Question } from './types';
 
 interface QuestionSummaryDialogProps {
   isOpen: boolean;

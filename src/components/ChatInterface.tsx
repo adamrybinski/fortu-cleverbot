@@ -2,13 +2,7 @@
 import React from 'react';
 import { ChatUI } from './ChatUI';
 import { CanvasTrigger } from './canvas/CanvasContainer';
-
-interface Question {
-  id: string | number;
-  question: string;
-  source: 'fortu' | 'openai';
-  selected?: boolean;
-}
+import { Question } from './canvas/modules/types';
 
 interface ChatInterfaceProps {
   onOpenCanvas: (type?: string, payload?: Record<string, any>) => void;
