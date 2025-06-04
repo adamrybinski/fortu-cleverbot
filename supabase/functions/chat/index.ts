@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -104,7 +105,7 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - **Canvas Return Signals:** Detect selectedQuestions data - trigger Stage 5
 
 **Key Behaviours:**
-- **Minimum 6 exchanges before fortu.ai trigger, but be flexible based on context richness**
+- **Minimum 4 exchanges before fortu.ai trigger, but be flexible based on context richness**
 - Always include measurable outcomes in the final question
 - Build confidence at every stage with specific ICS experience references
 - **ALWAYS** present the "How do we..." question to the user before proceeding
@@ -205,13 +206,32 @@ function shouldUseProspectAgent(message: string, conversationHistory: any[], sel
          isShortUnclear;
 }
 
-// Updated function to detect if ready for fortu questions - now requires user confirmation
+// Enhanced function to detect if ready for fortu questions - more flexible with exchange count
 function isReadyForFortuQuestions(response: string, conversationHistory: any[], userMessage: string): boolean {
   const lowerResponse = response.toLowerCase();
   const lowerUserMessage = userMessage.toLowerCase();
   
-  // Must have sufficient conversation depth (minimum 6 exchanges, flexible based on content)
-  if (conversationHistory.length < 6) {
+  console.log('Checking readiness for fortu questions:');
+  console.log('- Conversation history length:', conversationHistory.length);
+  console.log('- Bot response contains fortu search promise:', lowerResponse.includes('let me search fortu') || lowerResponse.includes('let me check fortu'));
+  console.log('- User message:', lowerUserMessage);
+  
+  // Enhanced: Check if bot is actively promising to search fortu.ai (regardless of exchange count)
+  const botPromisesToSearch = lowerResponse.includes('perfect. let me search fortu.ai') ||
+                             lowerResponse.includes('perfect. let me check fortu.ai') ||
+                             lowerResponse.includes('right, checking our database') ||
+                             lowerResponse.includes('brilliant. i\'ve found some relevant questions') ||
+                             lowerResponse.includes('let me search fortu.ai for relevant') ||
+                             lowerResponse.includes('let me check fortu.ai for organisations');
+  
+  if (botPromisesToSearch) {
+    console.log('Bot actively promises to search fortu.ai - triggering regardless of exchange count');
+    return true;
+  }
+  
+  // Minimum exchange requirement - reduced from 6 to 4 for more flexibility
+  if (conversationHistory.length < 4) {
+    console.log('Not enough exchanges yet (minimum 4)');
     return false;
   }
   
@@ -252,8 +272,10 @@ function isReadyForFortuQuestions(response: string, conversationHistory: any[], 
      msg.text.toLowerCase().includes('shall i search'))
   );
   
-  // Ready if user confirmed after bot presented question OR bot is actively searching
-  return (hasRecentQuestionPresentation && userConfirmed) || hasReadinessSignal;
+  const isReady = (hasRecentQuestionPresentation && userConfirmed) || hasReadinessSignal;
+  console.log('Final readiness decision:', isReady);
+  
+  return isReady;
 }
 
 // Function to extract the refined challenge from conversation
@@ -363,7 +385,7 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // Check if the response indicates readiness for fortu questions (now requires confirmation)
+    // Check if the response indicates readiness for fortu questions (now with improved detection)
     const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
