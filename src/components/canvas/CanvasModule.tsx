@@ -7,7 +7,7 @@ import { Question, ChallengeHistoryHook } from './modules/types';
 
 interface CanvasModuleProps {
   trigger: CanvasTrigger;
-  onSendQuestionsToChat?: (questions: Question[]) => void;
+  onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
 }
 

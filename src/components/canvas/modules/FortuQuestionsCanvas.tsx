@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -13,7 +12,7 @@ import { Question, ChallengeHistoryHook } from './types';
 
 interface FortuQuestionsCanvasProps {
   payload?: Record<string, any>;
-  onSendQuestionsToChat?: (questions: Question[]) => void;
+  onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
 }
 
@@ -64,9 +63,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
   };
 
-  const handleSendToChat = (questions: Question[]) => {
+  const handleSendToChat = (questions: Question[], action: 'refine' | 'instance' | 'both') => {
     if (onSendQuestionsToChat) {
-      onSendQuestionsToChat(questions);
+      onSendQuestionsToChat(questions, action);
     }
     toggleSelectionMode();
     clearSelections();

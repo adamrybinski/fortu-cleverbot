@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,7 @@ interface CanvasContainerProps {
   trigger: CanvasTrigger | null;
   isMobile?: boolean;
   useShineBorder?: boolean;
-  onSendQuestionsToChat?: (questions: Question[]) => void;
+  onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({ 
@@ -94,7 +93,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     setShowChallengeHistory(false);
     // Trigger new challenge flow
     if (onSendQuestionsToChat) {
-      onSendQuestionsToChat([]);
+      onSendQuestionsToChat([], 'refine');
     }
   };
 
@@ -104,7 +103,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     switchToSession(sessionId);
     
     if (onSendQuestionsToChat && remainingQuestions.length > 0) {
-      onSendQuestionsToChat(remainingQuestions);
+      onSendQuestionsToChat(remainingQuestions, 'refine');
     }
   };
 

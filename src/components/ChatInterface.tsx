@@ -9,6 +9,7 @@ interface ChatInterfaceProps {
   onTriggerCanvas: (trigger: CanvasTrigger) => void;
   isCanvasOpen: boolean;
   selectedQuestionsFromCanvas?: Question[];
+  selectedAction?: 'refine' | 'instance' | 'both';
   onClearSelectedQuestions?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onTriggerCanvas, 
   isCanvasOpen,
   selectedQuestionsFromCanvas = [],
+  selectedAction = 'refine',
   onClearSelectedQuestions
 }) => {
   return (
@@ -27,6 +29,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         onTriggerCanvas={onTriggerCanvas}
         isCanvasOpen={isCanvasOpen}
         selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+        selectedAction={selectedAction}
         onClearSelectedQuestions={onClearSelectedQuestions}
       />
     </div>

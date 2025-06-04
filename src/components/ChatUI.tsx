@@ -8,6 +8,7 @@ import { ChatInput } from './chat/ChatInput';
 interface ExtendedChatUIProps extends ChatUIProps {
   isCanvasOpen?: boolean;
   selectedQuestionsFromCanvas?: Question[];
+  selectedAction?: 'refine' | 'instance' | 'both';
   onClearSelectedQuestions?: () => void;
 }
 
@@ -16,6 +17,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   onTriggerCanvas, 
   isCanvasOpen,
   selectedQuestionsFromCanvas = [],
+  selectedAction = 'refine',
   onClearSelectedQuestions
 }) => {
   const [messages, setMessages] = useState<Message[]>([
@@ -33,16 +35,29 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Handle selected questions from canvas
+  // Handle selected questions from canvas with different actions
   useEffect(() => {
     if (selectedQuestionsFromCanvas.length > 0) {
       const questionsList = selectedQuestionsFromCanvas.map(q => `• ${q.question}`).join('\n');
-      const autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas that seem most relevant to my challenge:\n\n${questionsList}\n\nCan you help me refine my challenge further based on these selections?`;
+      
+      let autoMessage = '';
+      
+      switch (selectedAction) {
+        case 'refine':
+          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas for challenge refinement:\n\n${questionsList}\n\nPlease provide a summary of these questions and refine my challenge based on these selections. I only want the refinement analysis, no additional question matches.`;
+          break;
+        case 'instance':
+          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas to setup a new fortu.ai instance:\n\n${questionsList}\n\nPlease help me prepare these questions along with my original challenge for setting up a new fortu.ai instance.`;
+          break;
+        case 'both':
+          autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas and want both refinement and instance setup:\n\n${questionsList}\n\nPlease first refine my challenge based on these selections, then help me prepare everything for setting up a new fortu.ai instance.`;
+          break;
+      }
       
       // Auto-send the message
       handleSendMessage(autoMessage, true);
     }
-  }, [selectedQuestionsFromCanvas]);
+  }, [selectedQuestionsFromCanvas, selectedAction]);
 
   // Handle canvas guidance when canvas opens
   useEffect(() => {
@@ -177,6 +192,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       text: textToSend,
       timestamp: new Date(),
       selectedQuestions: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
+      selectedAction: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedAction : undefined,
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -200,7 +216,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         body: {
           message: textToSend,
           conversationHistory: conversationHistory,
-          selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined
+          selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
+          selectedAction: selectedQuestionsFromCanvas.length > 0 ? selectedAction : undefined
         }
       });
 

@@ -21,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory = [], selectedQuestions = [] } = await req.json();
+    const { message, conversationHistory = [], selectedQuestions = [], selectedAction } = await req.json();
     
     if (!message) {
       throw new Error('Message is required');
@@ -35,6 +35,7 @@ serve(async (req) => {
     console.log('Processing message:', message);
     console.log('Conversation history length:', conversationHistory.length);
     console.log('Selected questions:', selectedQuestions);
+    console.log('Selected action:', selectedAction);
 
     // Determine which agent to use - include selectedQuestions in detection
     const useProspectAgent = shouldUseProspectAgent(message, conversationHistory, selectedQuestions);
@@ -51,17 +52,31 @@ serve(async (req) => {
       }))
     ];
 
-    // Add selected questions context if present with enhanced guidance
-    if (selectedQuestions.length > 0) {
+    // Add selected questions context with action-specific guidance
+    if (selectedQuestions.length > 0 && selectedAction) {
       const selectedQuestionsText = selectedQuestions.map((q: any) => 
         `- ${q.question} (from ${q.source})`
       ).join('\n');
       
       const themes = selectedQuestions.map((q: any) => q.source).join(', ');
       
+      let actionGuidance = '';
+      
+      switch (selectedAction) {
+        case 'refine':
+          actionGuidance = `The user has selected these questions for CHALLENGE REFINEMENT ONLY. Provide a detailed analysis of what these choices reveal about their priorities, create an ultra-refined challenge statement, and stop there. DO NOT suggest additional fortu.ai searches or mention canvas exploration. Focus solely on the refinement analysis and final challenge statement.`;
+          break;
+        case 'instance':
+          actionGuidance = `The user has selected these questions to SETUP A NEW FORTU.AI INSTANCE. Help them prepare these questions along with their original challenge for setting up a new fortu.ai instance. Provide guidance on how to structure the questions for their instance setup.`;
+          break;
+        case 'both':
+          actionGuidance = `The user wants BOTH refinement and instance setup. First, provide detailed analysis and ultra-refined challenge statement. Then, help them prepare everything for setting up a new fortu.ai instance with their refined challenge and selected questions.`;
+          break;
+      }
+      
       messages.push({
         role: 'system',
-        content: `The user has just returned from the canvas and selected the following questions that are relevant to their challenge:\n${selectedQuestionsText}\n\nBased on their selections from ${themes}, provide detailed analysis of what these choices reveal about their priorities and focus areas. Use these selections to create an ultra-refined challenge statement and suggest specific next steps for deeper exploration. This is a key refinement moment - be insightful and analytical about their choices.`
+        content: `The user has returned from the canvas and selected the following questions:\n${selectedQuestionsText}\n\nUser's selected action: ${selectedAction}\n\n${actionGuidance}\n\nBased on their selections from ${themes}, provide analysis according to their chosen action.`
       });
     }
 
@@ -93,8 +108,11 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // Check if the response indicates readiness for fortu questions (now with improved detection)
-    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
+    // For 'refine' action, don't trigger additional fortu searches
+    const blockFortuTrigger = selectedAction === 'refine';
+
+    // Check if the response indicates readiness for fortu questions (but block if refinement only)
+    const readyForFortu = !blockFortuTrigger && useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
     // Check if ready for fortu.ai instance guidance (Stage 6)

@@ -16,6 +16,7 @@ interface Question {
 export const ChatCanvas: React.FC = () => {
   const [activeView, setActiveView] = useState<'chat' | 'canvas'>('chat');
   const [selectedQuestionsFromCanvas, setSelectedQuestionsFromCanvas] = useState<Question[]>([]);
+  const [selectedAction, setSelectedAction] = useState<'refine' | 'instance' | 'both'>('refine');
   const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
 
   const handleCloseCanvas = () => {
@@ -23,9 +24,10 @@ export const ChatCanvas: React.FC = () => {
     setActiveView('chat');
   };
 
-  const handleSendQuestionsToChat = (questions: Question[]) => {
-    console.log('Sending questions to chat:', questions);
+  const handleSendQuestionsToChat = (questions: Question[], action: 'refine' | 'instance' | 'both' = 'refine') => {
+    console.log('Sending questions to chat:', questions, 'with action:', action);
     setSelectedQuestionsFromCanvas(questions);
+    setSelectedAction(action);
     // Switch to chat view on mobile after sending questions
     setActiveView('chat');
   };
@@ -33,6 +35,7 @@ export const ChatCanvas: React.FC = () => {
   const handleClearSelectedQuestions = () => {
     console.log('Clearing selected questions');
     setSelectedQuestionsFromCanvas([]);
+    setSelectedAction('refine');
   };
 
   // Check if mobile viewport
@@ -96,6 +99,7 @@ export const ChatCanvas: React.FC = () => {
               onTriggerCanvas={triggerCanvas}
               isCanvasOpen={isCanvasOpen}
               selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+              selectedAction={selectedAction}
               onClearSelectedQuestions={handleClearSelectedQuestions}
             />
           </div>
