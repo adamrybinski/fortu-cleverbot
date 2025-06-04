@@ -15,6 +15,13 @@ export const useCanvasPreview = () => {
           description: 'Discover relevant questions and insights from our database of business challenges. Explore proven approaches to your refined challenge.',
           payload
         };
+      case 'challengeHistory':
+        return {
+          type: 'challengeHistory',
+          title: 'Challenge History',
+          description: 'View your previous challenges and explore remaining questions or start new challenges.',
+          payload
+        };
       case 'blank':
       case 'canvas':
       default:
@@ -36,27 +43,7 @@ export const useCanvasPreview = () => {
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // Multi-challenge exploration trigger (Stage 7)
-    if (readyForMultiChallenge && agentUsed === 'prospect') {
-      setPendingCanvasGuidance(
-        "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
-        "**Option 1: Explore Remaining Questions**\n" +
-        "- Review questions from your previous canvas session that you didn't select\n" +
-        "- Dive deeper into alternative approaches for the same challenge area\n\n" +
-        "**Option 2: Start a Completely New Challenge**\n" +
-        "- Begin fresh with a different business challenge you're facing\n" +
-        "- Build a comprehensive challenge bank for your organisation\n\n" +
-        "Click the History button in the canvas to see your previous challenges and choose your next exploration path!"
-      );
-
-      return createCanvasPreviewData('challengeHistory', {
-        multiChallengeMode: true,
-        previousChallenge: refinedChallenge,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Primary trigger: Prospect Agent indicates readiness AND user has confirmed
+    // PRIMARY TRIGGER: Fortu questions take highest priority when readyForFortu is true
     if (readyForFortu && agentUsed === 'prospect') {
       setPendingCanvasGuidance(
         "Perfect! I've opened the fortu.ai question search for you. You'll see questions matched from our database and AI-generated suggestions.\n\n" +
@@ -71,6 +58,26 @@ export const useCanvasPreview = () => {
         refinedChallenge: refinedChallenge || message,
         challengeContext: 'user_confirmed',
         searchReady: true,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Multi-challenge exploration trigger (Stage 7) - only when NOT ready for fortu
+    if (readyForMultiChallenge && agentUsed === 'prospect' && !readyForFortu) {
+      setPendingCanvasGuidance(
+        "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
+        "**Option 1: Explore Remaining Questions**\n" +
+        "- Review questions from your previous canvas session that you didn't select\n" +
+        "- Dive deeper into alternative approaches for the same challenge area\n\n" +
+        "**Option 2: Start a Completely New Challenge**\n" +
+        "- Begin fresh with a different business challenge you're facing\n" +
+        "- Build a comprehensive challenge bank for your organisation\n\n" +
+        "Click the History button in the canvas to see your previous challenges and choose your next exploration path!"
+      );
+
+      return createCanvasPreviewData('challengeHistory', {
+        multiChallengeMode: true,
+        previousChallenge: refinedChallenge,
         timestamp: new Date().toISOString()
       });
     }

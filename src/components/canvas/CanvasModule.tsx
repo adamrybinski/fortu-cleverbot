@@ -3,6 +3,7 @@ import React from 'react';
 import { CanvasTrigger } from './CanvasContainer';
 import { BlankCanvas } from './modules/BlankCanvas';
 import { FortuQuestionsCanvas } from './modules/FortuQuestionsCanvas';
+import { ChallengeHistory } from './modules/ChallengeHistory';
 import { Question, ChallengeHistoryHook } from './modules/types';
 
 interface CanvasModuleProps {
@@ -26,6 +27,36 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           onSendQuestionsToChat={onSendQuestionsToChat}
           challengeHistory={challengeHistory}
         />
+      );
+    
+    case 'challengeHistory':
+      if (!challengeHistory) {
+        console.warn('Challenge history not available, falling back to blank canvas');
+        return <BlankCanvas payload={trigger.payload} />;
+      }
+      
+      return (
+        <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
+          <ChallengeHistory
+            challengeHistory={challengeHistory.challengeHistory}
+            currentSessionId={challengeHistory.currentSessionId}
+            onSwitchToSession={challengeHistory.switchToSession}
+            onDeleteSession={challengeHistory.deleteSession}
+            onStartNewChallenge={() => {
+              if (onSendQuestionsToChat) {
+                onSendQuestionsToChat([], 'refine');
+              }
+            }}
+            onExploreRemainingQuestions={(sessionId) => {
+              const remainingQuestions = challengeHistory.getUnselectedQuestions(sessionId);
+              challengeHistory.switchToSession(sessionId);
+              
+              if (onSendQuestionsToChat && remainingQuestions.length > 0) {
+                onSendQuestionsToChat(remainingQuestions, 'refine');
+              }
+            }}
+          />
+        </div>
       );
     
     case 'challengeMapping':
