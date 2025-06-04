@@ -36,6 +36,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const previousMessagesLength = useRef(messages.length);
+  const storedScrollPosition = useRef<number>(0);
+  const isCanvasOpenRef = useRef(isCanvasOpen);
 
   const {
     hasCanvasBeenTriggered,
@@ -91,6 +93,32 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setInputValue('');
   };
 
+  // Store scroll position before canvas state changes
+  useEffect(() => {
+    const previousCanvasState = isCanvasOpenRef.current;
+    
+    if (previousCanvasState !== isCanvasOpen && messagesContainerRef.current) {
+      // Store current scroll position before canvas state changes
+      storedScrollPosition.current = messagesContainerRef.current.scrollTop;
+      console.log('Storing scroll position:', storedScrollPosition.current);
+    }
+    
+    isCanvasOpenRef.current = isCanvasOpen;
+  }, [isCanvasOpen]);
+
+  // Restore scroll position after canvas transition
+  useEffect(() => {
+    if (messagesContainerRef.current && storedScrollPosition.current > 0) {
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = storedScrollPosition.current;
+          console.log('Restored scroll position:', storedScrollPosition.current);
+        }
+      });
+    }
+  }, [isCanvasOpen]);
+
   // Only auto-scroll when new messages are added, not when canvas state changes
   useEffect(() => {
     const hasNewMessages = messages.length > previousMessagesLength.current;
@@ -107,7 +135,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     // Re-enable auto-scroll after a brief delay to allow for canvas transition
     const timer = setTimeout(() => {
       setShouldAutoScroll(true);
-    }, 100);
+    }, 300); // Increased delay to ensure transition completes
 
     return () => clearTimeout(timer);
   }, [isCanvasOpen]);
