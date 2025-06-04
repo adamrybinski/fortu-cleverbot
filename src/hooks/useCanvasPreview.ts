@@ -19,7 +19,7 @@ export const useCanvasPreview = () => {
         return {
           type: 'challengeHistory',
           title: 'Challenge History',
-          description: 'View your previous challenges and explore remaining questions or start new challenges.',
+          description: 'Your challenge workspace. Start a new challenge while preserving your previous work, or explore remaining questions from your current challenge.',
           payload
         };
       case 'blank':
@@ -43,31 +43,32 @@ export const useCanvasPreview = () => {
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // Multi-challenge exploration trigger (Stage 7) - highest priority when ready
+    // New challenge creation trigger (preserve current challenge)
     if (readyForMultiChallenge && agentUsed === 'prospect') {
       setPendingCanvasGuidance(
-        "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
-        "**Option 1: Explore Remaining Questions**\n" +
-        "- Review questions from your previous canvas session that you didn't select\n" +
-        "- Dive deeper into alternative approaches for the same challenge area\n\n" +
-        "**Option 2: Start a Completely New Challenge**\n" +
-        "- Begin fresh with a different business challenge you're facing\n" +
-        "- Build a comprehensive challenge bank for your organisation\n\n" +
-        "Click the History button in the canvas to see your previous challenges and choose your next exploration path!"
+        "Perfect! I've saved your current challenge and opened your challenge workspace.\n\n" +
+        "**Your Options:**\n\n" +
+        "**📝 Start New Challenge**\n" +
+        "- Begin with a completely different business challenge\n" +
+        "- Your previous challenge will remain accessible in the history\n\n" +
+        "**🔍 Continue Previous Work**\n" +
+        "- Access your saved challenges and their refined questions\n" +
+        "- Review and build upon your previous explorations\n\n" +
+        "Choose how you'd like to proceed with your challenge exploration!"
       );
 
       return createCanvasPreviewData('challengeHistory', {
-        multiChallengeMode: true,
-        previousChallenge: refinedChallenge,
+        newChallengeMode: true,
+        currentChallenge: refinedChallenge,
         timestamp: new Date().toISOString()
       });
     }
     
-    // Manual fortu questions trigger (explicit user request only)
-    if (lowerInput.includes('fortu questions') || lowerInput.includes('search questions')) {
+    // Question matching trigger (user explicitly requested)
+    if (readyForFortu && agentUsed === 'prospect') {
       return createCanvasPreviewData('fortuQuestions', {
-        challengeSummary: message,
-        searchReady: false,
+        refinedChallenge: refinedChallenge,
+        searchReady: true,
         timestamp: new Date().toISOString()
       });
     }

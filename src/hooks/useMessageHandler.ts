@@ -80,27 +80,14 @@ export const useMessageHandler = ({
       console.log('Ready for multi-challenge:', readyForMultiChallenge);
       console.log('Refined challenge:', refinedChallenge);
 
-      // Handle fortu.ai instance guidance (Stage 6)
+      // Handle fortu.ai instance guidance (when user selects "create instance")
       if (readyForFortuInstance && refinedChallenge) {
         assistantText += `\n\n**🎯 Your Refined Challenge for fortu.ai:**\n\n"${refinedChallenge}"\n\n` +
           "**Next Step:** Take this refined question to your own fortu.ai instance to find specific, actionable solutions from organisations that have tackled this exact challenge.\n\n" +
           "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies.";
       }
 
-      // Handle readyForFortu with direct chat guidance (no canvas)
-      if (readyForFortu && refinedChallenge) {
-        assistantText += `\n\n**🔍 Your Challenge is Ready for Exploration:**\n\n"${refinedChallenge}"\n\n` +
-          "**Here's what I've found for you:**\n" +
-          "• **Matched questions from fortu.ai database** - Questions from organisations that have tackled similar challenges\n" +
-          "• **AI-generated suggestions** - Fresh perspectives and approaches to consider\n\n" +
-          "**What you can do next:**\n" +
-          "1. **Review the questions** that resonate with your specific situation\n" +
-          "2. **Tell me which approaches interest you** and I'll help refine your challenge further\n" +
-          "3. **Ask for specific examples** of how other organisations solved similar problems\n\n" +
-          "Would you like me to share some of the most relevant questions I've found?";
-      }
-
-      // Check if we should create a canvas preview (excluding fortu questions now)
+      // Check if we should create a canvas preview
       const canvasPreviewData = shouldCreateCanvasPreview(
         messageText, 
         agentUsed, 
@@ -112,9 +99,11 @@ export const useMessageHandler = ({
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
         
-        // Handle different canvas preview types (excluding fortu questions)
-        if (canvasPreviewData.type === 'challengeHistory') {
-          assistantText += "\n\nBrilliant! You've got solid foundations now. I've opened your challenge exploration centre where you can choose to dive deeper into remaining questions from your previous exploration or start tackling a completely new challenge. Click the expand button below to explore your options.";
+        // Handle different canvas preview types
+        if (canvasPreviewData.type === 'fortuQuestions') {
+          assistantText += "\n\nPerfect! I'm opening the question matching canvas where you can explore relevant approaches from organisations that have tackled similar challenges. Click the expand button below to start exploring.";
+        } else if (canvasPreviewData.type === 'challengeHistory') {
+          assistantText += "\n\nBrilliant! I've opened your challenge workspace where you can start a new challenge while preserving your current work. Click the expand button below to continue.";
         } else {
           assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
         }
