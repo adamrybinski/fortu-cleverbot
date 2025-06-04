@@ -80,14 +80,35 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   };
 
-  // Enhanced detection with confirmation requirement
+  // Enhanced detection with confirmation requirement and multi-challenge support
   const shouldCreateCanvasPreview = (
     message: string, 
     agentUsed?: string, 
     readyForFortu?: boolean, 
+    readyForMultiChallenge?: boolean,
     refinedChallenge?: string
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
+    
+    // Multi-challenge exploration trigger (Stage 7)
+    if (readyForMultiChallenge && agentUsed === 'prospect') {
+      setPendingCanvasGuidance(
+        "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
+        "**Option 1: Explore Remaining Questions**\n" +
+        "- Review questions from your previous canvas session that you didn't select\n" +
+        "- Dive deeper into alternative approaches for the same challenge area\n\n" +
+        "**Option 2: Start a Completely New Challenge**\n" +
+        "- Begin fresh with a different business challenge you're facing\n" +
+        "- Build a comprehensive challenge bank for your organisation\n\n" +
+        "Click the History button in the canvas to see your previous challenges and choose your next exploration path!"
+      );
+
+      return createCanvasPreviewData('challengeHistory', {
+        multiChallengeMode: true,
+        previousChallenge: refinedChallenge,
+        timestamp: new Date().toISOString()
+      });
+    }
     
     // Primary trigger: Prospect Agent indicates readiness AND user has confirmed
     if (readyForFortu && agentUsed === 'prospect') {
@@ -189,11 +210,13 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       const agentUsed = data.agentUsed;
       const readyForFortu = data.readyForFortu;
       const readyForFortuInstance = data.readyForFortuInstance;
+      const readyForMultiChallenge = data.readyForMultiChallenge;
       const refinedChallenge = data.refinedChallenge;
 
       console.log('Agent used:', agentUsed);
       console.log('Ready for fortu:', readyForFortu);
       console.log('Ready for fortu instance:', readyForFortuInstance);
+      console.log('Ready for multi-challenge:', readyForMultiChallenge);
       console.log('Refined challenge:', refinedChallenge);
 
       // Handle fortu.ai instance guidance (Stage 6)
@@ -203,19 +226,22 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
           "In fortu.ai, search for this question and you'll get access to detailed case studies, proven approaches, and specific methodologies.";
       }
 
-      // Check if we should create a canvas preview (only for initial fortu search, not instance guidance)
-      const canvasPreviewData = !readyForFortuInstance ? shouldCreateCanvasPreview(
+      // Check if we should create a canvas preview (multi-challenge or initial fortu search)
+      const canvasPreviewData = shouldCreateCanvasPreview(
         textToSend, 
         agentUsed, 
-        readyForFortu, 
+        readyForFortu,
+        readyForMultiChallenge,
         refinedChallenge
-      ) : null;
+      );
       
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
         
-        // Only modify response for fortu Questions when ready for search
-        if (canvasPreviewData.type === 'fortuQuestions' && readyForFortu) {
+        // Handle different canvas preview types
+        if (canvasPreviewData.type === 'challengeHistory') {
+          assistantText += "\n\nBrilliant! You've got solid foundations now. I've opened your challenge exploration centre where you can choose to dive deeper into remaining questions from your previous exploration or start tackling a completely new challenge. Click the expand button below to explore your options.";
+        } else if (canvasPreviewData.type === 'fortuQuestions' && readyForFortu) {
           assistantText += "\n\nBrilliant. I've found some relevant questions in fortu.ai that match your challenge. Click the expand button below to explore these proven approaches and see how other organisations have tackled similar challenges.";
         } else if (canvasPreviewData.type === 'fortuQuestions') {
           assistantText += "\n\nI've created a fortu Questions module for you. Click the expand button below to open it and start exploring your challenge.";

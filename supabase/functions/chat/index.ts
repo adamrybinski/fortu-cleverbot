@@ -6,13 +6,9 @@ import { shouldUseProspectAgent } from './agent-detection.ts';
 import { 
   isReadyForFortuQuestions, 
   isReadyForFortuInstanceGuidance, 
+  isReadyForMultiChallengeExploration,
   extractRefinedChallenge 
 } from './fortu-detection.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -100,6 +96,10 @@ serve(async (req) => {
     const readyForFortuInstance = useProspectAgent && isReadyForFortuInstanceGuidance(aiResponse, conversationHistory, message);
     console.log('Ready for fortu.ai instance guidance:', readyForFortuInstance);
 
+    // Check if ready for multi-challenge exploration (Stage 7)
+    const readyForMultiChallenge = useProspectAgent && isReadyForMultiChallengeExploration(aiResponse, conversationHistory, message);
+    console.log('Ready for multi-challenge exploration:', readyForMultiChallenge);
+
     // Extract refined challenge if ready for fortu or instance guidance
     let refinedChallenge = '';
     if (readyForFortu || readyForFortuInstance) {
@@ -113,6 +113,7 @@ serve(async (req) => {
       agentUsed: useProspectAgent ? 'prospect' : 'general',
       readyForFortu: readyForFortu,
       readyForFortuInstance: readyForFortuInstance,
+      readyForMultiChallenge: readyForMultiChallenge,
       refinedChallenge: refinedChallenge
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

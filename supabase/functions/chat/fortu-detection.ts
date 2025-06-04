@@ -1,4 +1,3 @@
-
 // Enhanced function to detect if ready for fortu questions - more flexible with exchange count
 export function isReadyForFortuQuestions(response: string, conversationHistory: any[], userMessage: string): boolean {
   const lowerResponse = response.toLowerCase();
@@ -104,6 +103,44 @@ export function isReadyForFortuInstanceGuidance(response: string, conversationHi
   
   const isReady = (completedRefinement && readyForGuidance) || (hasRecentRefinement && (lowerUserMessage.includes('yes') || lowerUserMessage.includes('looks great')));
   console.log('Ready for fortu.ai instance guidance:', isReady);
+  
+  return isReady;
+}
+
+// NEW: Function to detect if ready for multi-challenge exploration
+export function isReadyForMultiChallengeExploration(response: string, conversationHistory: any[], userMessage: string): boolean {
+  const lowerResponse = response.toLowerCase();
+  const lowerUserMessage = userMessage.toLowerCase();
+  
+  console.log('Checking readiness for multi-challenge exploration:');
+  console.log('- Looking for completion of fortu.ai instance guidance');
+  
+  // Check if the bot has completed fortu.ai instance guidance (Stage 6)
+  const completedFortuGuidance = lowerResponse.includes('next step: take this refined question') ||
+                                lowerResponse.includes('in fortu.ai, search for this question') ||
+                                lowerResponse.includes('your refined challenge is now sharp') ||
+                                lowerResponse.includes('crystal-clear challenge statement');
+  
+  // Check if user has acknowledged the guidance
+  const userAcknowledged = lowerUserMessage.includes('yes') ||
+                          lowerUserMessage.includes('got it') ||
+                          lowerUserMessage.includes('understood') ||
+                          lowerUserMessage.includes('what next') ||
+                          lowerUserMessage.includes('thanks') ||
+                          lowerUserMessage.includes('perfect') ||
+                          lowerUserMessage.includes('great') ||
+                          lowerUserMessage.includes('sounds good');
+  
+  // Check for previous fortu.ai guidance in conversation
+  const hasRecentFortuGuidance = conversationHistory.slice(-2).some((msg: any) => 
+    msg.role === 'assistant' && 
+    (msg.text.toLowerCase().includes('take this refined question to your own fortu.ai') || 
+     msg.text.toLowerCase().includes('next step: take this refined question') ||
+     msg.text.toLowerCase().includes('crystal-clear challenge statement'))
+  );
+  
+  const isReady = (completedFortuGuidance && userAcknowledged) || (hasRecentFortuGuidance && userAcknowledged);
+  console.log('Ready for multi-challenge exploration:', isReady);
   
   return isReady;
 }

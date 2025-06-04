@@ -1,8 +1,10 @@
-import React from 'react';
-import { X, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
+import { ChallengeHistory } from './modules/ChallengeHistory';
+import { useChallengeHistory } from '@/hooks/useChallengeHistory';
 
 // ShineBorder Component optimized for Lovable
 interface ShineBorderProps {
@@ -78,7 +80,38 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   useShineBorder = false,
   onSendQuestionsToChat
 }) => {
+  const [showChallengeHistory, setShowChallengeHistory] = useState(false);
+  const {
+    challengeHistory,
+    currentSessionId,
+    getCurrentSession,
+    createNewSession,
+    updateSession,
+    switchToSession,
+    deleteSession,
+    getUnselectedQuestions,
+    markSessionCompleted
+  } = useChallengeHistory();
+
   if (!isVisible || !trigger) return null;
+
+  const handleStartNewChallenge = () => {
+    setShowChallengeHistory(false);
+    // Trigger new challenge flow
+    if (onSendQuestionsToChat) {
+      onSendQuestionsToChat([]);
+    }
+  };
+
+  const handleExploreRemainingQuestions = (sessionId: string) => {
+    const remainingQuestions = getUnselectedQuestions(sessionId);
+    setShowChallengeHistory(false);
+    switchToSession(sessionId);
+    
+    if (onSendQuestionsToChat && remainingQuestions.length > 0) {
+      onSendQuestionsToChat(remainingQuestions);
+    }
+  };
 
   const content = (
     <div className="flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
@@ -95,23 +128,66 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
-          <h2 className="text-lg font-semibold text-[#003079]">Canvas</h2>
+          <h2 className="text-lg font-semibold text-[#003079]">
+            {showChallengeHistory ? 'Challenge History' : 'Canvas'}
+          </h2>
         </div>
-        {!isMobile && (
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="sm"
-            className="text-[#003079] hover:bg-white/50"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!showChallengeHistory && challengeHistory.length > 0 && (
+            <Button
+              onClick={() => setShowChallengeHistory(true)}
+              variant="ghost"
+              size="sm"
+              className="text-[#003079] hover:bg-white/50"
+            >
+              <History className="w-4 h-4" />
+            </Button>
+          )}
+          {!isMobile && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-[#003079] hover:bg-white/50"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
+      
       {/* Canvas Content Area with ScrollArea */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full w-full">
-          <CanvasModule trigger={trigger} onSendQuestionsToChat={onSendQuestionsToChat} />
+          {showChallengeHistory ? (
+            <ChallengeHistory
+              challengeHistory={challengeHistory}
+              currentSessionId={currentSessionId}
+              onSwitchToSession={(sessionId) => {
+                switchToSession(sessionId);
+                setShowChallengeHistory(false);
+              }}
+              onDeleteSession={deleteSession}
+              onStartNewChallenge={handleStartNewChallenge}
+              onExploreRemainingQuestions={handleExploreRemainingQuestions}
+            />
+          ) : (
+            <CanvasModule 
+              trigger={trigger} 
+              onSendQuestionsToChat={onSendQuestionsToChat}
+              challengeHistory={{
+                challengeHistory,
+                currentSessionId,
+                getCurrentSession,
+                createNewSession,
+                updateSession,
+                switchToSession,
+                deleteSession,
+                getUnselectedQuestions,
+                markSessionCompleted
+              }}
+            />
+          )}
         </ScrollArea>
       </div>
     </div>
