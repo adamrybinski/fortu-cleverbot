@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -141,7 +140,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#003079] mb-2">fortu.ai Question Search</h1>
+            <h1 className="text-2xl font-bold text-[#003079] mb-2">Question Search</h1>
             <p className="text-[#1D253A] mb-4">
               Explore relevant questions and insights from our database of business challenges.
             </p>
@@ -210,7 +209,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
               <div className="space-y-4">
                 {fortuQuestions.map((question) => (
                   <div key={question.id} className="bg-white/70 p-4 rounded-lg border border-[#6EFFC6]/30 hover:bg-white/90 transition-colors">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between">
                       <h3 className="font-medium text-[#003079] flex-1 mr-4">
                         {question.question}
                       </h3>
@@ -221,30 +220,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
                         >
                           {question.status}
                         </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {question.context && (
-                        <p className="text-sm text-[#1D253A]/70">
-                          <span className="font-medium">Context:</span> {question.context}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-4 text-sm text-[#1D253A]/60">
-                        {question.relevance && (
-                          <span>Relevance: {question.relevance}%</span>
-                        )}
-                        {question.organisations && (
-                          <span>{question.organisations} organisations</span>
-                        )}
-                        <span className="capitalize">fortu.ai</span>
-                      </div>
-                      
-                      {question.insights && (
-                        <p className="text-sm text-[#003079] font-medium">
-                          {question.insights}
-                        </p>
                       )}
                     </div>
                   </div>
@@ -274,7 +249,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
               <div className="space-y-4">
                 {aiQuestions.map((question) => (
                   <div key={question.id} className="bg-white/70 p-4 rounded-lg border border-[#753BBD]/20 hover:bg-white/90 transition-colors">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between">
                       <h3 className="font-medium text-[#003079] flex-1 mr-4">
                         {question.question}
                       </h3>
@@ -284,10 +259,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
                       >
                         AI
                       </Badge>
-                    </div>
-                    
-                    <div className="text-sm text-[#1D253A]/60">
-                      <span className="capitalize">CleverBot AI</span>
                     </div>
                   </div>
                 ))}
