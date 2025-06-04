@@ -43,27 +43,8 @@ export const useCanvasPreview = () => {
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // PRIMARY TRIGGER: Fortu questions take highest priority when readyForFortu is true
-    if (readyForFortu && agentUsed === 'prospect') {
-      setPendingCanvasGuidance(
-        "Perfect! I've opened the fortu.ai question search for you. You'll see questions matched from our database and AI-generated suggestions.\n\n" +
-        "To refine your challenge further:\n" +
-        "1. **Click on any question** to read a detailed summary and insights\n" +
-        "2. **Select multiple questions** by clicking 'Select Questions' button\n" +
-        "3. **Send selected questions back to me** to refine your challenge based on what resonates\n\n" +
-        "Explore the questions and let me know which ones catch your attention!"
-      );
-
-      return createCanvasPreviewData('fortuQuestions', {
-        refinedChallenge: refinedChallenge || message,
-        challengeContext: 'user_confirmed',
-        searchReady: true,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Multi-challenge exploration trigger (Stage 7) - only when NOT ready for fortu
-    if (readyForMultiChallenge && agentUsed === 'prospect' && !readyForFortu) {
+    // Multi-challenge exploration trigger (Stage 7) - highest priority when ready
+    if (readyForMultiChallenge && agentUsed === 'prospect') {
       setPendingCanvasGuidance(
         "Excellent! You now have multiple options to continue your challenge exploration:\n\n" +
         "**Option 1: Explore Remaining Questions**\n" +
@@ -82,23 +63,7 @@ export const useCanvasPreview = () => {
       });
     }
     
-    // Fallback triggers for explicit requests
-    if (agentUsed === 'prospect') {
-      if (lowerInput.includes('question') || 
-          lowerInput.includes('solution') || 
-          lowerInput.includes('example') ||
-          lowerInput.includes('what next') ||
-          lowerInput.includes('how do we proceed')) {
-        return createCanvasPreviewData('fortuQuestions', {
-          challengeSummary: refinedChallenge || message,
-          challengeContext: 'user_request',
-          searchReady: false,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-    
-    // Manual fortu questions trigger
+    // Manual fortu questions trigger (explicit user request only)
     if (lowerInput.includes('fortu questions') || lowerInput.includes('search questions')) {
       return createCanvasPreviewData('fortuQuestions', {
         challengeSummary: message,
