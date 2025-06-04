@@ -36,8 +36,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const previousMessagesLength = useRef(messages.length);
-  const [isScrollLocked, setIsScrollLocked] = useState(false);
-  const storedScrollPosition = useRef<number>(0);
 
   const {
     hasCanvasBeenTriggered,
@@ -93,47 +91,23 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setInputValue('');
   };
 
-  // Lock scroll position during canvas transitions
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      // Store current scroll position before transition
-      storedScrollPosition.current = messagesContainerRef.current.scrollTop;
-      
-      // Lock scroll during transition
-      setIsScrollLocked(true);
-      
-      // Set a timeout to unlock scroll after transition completes
-      const unlockTimer = setTimeout(() => {
-        setIsScrollLocked(false);
-        
-        // Restore exact scroll position after transition
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop = storedScrollPosition.current;
-        }
-      }, 500); // Matches transition duration
-      
-      return () => clearTimeout(unlockTimer);
-    }
-  }, [isCanvasOpen]);
-
   // Only auto-scroll when new messages are added, not when canvas state changes
   useEffect(() => {
     const hasNewMessages = messages.length > previousMessagesLength.current;
     previousMessagesLength.current = messages.length;
 
-    // Only auto-scroll if not locked and should auto-scroll
-    if (hasNewMessages && shouldAutoScroll && !isScrollLocked && scrollRef.current) {
+    if (hasNewMessages && shouldAutoScroll && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, shouldAutoScroll, isScrollLocked]);
+  }, [messages, shouldAutoScroll]);
 
   // Disable auto-scroll when canvas state changes to prevent jumping
   useEffect(() => {
     setShouldAutoScroll(false);
-    // Re-enable auto-scroll after transition completes
+    // Re-enable auto-scroll after a brief delay to allow for canvas transition
     const timer = setTimeout(() => {
       setShouldAutoScroll(true);
-    }, 500);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [isCanvasOpen]);
@@ -152,7 +126,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         messagesContainerRef={messagesContainerRef}
         scrollRef={scrollRef}
         onTriggerCanvas={onTriggerCanvas}
-        isScrollLocked={isScrollLocked}
       />
 
       <ChatInput

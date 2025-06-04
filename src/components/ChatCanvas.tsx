@@ -81,22 +81,18 @@ export const ChatCanvas: React.FC = () => {
           </div>
         )}
 
-        <div className="flex h-full relative">
-          {/* Chat Panel - Fixed width approach to prevent reflow */}
+        <div className="flex h-full">
+          {/* Chat Panel - removed overflow-hidden to allow internal scrolling */}
           <div
-            className={`flex-shrink-0 transition-all duration-500 ease-in-out ${
+            className={`transition-all duration-500 ease-in-out ${
               isCanvasOpen
-                ? 'hidden md:flex md:w-[420px] lg:w-[500px]' // Fixed pixel widths instead of percentages
+                ? 'hidden md:flex md:w-[30%] lg:w-[35%]'
                 : 'w-full'
             } ${
               isCanvasOpen && activeView === 'chat' ? 'flex md:flex' : ''
             } ${
               isCanvasOpen && activeView === 'canvas' ? 'hidden md:flex' : ''
             }`}
-            style={{
-              // Prevent layout shifts by maintaining consistent sizing
-              minWidth: isCanvasOpen ? (window.innerWidth >= 1024 ? '500px' : '420px') : 'auto'
-            }}
           >
             <ChatInterface
               onOpenCanvas={openCanvas}
@@ -108,11 +104,11 @@ export const ChatCanvas: React.FC = () => {
             />
           </div>
 
-          {/* Canvas Panel - Takes remaining space */}
+          {/* Canvas Panel */}
           <div
-            className={`flex-1 transition-all duration-500 ease-in-out overflow-hidden ${
+            className={`transition-all duration-500 ease-in-out overflow-hidden ${
               isCanvasOpen
-                ? 'w-auto' // Let it take remaining space
+                ? 'w-full md:w-[70%] lg:w-[65%]'
                 : 'w-0 overflow-hidden'
             } ${
               isCanvasOpen && activeView === 'canvas' ? 'flex md:flex' : ''

@@ -10,7 +10,6 @@ interface MessagesContainerProps {
   messagesContainerRef: React.RefObject<HTMLDivElement>;
   scrollRef: React.RefObject<HTMLDivElement>;
   onTriggerCanvas?: (trigger: CanvasTrigger) => void;
-  isScrollLocked?: boolean;
 }
 
 export const MessagesContainer: React.FC<MessagesContainerProps> = ({
@@ -19,16 +18,11 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
   messagesContainerRef,
   scrollRef,
   onTriggerCanvas,
-  isScrollLocked = false,
 }) => {
   return (
     <div 
       ref={messagesContainerRef}
-      className={`flex-1 px-4 py-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 ${
-        isScrollLocked 
-          ? 'overflow-hidden' 
-          : 'overflow-y-auto'
-      }`}
+      className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
       id="chat-messages"
       style={{ 
         scrollbarWidth: 'thin',
