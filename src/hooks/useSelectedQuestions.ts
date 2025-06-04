@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Question } from '@/components/chat/types';
 
 interface UseSelectedQuestionsProps {
@@ -13,8 +13,21 @@ export const useSelectedQuestions = ({
   selectedAction,
   onSendMessage
 }: UseSelectedQuestionsProps) => {
+  const lastProcessedRef = useRef<string>('');
+
   useEffect(() => {
     if (selectedQuestionsFromCanvas.length > 0) {
+      // Create a unique key for this set of questions
+      const questionsKey = selectedQuestionsFromCanvas.map(q => q.id).sort().join(',');
+      
+      // Prevent duplicate processing
+      if (questionsKey === lastProcessedRef.current) {
+        console.log('Skipping duplicate selected questions processing');
+        return;
+      }
+      
+      lastProcessedRef.current = questionsKey;
+      
       const questionsList = selectedQuestionsFromCanvas.map(q => `• ${q.question}`).join('\n');
       
       let autoMessage = '';
@@ -31,7 +44,15 @@ export const useSelectedQuestions = ({
           break;
       }
       
+      console.log('Sending auto-message for selected questions:', questionsKey);
       onSendMessage(autoMessage, true);
     }
   }, [selectedQuestionsFromCanvas, selectedAction, onSendMessage]);
+
+  // Reset the processed ref when questions are cleared
+  useEffect(() => {
+    if (selectedQuestionsFromCanvas.length === 0) {
+      lastProcessedRef.current = '';
+    }
+  }, [selectedQuestionsFromCanvas.length]);
 };

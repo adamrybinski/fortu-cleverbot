@@ -14,9 +14,11 @@ interface UseMessageHandlerProps {
     agentUsed?: string, 
     readyForFortu?: boolean, 
     readyForMultiChallenge?: boolean,
-    refinedChallenge?: string
+    refinedChallenge?: string,
+    onTriggerCanvas?: (trigger: any) => void
   ) => CanvasPreviewData | null;
   setHasCanvasBeenTriggered: (value: boolean) => void;
+  onTriggerCanvas?: (trigger: any) => void;
 }
 
 export const useMessageHandler = ({
@@ -26,12 +28,24 @@ export const useMessageHandler = ({
   selectedAction,
   onClearSelectedQuestions,
   shouldCreateCanvasPreview,
-  setHasCanvasBeenTriggered
+  setHasCanvasBeenTriggered,
+  onTriggerCanvas
 }: UseMessageHandlerProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
 
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
     if (!messageText.trim() || isLoading) return;
+
+    // Prevent duplicate processing of the same selected questions
+    if (isAutoMessage && selectedQuestionsFromCanvas.length > 0) {
+      const questionsKey = selectedQuestionsFromCanvas.map(q => q.id).join(',');
+      if (questionsKey === lastProcessedQuestions) {
+        console.log('Skipping duplicate question processing');
+        return;
+      }
+      setLastProcessedQuestions(questionsKey);
+    }
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -86,13 +100,14 @@ export const useMessageHandler = ({
           "**Next Step:** Take this to your fortu.ai instance to find specific, actionable solutions from organisations that have successfully tackled this exact challenge.";
       }
 
-      // Check if we should create a canvas preview (simplified - only fortu questions)
+      // Check if we should create a canvas preview and auto-open
       const canvasPreviewData = shouldCreateCanvasPreview(
         messageText, 
         agentUsed, 
         readyForFortu,
         false, // No multi-challenge in simplified flow
-        refinedChallenge
+        refinedChallenge,
+        onTriggerCanvas
       );
       
       if (canvasPreviewData) {

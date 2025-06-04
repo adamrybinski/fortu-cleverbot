@@ -5,6 +5,7 @@ import { CanvasPreviewData } from '@/components/chat/types';
 export const useCanvasPreview = () => {
   const [hasCanvasBeenTriggered, setHasCanvasBeenTriggered] = useState(false);
   const [pendingCanvasGuidance, setPendingCanvasGuidance] = useState<string | null>(null);
+  const [shouldAutoOpenCanvas, setShouldAutoOpenCanvas] = useState(false);
 
   const createCanvasPreviewData = (type: string, payload: Record<string, any>): CanvasPreviewData => {
     switch (type) {
@@ -32,12 +33,15 @@ export const useCanvasPreview = () => {
     agentUsed?: string, 
     readyForFortu?: boolean, 
     readyForMultiChallenge?: boolean,
-    refinedChallenge?: string
+    refinedChallenge?: string,
+    onTriggerCanvas?: (trigger: any) => void
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
     // Auto-trigger fortu questions search (simplified flow step 3)
     if (readyForFortu && agentUsed === 'prospect') {
+      console.log('Auto-triggering canvas for fortu questions search');
+      
       setPendingCanvasGuidance(
         "Perfect! I've found relevant questions and approaches from organisations that have tackled similar challenges.\n\n" +
         "**Your Next Step:**\n\n" +
@@ -45,11 +49,25 @@ export const useCanvasPreview = () => {
         "Take your time exploring the options and select the questions that best align with your goals."
       );
 
-      return createCanvasPreviewData('fortuQuestions', {
+      const canvasData = createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge,
         searchReady: true,
         timestamp: new Date().toISOString()
       });
+
+      // Auto-open the canvas instead of just showing preview
+      if (onTriggerCanvas) {
+        console.log('Auto-opening canvas for fortu questions');
+        setShouldAutoOpenCanvas(true);
+        setTimeout(() => {
+          onTriggerCanvas({
+            type: 'fortuQuestions',
+            payload: canvasData.payload
+          });
+        }, 100);
+      }
+
+      return canvasData;
     }
     
     // General canvas trigger (blank canvas only)
@@ -68,6 +86,8 @@ export const useCanvasPreview = () => {
     setHasCanvasBeenTriggered,
     pendingCanvasGuidance,
     setPendingCanvasGuidance,
+    shouldAutoOpenCanvas,
+    setShouldAutoOpenCanvas,
     createCanvasPreviewData,
     shouldCreateCanvasPreview
   };

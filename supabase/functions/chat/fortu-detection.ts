@@ -36,7 +36,13 @@ export function isReadyForFortuQuestions(
     lowerMessage.includes('looks good') ||
     (lowerMessage.length < 30 && !lowerMessage.includes('no'));
 
-  if (hasFortuSearchPromise && userConfirmedHDW) {
+  // Don't trigger if user is sending selected questions back from canvas
+  const isCanvasReturn = 
+    lowerMessage.includes('selected questions') ||
+    lowerMessage.includes('canvas for challenge refinement') ||
+    lowerMessage.includes('from the canvas');
+
+  if (hasFortuSearchPromise && userConfirmedHDW && !isCanvasReturn) {
     console.log('Auto-triggering fortu search after HDW confirmation');
     return true;
   }
@@ -62,25 +68,29 @@ export function isReadyForFortuInstanceGuidance(
     lowerResponse.includes('blended challenge');
 
   const hasInstanceOptions = 
-    lowerResponse.includes('option 1') ||
-    lowerResponse.includes('option 2') ||
-    lowerResponse.includes('option 3') ||
-    lowerResponse.includes('submit to your fortu.ai instance');
+    lowerResponse.includes('submit to your fortu.ai instance') ||
+    lowerResponse.includes('what to submit') ||
+    lowerResponse.includes('choose what to submit');
 
-  // User selects an option for instance creation
+  // User is responding to the refined challenge options (not initial canvas return)
   const userSelectsOption = 
-    lowerMessage.includes('option 1') ||
-    lowerMessage.includes('option 2') ||
-    lowerMessage.includes('option 3') ||
+    (lowerMessage.includes('option') && !lowerMessage.includes('canvas')) ||
     lowerMessage.includes('refined challenge') ||
-    lowerMessage.includes('selected questions') ||
-    lowerMessage.includes('both');
+    lowerMessage.includes('both') ||
+    lowerMessage.includes('submit');
+
+  // Don't trigger if this is the canvas return message (contains selected questions list)
+  const isCanvasReturn = 
+    lowerMessage.includes('canvas for challenge refinement') ||
+    lowerMessage.includes('• ') || // Contains bullet points from selected questions
+    lowerMessage.includes('selected these');
 
   console.log('- Response contains refined challenge:', hasRefinedChallenge);
   console.log('- Response contains instance options:', hasInstanceOptions);
   console.log('- User selects option:', userSelectsOption);
+  console.log('- Is canvas return:', isCanvasReturn);
 
-  const ready = hasRefinedChallenge && hasInstanceOptions && userSelectsOption;
+  const ready = hasRefinedChallenge && hasInstanceOptions && userSelectsOption && !isCanvasReturn;
   console.log('Ready for fortu.ai instance guidance:', ready);
   
   return ready;

@@ -50,7 +50,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     selectedAction,
     onClearSelectedQuestions,
     shouldCreateCanvasPreview,
-    setHasCanvasBeenTriggered
+    setHasCanvasBeenTriggered,
+    onTriggerCanvas
   });
 
   // Handle selected questions from canvas with different actions
