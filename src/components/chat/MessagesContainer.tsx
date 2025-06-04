@@ -44,7 +44,8 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
 
         {isLoading && <LoadingIndicator />}
 
-        <div ref={scrollRef} />
+        {/* Scroll target with proper bottom padding to ensure consistent bottom spacing */}
+        <div ref={scrollRef} className="h-20" />
       </div>
 
       {/* White overlay during transitions */}
