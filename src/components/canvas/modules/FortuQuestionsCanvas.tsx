@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -21,6 +22,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   onSendQuestionsToChat,
   challengeHistory
 }) => {
+  console.log('FortuQuestionsCanvas mounted with payload:', payload);
+  
   const {
     fortuQuestions,
     aiQuestions,
@@ -45,21 +48,46 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
   const refinedChallenge = payload?.refinedChallenge;
   const isSearchReady = payload?.searchReady;
+  
+  console.log('Extracted values:', {
+    refinedChallenge,
+    isSearchReady,
+    fortuQuestionsCount: fortuQuestions.length,
+    aiQuestionsCount: aiQuestions.length
+  });
 
   // Auto-generate when search is ready
   useEffect(() => {
+    console.log('useEffect triggered with:', {
+      isSearchReady,
+      refinedChallenge,
+      fortuQuestionsLength: fortuQuestions.length,
+      aiQuestionsLength: aiQuestions.length
+    });
+    
     if (isSearchReady && refinedChallenge && fortuQuestions.length === 0 && aiQuestions.length === 0) {
+      console.log('Conditions met, calling generateAllQuestions with:', refinedChallenge);
       generateAllQuestions(refinedChallenge);
+    } else {
+      console.log('Conditions not met for auto-generation:', {
+        isSearchReady: !!isSearchReady,
+        hasRefinedChallenge: !!refinedChallenge,
+        fortuQuestionsEmpty: fortuQuestions.length === 0,
+        aiQuestionsEmpty: aiQuestions.length === 0
+      });
     }
-  }, [isSearchReady, refinedChallenge]);
+  }, [isSearchReady, refinedChallenge, fortuQuestions.length, aiQuestions.length, generateAllQuestions]);
 
   const hasQuestions = fortuQuestions.length > 0 || aiQuestions.length > 0;
   const isLoading = isLoadingFortu || isLoadingAI;
   const selectedQuestions = getSelectedQuestions();
 
   const handleGenerateQuestions = () => {
+    console.log('Manual generation triggered with challenge:', refinedChallenge);
     if (refinedChallenge) {
       generateAllQuestions(refinedChallenge);
+    } else {
+      console.warn('No refined challenge available for manual generation');
     }
   };
 

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -30,13 +31,20 @@ export const useQuestionGeneration = () => {
   const generateFortuQuestions = async (refinedChallenge: string) => {
     if (!refinedChallenge) return [];
 
+    console.log('generateFortuQuestions called with:', refinedChallenge);
     setIsLoadingFortu(true);
     try {
+      console.log('Calling generate-fortu-questions edge function...');
       const { data: fortuData, error: fortuError } = await supabase.functions.invoke('generate-fortu-questions', {
         body: { refinedChallenge }
       });
 
-      if (fortuError) throw fortuError;
+      if (fortuError) {
+        console.error('Fortu function error:', fortuError);
+        throw fortuError;
+      }
+
+      console.log('Fortu function response:', fortuData);
 
       const questions: Question[] = (fortuData.questions || []).slice(0, 5).map((q: any, i: number) => ({
         ...q,
@@ -45,6 +53,7 @@ export const useQuestionGeneration = () => {
         selected: false
       }));
 
+      console.log('Processed fortu questions:', questions);
       setFortuQuestions(questions);
       return questions;
     } catch (err) {
@@ -58,8 +67,10 @@ export const useQuestionGeneration = () => {
   const generateAIQuestions = async (refinedChallenge: string, relatedQuestions: string[] = []) => {
     if (!refinedChallenge) return [];
 
+    console.log('generateAIQuestions called with:', { refinedChallenge, relatedQuestions });
     setIsLoadingAI(true);
     try {
+      console.log('Calling generate-ai-questions edge function...');
       const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
           refinedChallenge,
@@ -67,7 +78,12 @@ export const useQuestionGeneration = () => {
         }
       });
 
-      if (aiError) throw aiError;
+      if (aiError) {
+        console.error('AI function error:', aiError);
+        throw aiError;
+      }
+
+      console.log('AI function response:', aiData);
 
       const questions: Question[] = (aiData.questions || []).map((q: string, i: number) => ({
         id: `ai-${i}`,
@@ -77,6 +93,7 @@ export const useQuestionGeneration = () => {
         selected: false
       }));
 
+      console.log('Processed AI questions:', questions);
       setAiQuestions(questions);
       return questions;
     } catch (err) {
@@ -143,18 +160,25 @@ export const useQuestionGeneration = () => {
   };
 
   const generateAllQuestions = async (refinedChallenge: string) => {
-    if (!refinedChallenge) return;
+    if (!refinedChallenge) {
+      console.warn('generateAllQuestions called without refinedChallenge');
+      return;
+    }
 
+    console.log('generateAllQuestions called with:', refinedChallenge);
     setError(null);
 
     try {
       // Step 1: Generate fortu questions
+      console.log('Step 1: Generating fortu questions...');
       const fortuQs = await generateFortuQuestions(refinedChallenge);
       
       // Step 2: Generate AI questions based on fortu questions
+      console.log('Step 2: Generating AI questions...');
       const relatedQuestionsText = fortuQs.map(q => q.question);
       await generateAIQuestions(refinedChallenge, relatedQuestionsText);
 
+      console.log('All questions generated successfully');
     } catch (err) {
       console.error('Question generation error:', err);
       setError('Something went wrong while generating questions. Please try again.');
