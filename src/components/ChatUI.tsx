@@ -101,13 +101,17 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   }, [messages, shouldAutoScroll]);
 
-  // Disable auto-scroll when canvas state changes to prevent jumping
+  // Force scroll to bottom when canvas state changes
   useEffect(() => {
     setShouldAutoScroll(false);
-    // Re-enable auto-scroll after a brief delay to allow for canvas transition
+    
+    // Force scroll to bottom after a delay to ensure layout has settled
     const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
       setShouldAutoScroll(true);
-    }, 100);
+    }, 600); // Slightly longer than the 500ms transition duration
 
     return () => clearTimeout(timer);
   }, [isCanvasOpen]);
