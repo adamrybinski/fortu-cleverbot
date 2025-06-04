@@ -137,7 +137,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   }, [isCanvasOpen]);
 
   return (
-    <div className="flex flex-col flex-1 bg-white min-h-0">
+    <div className="flex flex-col h-full bg-white min-h-0">
       <ChatHeader 
         onOpenCanvas={onOpenCanvas}
         isCanvasOpen={isCanvasOpen}

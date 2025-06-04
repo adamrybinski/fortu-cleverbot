@@ -22,10 +22,10 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
   isTransitioning = false,
 }) => {
   return (
-    <div className="relative flex-1 min-h-0">
+    <div className="flex-1 min-h-0 relative">
       <div 
         ref={messagesContainerRef}
-        className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 transition-opacity duration-300 ${
+        className={`h-full overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 transition-opacity duration-300 ${
           isTransitioning ? 'opacity-0' : 'opacity-100'
         }`}
         id="chat-messages"
@@ -49,7 +49,7 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
 
       {/* White overlay during transitions */}
       {isTransitioning && (
-        <div className="absolute inset-0 bg-white flex items-center justify-center">
+        <div className="absolute inset-0 bg-white flex items-center justify-center z-10">
           <div className="w-6 h-6 border-2 border-[#753BBD] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
