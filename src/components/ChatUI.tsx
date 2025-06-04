@@ -1,19 +1,23 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData } from './chat/types';
+import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData, Question } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
 
 interface ExtendedChatUIProps extends ChatUIProps {
   isCanvasOpen?: boolean;
+  selectedQuestionsFromCanvas?: Question[];
+  onClearSelectedQuestions?: () => void;
 }
 
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
   onOpenCanvas, 
   onTriggerCanvas, 
-  isCanvasOpen 
+  isCanvasOpen,
+  selectedQuestionsFromCanvas = [],
+  onClearSelectedQuestions
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -114,12 +118,18 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       role: 'user',
       text: inputValue,
       timestamp: new Date(),
+      selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
     };
 
     setMessages(prev => [...prev, newMessage]);
     const currentInput = inputValue;
     setInputValue('');
     setIsLoading(true);
+
+    // Clear selected questions after sending
+    if (onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
+      onClearSelectedQuestions();
+    }
 
     try {
       const conversationHistory = messages.map(msg => ({
@@ -130,7 +140,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
           message: currentInput,
-          conversationHistory: conversationHistory
+          conversationHistory: conversationHistory,
+          selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined
         }
       });
 
