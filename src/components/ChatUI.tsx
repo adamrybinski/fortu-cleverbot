@@ -32,10 +32,12 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     },
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const previousMessagesLength = useRef(messages.length);
+  const savedScrollPosition = useRef<number>(0);
 
   const {
     hasCanvasBeenTriggered,
@@ -101,19 +103,37 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   }, [messages, shouldAutoScroll]);
 
-  // Force scroll to bottom when canvas state changes
+  // Handle canvas transition with scroll position preservation
   useEffect(() => {
-    setShouldAutoScroll(false);
-    
-    // Force scroll to bottom after a delay to ensure layout has settled
-    const timer = setTimeout(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
-      setShouldAutoScroll(true);
-    }, 600); // Slightly longer than the 500ms transition duration
+    if (isTransitioning) return; // Prevent multiple simultaneous transitions
 
-    return () => clearTimeout(timer);
+    // Capture current scroll position
+    if (messagesContainerRef.current) {
+      savedScrollPosition.current = messagesContainerRef.current.scrollTop;
+    }
+
+    // Start transition
+    setIsTransitioning(true);
+    setShouldAutoScroll(false);
+
+    // Phase 1: Show overlay (100ms)
+    const phase1Timer = setTimeout(() => {
+      // Canvas transition happens here (handled by CSS)
+    }, 100);
+
+    // Phase 2: Restore scroll position and hide overlay (500ms total)
+    const phase2Timer = setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = savedScrollPosition.current;
+      }
+      setIsTransitioning(false);
+      setShouldAutoScroll(true);
+    }, 500);
+
+    return () => {
+      clearTimeout(phase1Timer);
+      clearTimeout(phase2Timer);
+    };
   }, [isCanvasOpen]);
 
   return (
@@ -130,6 +150,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         messagesContainerRef={messagesContainerRef}
         scrollRef={scrollRef}
         onTriggerCanvas={onTriggerCanvas}
+        isTransitioning={isTransitioning}
       />
 
       <ChatInput
