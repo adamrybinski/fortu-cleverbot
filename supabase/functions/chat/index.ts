@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CLEVERBOT_SYSTEM_PROMPT, PROSPECT_AGENT_PROMPT } from './prompts/index.ts';
@@ -52,7 +51,7 @@ serve(async (req) => {
       }))
     ];
 
-    // Add selected questions context with action-specific guidance
+    // Add selected questions context with simplified action guidance
     if (selectedQuestions.length > 0 && selectedAction) {
       const selectedQuestionsText = selectedQuestions.map((q: any) => 
         `- ${q.question} (from ${q.source})`
@@ -60,23 +59,12 @@ serve(async (req) => {
       
       const themes = selectedQuestions.map((q: any) => q.source).join(', ');
       
-      let actionGuidance = '';
-      
-      switch (selectedAction) {
-        case 'refine':
-          actionGuidance = `The user has selected these questions for CHALLENGE REFINEMENT ONLY. Provide a detailed analysis of what these choices reveal about their priorities, create an ultra-refined challenge statement, and stop there. DO NOT suggest additional fortu.ai searches or mention canvas exploration. Focus solely on the refinement analysis and final challenge statement.`;
-          break;
-        case 'instance':
-          actionGuidance = `The user has selected these questions to SETUP A NEW FORTU.AI INSTANCE. Help them prepare these questions along with their original challenge for setting up a new fortu.ai instance. Provide guidance on how to structure the questions for their instance setup.`;
-          break;
-        case 'both':
-          actionGuidance = `The user wants BOTH refinement and instance setup. First, provide detailed analysis and ultra-refined challenge statement. Then, help them prepare everything for setting up a new fortu.ai instance with their refined challenge and selected questions.`;
-          break;
-      }
+      // Simplified action guidance for step 4
+      const actionGuidance = `The user has selected these questions from the canvas and wants to proceed to step 4. Create a refined challenge statement that blends their original challenge with insights from these selected questions. Then present the 3 options for what to submit to their fortu.ai instance: (1) refined challenge, (2) selected questions, or (3) both.`;
       
       messages.push({
         role: 'system',
-        content: `The user has returned from the canvas and selected the following questions:\n${selectedQuestionsText}\n\nUser's selected action: ${selectedAction}\n\n${actionGuidance}\n\nBased on their selections from ${themes}, provide analysis according to their chosen action.`
+        content: `The user has returned from the canvas and selected the following questions:\n${selectedQuestionsText}\n\nUser's selected action: ${selectedAction}\n\n${actionGuidance}\n\nBased on their selections from ${themes}, create the refined challenge and present the fortu.ai instance options.`
       });
     }
 
@@ -108,20 +96,13 @@ serve(async (req) => {
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
-    // For 'refine' action, don't trigger additional fortu searches
-    const blockFortuTrigger = selectedAction === 'refine';
-
-    // Check if the response indicates readiness for fortu questions (but block if refinement only)
-    const readyForFortu = !blockFortuTrigger && useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
+    // Simplified detection - only fortu questions and instance guidance
+    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
-    // Check if ready for fortu.ai instance guidance (Stage 6)
+    // Check if ready for fortu.ai instance guidance (step 4)
     const readyForFortuInstance = useProspectAgent && isReadyForFortuInstanceGuidance(aiResponse, conversationHistory, message);
     console.log('Ready for fortu.ai instance guidance:', readyForFortuInstance);
-
-    // Check if ready for multi-challenge exploration (Stage 7)
-    const readyForMultiChallenge = useProspectAgent && isReadyForMultiChallengeExploration(aiResponse, conversationHistory, message);
-    console.log('Ready for multi-challenge exploration:', readyForMultiChallenge);
 
     // Extract refined challenge if ready for fortu or instance guidance
     let refinedChallenge = '';
@@ -136,7 +117,7 @@ serve(async (req) => {
       agentUsed: useProspectAgent ? 'prospect' : 'general',
       readyForFortu: readyForFortu,
       readyForFortuInstance: readyForFortuInstance,
-      readyForMultiChallenge: readyForMultiChallenge,
+      readyForMultiChallenge: false, // Simplified flow - no multi-challenge
       refinedChallenge: refinedChallenge
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

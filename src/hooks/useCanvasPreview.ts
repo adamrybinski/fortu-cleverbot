@@ -12,14 +12,7 @@ export const useCanvasPreview = () => {
         return {
           type: 'fortuQuestions',
           title: 'fortu.ai Question Search',
-          description: 'Discover relevant questions and insights from our database of business challenges. Explore proven approaches to your refined challenge.',
-          payload
-        };
-      case 'challengeHistory':
-        return {
-          type: 'challengeHistory',
-          title: 'Challenge History',
-          description: 'Your challenge workspace. Start a new challenge while preserving your previous work, or explore remaining questions from your current challenge.',
+          description: 'Discover relevant questions and insights from our database of business challenges. Select the most relevant ones to refine your challenge.',
           payload
         };
       case 'blank':
@@ -43,29 +36,15 @@ export const useCanvasPreview = () => {
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // New challenge creation trigger (preserve current challenge)
-    if (readyForMultiChallenge && agentUsed === 'prospect') {
+    // Auto-trigger fortu questions search (simplified flow step 3)
+    if (readyForFortu && agentUsed === 'prospect') {
       setPendingCanvasGuidance(
-        "Perfect! I've saved your current challenge and opened your challenge workspace.\n\n" +
-        "**Your Options:**\n\n" +
-        "**📝 Start New Challenge**\n" +
-        "- Begin with a completely different business challenge\n" +
-        "- Your previous challenge will remain accessible in the history\n\n" +
-        "**🔍 Continue Previous Work**\n" +
-        "- Access your saved challenges and their refined questions\n" +
-        "- Review and build upon your previous explorations\n\n" +
-        "Choose how you'd like to proceed with your challenge exploration!"
+        "Perfect! I've found relevant questions and approaches from organisations that have tackled similar challenges.\n\n" +
+        "**Your Next Step:**\n\n" +
+        "Browse through the matched questions from fortu.ai and AI suggestions. Select the ones that resonate most with your situation - these will help me create a refined, ultra-specific challenge statement for your fortu.ai instance.\n\n" +
+        "Take your time exploring the options and select the questions that best align with your goals."
       );
 
-      return createCanvasPreviewData('challengeHistory', {
-        newChallengeMode: true,
-        currentChallenge: refinedChallenge,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Question matching trigger (user explicitly requested)
-    if (readyForFortu && agentUsed === 'prospect') {
       return createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge,
         searchReady: true,

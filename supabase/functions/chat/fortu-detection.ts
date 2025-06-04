@@ -1,118 +1,149 @@
 
-export const isReadyForFortuQuestions = (
-  response: string,
-  conversationHistory: any[],
+// Simplified detection functions for the 4-step flow
+
+export function isReadyForFortuQuestions(
+  response: string, 
+  conversationHistory: any[], 
   userMessage: string
-): boolean => {
+): boolean {
+  const lowerResponse = response.toLowerCase();
+  const lowerMessage = userMessage.toLowerCase();
+  
   console.log('Checking readiness for fortu questions:');
   console.log('- Conversation history length:', conversationHistory.length);
-  console.log('- Bot response contains fortu search promise:', response.toLowerCase().includes('search fortu') || response.toLowerCase().includes('checking our database'));
-  console.log('- User message:', userMessage.toLowerCase());
+  console.log('- User message:', userMessage);
+  console.log('- Bot response contains fortu search promise:', 
+    lowerResponse.includes('search fortu') || 
+    lowerResponse.includes('find organisations') || 
+    lowerResponse.includes('searching our database')
+  );
 
-  // Check if user explicitly requested question matching
-  const userRequestsMatching = userMessage.toLowerCase().includes('match questions') || 
-                               userMessage.toLowerCase().includes('search fortu') || 
-                               userMessage.toLowerCase().includes('find similar') || 
-                               userMessage.toLowerCase().includes('show examples') ||
-                               userMessage.toLowerCase().includes('option 1') ||
-                               (userMessage.toLowerCase() === 'yes' && response.toLowerCase().includes('search fortu'));
+  // Auto-trigger after HDW confirmation - look for automatic search promises
+  const hasFortuSearchPromise = 
+    lowerResponse.includes('search fortu') ||
+    lowerResponse.includes('find organisations') ||
+    lowerResponse.includes('searching our database') ||
+    lowerResponse.includes('let me search') ||
+    lowerResponse.includes('i\'ll find');
 
-  // Bot actively promises to search fortu.ai
-  const botPromisesFortuSearch = response.toLowerCase().includes('search fortu') || 
-                                response.toLowerCase().includes('checking our database') ||
-                                response.toLowerCase().includes('let me check fortu') ||
-                                response.toLowerCase().includes('found some relevant');
+  // User confirmed HDW question (simple yes/no or confirmation)
+  const userConfirmedHDW = 
+    lowerMessage.includes('yes') ||
+    lowerMessage.includes('correct') ||
+    lowerMessage.includes('right') ||
+    lowerMessage.includes('accurate') ||
+    lowerMessage.includes('that works') ||
+    lowerMessage.includes('looks good') ||
+    (lowerMessage.length < 30 && !lowerMessage.includes('no'));
 
-  // If bot promises fortu search AND user has requested it, trigger regardless of exchange count
-  if (botPromisesFortuSearch && userRequestsMatching) {
-    console.log('User explicitly requested question matching and bot promises fortu search - triggering');
+  if (hasFortuSearchPromise && userConfirmedHDW) {
+    console.log('Auto-triggering fortu search after HDW confirmation');
     return true;
   }
 
-  console.log('Final readiness decision:', false);
+  console.log('Ready for fortu questions:', false);
   return false;
-};
+}
 
-export const isReadyForFortuInstanceGuidance = (
+export function isReadyForFortuInstanceGuidance(
   response: string,
   conversationHistory: any[],
   userMessage: string
-): boolean => {
+): boolean {
+  const lowerResponse = response.toLowerCase();
+  const lowerMessage = userMessage.toLowerCase();
+  
   console.log('Checking readiness for fortu.ai instance guidance:');
   
-  // Check if user explicitly requested instance creation
-  const userRequestsInstance = userMessage.toLowerCase().includes('create instance') ||
-                              userMessage.toLowerCase().includes('setup fortu') ||
-                              userMessage.toLowerCase().includes('take to fortu') ||
-                              userMessage.toLowerCase().includes('option 2') ||
-                              userMessage.toLowerCase().includes('ready for action');
+  // Check if response contains refined challenge and instance options
+  const hasRefinedChallenge = 
+    lowerResponse.includes('refined challenge') ||
+    lowerResponse.includes('here\'s your refined') ||
+    lowerResponse.includes('blended challenge');
 
-  // Check if response contains ultra-refinement completion signals
-  const responseContainsUltraRefinement = response.toLowerCase().includes('ultra-refined') ||
-                                         response.toLowerCase().includes('based on your selections') ||
-                                         response.toLowerCase().includes('refined challenge') ||
-                                         response.toLowerCase().includes('crystal-clear challenge');
+  const hasInstanceOptions = 
+    lowerResponse.includes('option 1') ||
+    lowerResponse.includes('option 2') ||
+    lowerResponse.includes('option 3') ||
+    lowerResponse.includes('submit to your fortu.ai instance');
 
-  console.log('- Response contains ultra-refinement completion signals:', responseContainsUltraRefinement);
-  console.log('- User requests instance creation:', userRequestsInstance);
+  // User selects an option for instance creation
+  const userSelectsOption = 
+    lowerMessage.includes('option 1') ||
+    lowerMessage.includes('option 2') ||
+    lowerMessage.includes('option 3') ||
+    lowerMessage.includes('refined challenge') ||
+    lowerMessage.includes('selected questions') ||
+    lowerMessage.includes('both');
 
-  const isReady = responseContainsUltraRefinement && userRequestsInstance;
-  console.log('Ready for fortu.ai instance guidance:', isReady);
+  console.log('- Response contains refined challenge:', hasRefinedChallenge);
+  console.log('- Response contains instance options:', hasInstanceOptions);
+  console.log('- User selects option:', userSelectsOption);
+
+  const ready = hasRefinedChallenge && hasInstanceOptions && userSelectsOption;
+  console.log('Ready for fortu.ai instance guidance:', ready);
   
-  return isReady;
-};
+  return ready;
+}
 
-export const isReadyForMultiChallengeExploration = (
+// Simplified - no multi-challenge complexity
+export function isReadyForMultiChallengeExploration(
   response: string,
   conversationHistory: any[],
   userMessage: string
-): boolean => {
-  console.log('Checking readiness for multi-challenge exploration:');
+): boolean {
+  console.log('Multi-challenge exploration disabled in simplified flow');
+  return false;
+}
+
+export function extractRefinedChallenge(conversationHistory: any[], currentResponse: string): string {
+  const lowerResponse = currentResponse.toLowerCase();
   
-  // Check if user explicitly requested new challenge
-  const userRequestsNewChallenge = userMessage.toLowerCase().includes('new challenge') ||
-                                  userMessage.toLowerCase().includes('different challenge') ||
-                                  userMessage.toLowerCase().includes('start fresh') ||
-                                  userMessage.toLowerCase().includes('another question') ||
-                                  userMessage.toLowerCase().includes('option 4');
-
-  // Check if this follows fortu.ai instance guidance completion
-  const followsInstanceGuidance = response.toLowerCase().includes('take this refined question') ||
-                                 response.toLowerCase().includes('fortu.ai instance') ||
-                                 response.toLowerCase().includes('crystal-clear challenge');
-
-  console.log('- Looking for new challenge request:', userRequestsNewChallenge);
-  console.log('- Follows instance guidance:', followsInstanceGuidance);
-
-  const isReady = userRequestsNewChallenge || (followsInstanceGuidance && userRequestsNewChallenge);
-  console.log('Ready for multi-challenge exploration:', isReady);
+  // Look for refined challenge in current response
+  const refinedChallengeMarkers = [
+    'here\'s your refined challenge:',
+    'refined challenge statement:',
+    'blended challenge:',
+    'your refined challenge:'
+  ];
   
-  return isReady;
-};
-
-export const extractRefinedChallenge = (conversationHistory: any[], currentResponse: string): string => {
-  // Look for "How do we..." patterns in the current response and conversation
-  const howDoWePattern = /How do we ([^?]+)\?/i;
-  
-  // First check current response
-  const currentMatch = currentResponse.match(howDoWePattern);
-  if (currentMatch) {
-    return currentMatch[0];
+  for (const marker of refinedChallengeMarkers) {
+    const markerIndex = lowerResponse.indexOf(marker);
+    if (markerIndex !== -1) {
+      const afterMarker = currentResponse.substring(markerIndex + marker.length);
+      const lines = afterMarker.split('\n');
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('"') && trimmed.includes('How do we')) {
+          const extracted = trimmed.replace(/^"/, '').replace(/"$/, '').trim();
+          console.log('Extracted refined challenge:', extracted);
+          return extracted;
+        }
+      }
+    }
   }
   
-  // Then check recent conversation history (last 3 exchanges)
-  const recentHistory = conversationHistory.slice(-6); // Last 3 exchanges (user + bot pairs)
+  // Fallback: look for any "How do we" question in the response
+  const howDoWeMatch = currentResponse.match(/How do we[^?]+\?/);
+  if (howDoWeMatch) {
+    const extracted = howDoWeMatch[0];
+    console.log('Extracted refined challenge (fallback):', extracted);
+    return extracted;
+  }
   
-  for (let i = recentHistory.length - 1; i >= 0; i--) {
-    const message = recentHistory[i];
-    if (message.role === 'assistant' || message.role === 'bot') {
-      const match = message.text.match(howDoWePattern);
-      if (match) {
-        console.log('Extracted refined challenge:', match[0]);
-        return match[0];
+  // Final fallback: look in conversation history for the latest HDW question
+  for (let i = conversationHistory.length - 1; i >= 0; i--) {
+    const msg = conversationHistory[i];
+    if (msg.role === 'assistant' && msg.text.includes('How do we')) {
+      const howDoWeMatch = msg.text.match(/How do we[^?]+\?/);
+      if (howDoWeMatch) {
+        const extracted = howDoWeMatch[0];
+        console.log('Extracted refined challenge (history fallback):', extracted);
+        return extracted;
       }
     }
   }
   
   return '';
-};
+}
