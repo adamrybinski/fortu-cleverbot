@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
 
 // ShineBorder Component optimized for Lovable
@@ -101,9 +103,11 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
           </Button>
         )}
       </div>
-      {/* Canvas Content Area */}
-      <div className="flex-1 w-full overflow-hidden">
-        <CanvasModule trigger={trigger} />
+      {/* Canvas Content Area with ScrollArea */}
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="h-full w-full">
+          <CanvasModule trigger={trigger} />
+        </ScrollArea>
       </div>
     </div>
   );
