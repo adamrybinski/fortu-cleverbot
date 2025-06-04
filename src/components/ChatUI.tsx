@@ -30,8 +30,35 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasCanvasBeenTriggered, setHasCanvasBeenTriggered] = useState(false);
+  const [pendingCanvasGuidance, setPendingCanvasGuidance] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handle selected questions from canvas
+  useEffect(() => {
+    if (selectedQuestionsFromCanvas.length > 0) {
+      const questionsList = selectedQuestionsFromCanvas.map(q => `• ${q.question}`).join('\n');
+      const autoMessage = `I've selected these ${selectedQuestionsFromCanvas.length} questions from the canvas that seem most relevant to my challenge:\n\n${questionsList}\n\nCan you help me refine my challenge further based on these selections?`;
+      
+      // Auto-send the message
+      handleSendMessage(autoMessage, true);
+    }
+  }, [selectedQuestionsFromCanvas]);
+
+  // Handle canvas guidance when canvas opens
+  useEffect(() => {
+    if (isCanvasOpen && pendingCanvasGuidance) {
+      const guidanceMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        text: pendingCanvasGuidance,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, guidanceMessage]);
+      setPendingCanvasGuidance(null);
+    }
+  }, [isCanvasOpen, pendingCanvasGuidance]);
 
   const createCanvasPreviewData = (type: string, payload: Record<string, any>): CanvasPreviewData => {
     switch (type) {
@@ -65,6 +92,16 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     
     // Primary trigger: Prospect Agent indicates readiness AND user has confirmed
     if (readyForFortu && agentUsed === 'prospect') {
+      // Set guidance message for when canvas opens
+      setPendingCanvasGuidance(
+        "Perfect! I've opened the fortu.ai question search for you. You'll see questions matched from our database and AI-generated suggestions.\n\n" +
+        "To refine your challenge further:\n" +
+        "1. **Click on any question** to read a detailed summary and insights\n" +
+        "2. **Select multiple questions** by clicking 'Select Questions' button\n" +
+        "3. **Send selected questions back to me** to refine your challenge based on what resonates\n\n" +
+        "Explore the questions and let me know which ones catch your attention!"
+      );
+
       return createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge || message,
         challengeContext: 'user_confirmed',
@@ -110,24 +147,26 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     return null;
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = async (messageText?: string, isAutoMessage = false) => {
+    const textToSend = messageText || inputValue;
+    if (!textToSend.trim() || isLoading) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      text: inputValue,
+      text: textToSend,
       timestamp: new Date(),
-      selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
+      selectedQuestions: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
     };
 
     setMessages(prev => [...prev, newMessage]);
-    const currentInput = inputValue;
-    setInputValue('');
+    if (!isAutoMessage) {
+      setInputValue('');
+    }
     setIsLoading(true);
 
-    // Clear selected questions after sending
-    if (onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
+    // Clear selected questions after sending (only for manual messages)
+    if (!isAutoMessage && onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
       onClearSelectedQuestions();
     }
 
@@ -139,7 +178,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
-          message: currentInput,
+          message: textToSend,
           conversationHistory: conversationHistory,
           selectedQuestions: selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined
         }
@@ -158,7 +197,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
       // Check if we should create a canvas preview
       const canvasPreviewData = shouldCreateCanvasPreview(
-        currentInput, 
+        textToSend, 
         agentUsed, 
         readyForFortu, 
         refinedChallenge
@@ -233,7 +272,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         inputValue={inputValue}
         isLoading={isLoading}
         onInputChange={setInputValue}
-        onSendMessage={handleSendMessage}
+        onSendMessage={() => handleSendMessage()}
         onKeyPress={handleKeyPress}
       />
     </div>

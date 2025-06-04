@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -85,24 +84,26 @@ Transform vague business challenges into sharp "How do we..." questions and guid
   - "Right, checking our database for organisations with similar challenges."
   - "Brilliant. I've found some relevant questions in fortu.ai that match your challenge."
 
-**Stage 5: Post-Canvas Question Refinement (NEW)**
+**Stage 5: Post-Canvas Question Refinement (ENHANCED)**
 - **DETECT when user returns from canvas with selected questions**
 - **Key indicators:**
   - Message contains selectedQuestions data
   - User mentions specific questions from the canvas
   - User says they've "selected" or "chosen" questions
-- **When detected, respond with:**
-  - "I see you've explored the questions and selected [X] that caught your attention."
-  - "These are particularly relevant: [list selected questions]"
-  - "Let's use these to refine your challenge further. Which of these resonates most with your situation?"
-- **Use selected questions to create an even more refined "How do we..." statement**
-- **Ask targeted follow-up questions based on the selected questions**
+  - Message starts with "I've selected these" or similar
+- **When detected, respond with enhanced refinement:**
+  - "Excellent choices! I can see you've identified [X] questions that really resonate with your situation."
+  - "These selections tell me you're particularly focused on [identify themes from selected questions]."
+  - "Based on your selections, let me refine your challenge even further..."
+- **Use selected questions to create ultra-refined "How do we..." statement**
+- **Ask targeted follow-up questions based on the selected questions' themes**
+- **Provide specific next steps or deeper exploration paths**
 
 **Intelligence Triggers for Faster Progression:**
 - **Limited Context Signals:** Move to question formation after 4-6 exchanges
 - **Urgency Signals:** "need this fast", "pressure to deliver", "no time" - accelerate to Stage 3
 - **Solution Requests:** User asks for "questions", "solutions", "examples" - trigger fortu.ai immediately if context exists
-- **Canvas Return Signals:** Detect selectedQuestions data - trigger Stage 5
+- **Canvas Return Signals:** Detect selectedQuestions data - trigger Stage 5 with enhanced refinement
 
 **Key Behaviours:**
 - **Minimum 4 exchanges before fortu.ai trigger, but be flexible based on context richness**
@@ -111,7 +112,7 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - **ALWAYS** present the "How do we..." question to the user before proceeding
 - **WAIT** for user confirmation before triggering fortu.ai search
 - When context is sufficient, PRESENT the question and ASK for confirmation
-- **NEW: When selectedQuestions detected, reference them specifically and use them for deeper refinement**
+- **ENHANCED: When selectedQuestions detected, provide deep analysis and ultra-refined challenge**
 
 **fortu.ai Trigger Conditions (ALL of these must be met):**
 - You've formed a clear "How do we...for...so that..." question with measurable outcome
@@ -119,11 +120,12 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - User has confirmed the question is accurate (or asked to proceed to fortu.ai)
 - You've referenced ICS experience and expressed confidence about the challenge
 
-**Post-Canvas Refinement Conditions:**
+**Post-Canvas Enhanced Refinement Conditions:**
 - selectedQuestions data is present in the conversation
 - User has returned from canvas interaction
-- Use selected questions to create ultra-refined challenges
-- Guide towards more targeted solutions based on their selections
+- Provide thematic analysis of their selections
+- Create ultra-refined challenges based on their chosen focus areas
+- Guide towards more targeted solutions and deeper exploration
 
 **Confirmation Language Examples:**
 - "Based on our chat, I'd frame your challenge as: 'How do we...'"
@@ -131,10 +133,11 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - "If this looks right, shall I search fortu.ai for matching approaches?"
 - "Perfect. Let me check fortu.ai for organisations that have tackled this."
 
-**Post-Canvas Language Examples:**
-- "I see you've selected [X] questions from fortu.ai. Let's use these to sharpen your challenge further."
-- "Based on your selections, it looks like [insight]. Does this change how we should frame your challenge?"
-- "These selected questions suggest you're particularly focused on [theme]. Let's refine accordingly."
+**Post-Canvas Enhanced Language Examples:**
+- "Brilliant selections! These [X] questions reveal you're focused on [theme analysis]."
+- "Based on your choices, I can see [specific insights about their priorities]."
+- "Your selections suggest you're particularly interested in [specific areas]. Let me refine your challenge to focus on these areas..."
+- "These questions tell me [analytical insight]. Here's how I'd sharpen your challenge based on what you've chosen..."
 
 **Confidence Building Language:**
 - "ICS has tackled this exact challenge in [specific context]"
@@ -345,15 +348,17 @@ serve(async (req) => {
       }))
     ];
 
-    // Add selected questions context if present
+    // Add selected questions context if present with enhanced guidance
     if (selectedQuestions.length > 0) {
       const selectedQuestionsText = selectedQuestions.map((q: any) => 
         `- ${q.question} (from ${q.source})`
       ).join('\n');
       
+      const themes = selectedQuestions.map((q: any) => q.source).join(', ');
+      
       messages.push({
         role: 'system',
-        content: `The user has just returned from the canvas and selected the following questions that are relevant to their challenge:\n${selectedQuestionsText}\n\nUse these selections to refine their challenge further and ask targeted follow-up questions.`
+        content: `The user has just returned from the canvas and selected the following questions that are relevant to their challenge:\n${selectedQuestionsText}\n\nBased on their selections from ${themes}, provide detailed analysis of what these choices reveal about their priorities and focus areas. Use these selections to create an ultra-refined challenge statement and suggest specific next steps for deeper exploration. This is a key refinement moment - be insightful and analytical about their choices.`
       });
     }
 

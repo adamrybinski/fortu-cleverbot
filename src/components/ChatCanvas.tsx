@@ -24,8 +24,15 @@ export const ChatCanvas: React.FC = () => {
   };
 
   const handleSendQuestionsToChat = (questions: Question[]) => {
+    console.log('Sending questions to chat:', questions);
     setSelectedQuestionsFromCanvas(questions);
+    // Switch to chat view on mobile after sending questions
     setActiveView('chat');
+  };
+
+  const handleClearSelectedQuestions = () => {
+    console.log('Clearing selected questions');
+    setSelectedQuestionsFromCanvas([]);
   };
 
   // Check if mobile viewport
@@ -49,6 +56,11 @@ export const ChatCanvas: React.FC = () => {
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat
+              {selectedQuestionsFromCanvas.length > 0 && (
+                <span className="ml-1 bg-[#6EFFC6] text-[#003079] rounded-full px-2 py-0.5 text-xs font-medium">
+                  {selectedQuestionsFromCanvas.length}
+                </span>
+              )}
             </Button>
             <Button
               onClick={() => setActiveView('canvas')}
@@ -84,7 +96,7 @@ export const ChatCanvas: React.FC = () => {
               onTriggerCanvas={triggerCanvas}
               isCanvasOpen={isCanvasOpen}
               selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
-              onClearSelectedQuestions={() => setSelectedQuestionsFromCanvas([])}
+              onClearSelectedQuestions={handleClearSelectedQuestions}
             />
           </div>
 
