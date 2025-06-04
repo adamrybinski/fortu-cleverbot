@@ -36,6 +36,24 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
     }
   };
 
+  const getCanvasTitle = () => {
+    switch (canvasData.type) {
+      case 'fortuQuestions':
+        return 'Question Search added to Canvas';
+      default:
+        return canvasData.title;
+    }
+  };
+
+  const getCanvasDescription = () => {
+    switch (canvasData.type) {
+      case 'fortuQuestions':
+        return 'Browse relevant questions and select the ones that best match your challenge.';
+      default:
+        return canvasData.description;
+    }
+  };
+
   return (
     <div className={`mt-3 p-3 rounded-lg border ${getCanvasColor()} transition-all hover:shadow-sm`}>
       <div className="flex items-start gap-3">
@@ -46,37 +64,16 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-[#003079] text-sm mb-1">{canvasData.title}</h4>
-          <p className="text-[#1D253A]/70 text-xs leading-relaxed mb-2">{canvasData.description}</p>
+          <h4 className="font-medium text-[#003079] text-sm mb-1">{getCanvasTitle()}</h4>
+          <p className="text-[#1D253A]/70 text-xs leading-relaxed mb-2">{getCanvasDescription()}</p>
           
-          {/* Enhanced info for Challenge Mapping */}
+          {/* Enhanced info for Challenge Mapping only */}
           {canvasData.type === 'challengeMapping' && canvasData.payload?.originalChallenge && (
             <div className="bg-white/60 rounded p-2 text-xs text-[#1D253A]/80 mb-2">
               <span className="font-medium">Working on: </span>
               <span className="line-clamp-2">{canvasData.payload.originalChallenge}</span>
               {canvasData.payload.refinementStage === 'early' && (
                 <div className="mt-1 text-[#753BBD] font-medium">• Challenge refinement in progress</div>
-              )}
-            </div>
-          )}
-          
-          {/* Enhanced info for Fortune Questions */}
-          {canvasData.type === 'fortuQuestions' && (
-            <div className="bg-white/60 rounded p-2 text-xs text-[#1D253A]/80 mb-2">
-              {canvasData.payload?.searchReady ? (
-                <>
-                  <span className="font-medium text-[#753BBD]">✓ Search Ready: </span>
-                  <span className="line-clamp-2">{canvasData.payload.refinedChallenge}</span>
-                  <div className="mt-1 text-[#753BBD] font-medium">• Matching questions available</div>
-                </>
-              ) : canvasData.payload?.challengeSummary ? (
-                <>
-                  <span className="font-medium">Challenge: </span>
-                  <span className="line-clamp-2">{canvasData.payload.challengeSummary}</span>
-                  <div className="mt-1 text-[#1D253A]/60">• Complete refinement to unlock search</div>
-                </>
-              ) : (
-                <div className="text-[#1D253A]/60">• Fortune questions module ready</div>
               )}
             </div>
           )}

@@ -34,6 +34,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const [inputValue, setInputValue] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const previousMessagesLength = useRef(messages.length);
 
   const {
     hasCanvasBeenTriggered,
@@ -89,11 +91,26 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setInputValue('');
   };
 
+  // Only auto-scroll when new messages are added, not when canvas state changes
   useEffect(() => {
-    if (scrollRef.current) {
+    const hasNewMessages = messages.length > previousMessagesLength.current;
+    previousMessagesLength.current = messages.length;
+
+    if (hasNewMessages && shouldAutoScroll && scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, shouldAutoScroll]);
+
+  // Disable auto-scroll when canvas state changes to prevent jumping
+  useEffect(() => {
+    setShouldAutoScroll(false);
+    // Re-enable auto-scroll after a brief delay to allow for canvas transition
+    const timer = setTimeout(() => {
+      setShouldAutoScroll(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isCanvasOpen]);
 
   return (
     <div className="flex flex-col flex-1 bg-white min-h-0">
