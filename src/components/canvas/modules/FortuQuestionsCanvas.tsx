@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, Sparkles, Database, Bot } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FortuQuestionsCanvasProps {
@@ -38,66 +38,101 @@ const getStatusColor = (status: string) => {
 };
 
 export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payload }) => {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [fortuQuestions, setFortuQuestions] = useState<Question[]>([]);
+  const [aiQuestions, setAiQuestions] = useState<Question[]>([]);
+  const [isLoadingFortu, setIsLoadingFortu] = useState(false);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refinedChallenge = payload?.refinedChallenge;
   const isSearchReady = payload?.searchReady;
 
-  const generateQuestions = async () => {
-    if (!refinedChallenge) return;
+  const generateFortuQuestions = async () => {
+    if (!refinedChallenge) return [];
 
-    setIsLoading(true);
-    setError(null);
-
+    setIsLoadingFortu(true);
     try {
-      // Step 1: Fetch top 5 Fortu questions
       const { data: fortuData, error: fortuError } = await supabase.functions.invoke('generate-fortu-questions', {
         body: { refinedChallenge }
       });
 
       if (fortuError) throw fortuError;
 
-      const fortuQuestions: Question[] = (fortuData.questions || []).slice(0, 5).map((q: any, i: number) => ({
+      const questions: Question[] = (fortuData.questions || []).slice(0, 5).map((q: any, i: number) => ({
         ...q,
         id: `fortu-${i}`,
         source: 'fortu'
       }));
 
-      // Step 2: Generate 3 OpenAI questions based on Fortu + challenge
+      setFortuQuestions(questions);
+      return questions;
+    } catch (err) {
+      console.error('Fortu question generation error:', err);
+      throw err;
+    } finally {
+      setIsLoadingFortu(false);
+    }
+  };
+
+  const generateAIQuestions = async (relatedQuestions: string[] = []) => {
+    if (!refinedChallenge) return [];
+
+    setIsLoadingAI(true);
+    try {
       const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
           refinedChallenge,
-          relatedQuestions: fortuQuestions.map(q => q.question)
+          relatedQuestions
         }
       });
 
       if (aiError) throw aiError;
 
-      const aiQuestions: Question[] = (aiData.questions || []).map((q: string, i: number) => ({
+      const questions: Question[] = (aiData.questions || []).map((q: string, i: number) => ({
         id: `ai-${i}`,
         question: q,
         source: 'openai',
         status: 'AI'
       }));
 
-      // Merge and update
-      setQuestions([...fortuQuestions, ...aiQuestions]);
+      setAiQuestions(questions);
+      return questions;
+    } catch (err) {
+      console.error('AI question generation error:', err);
+      throw err;
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+  const generateAllQuestions = async () => {
+    if (!refinedChallenge) return;
+
+    setError(null);
+
+    try {
+      // Step 1: Generate fortu questions
+      const fortuQs = await generateFortuQuestions();
+      
+      // Step 2: Generate AI questions based on fortu questions
+      const relatedQuestionsText = fortuQs.map(q => q.question);
+      await generateAIQuestions(relatedQuestionsText);
 
     } catch (err) {
       console.error('Question generation error:', err);
       setError('Something went wrong while generating questions. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  // Auto-generate when search is ready
   useEffect(() => {
-    if (isSearchReady && refinedChallenge && questions.length === 0) {
-      generateQuestions();
+    if (isSearchReady && refinedChallenge && fortuQuestions.length === 0 && aiQuestions.length === 0) {
+      generateAllQuestions();
     }
   }, [isSearchReady, refinedChallenge]);
+
+  const hasQuestions = fortuQuestions.length > 0 || aiQuestions.length > 0;
+  const isLoading = isLoadingFortu || isLoadingAI;
 
   return (
     <div className="w-full h-full p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3]">
@@ -116,37 +151,39 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
           )}
         </div>
 
-        {/* Generate Button */}
-        <div className="mb-6">
-          <Button
-            onClick={generateQuestions}
-            disabled={isLoading || !refinedChallenge}
-            className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating Questions...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate Questions
-              </>
-            )}
-          </Button>
-          {questions.length > 0 && (
+        {/* Generate Button - only show if not auto-triggered */}
+        {!isSearchReady && (
+          <div className="mb-6">
             <Button
-              onClick={generateQuestions}
-              disabled={isLoading}
-              variant="outline"
-              className="ml-2 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+              onClick={generateAllQuestions}
+              disabled={isLoading || !refinedChallenge}
+              className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Questions...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Questions
+                </>
+              )}
             </Button>
-          )}
-        </div>
+            {hasQuestions && (
+              <Button
+                onClick={generateAllQuestions}
+                disabled={isLoading}
+                variant="outline"
+                className="ml-2 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -155,58 +192,114 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
           </div>
         )}
 
-        {/* Questions Display */}
-        {questions.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-[#003079] mb-4">
-              Related Questions ({questions.length})
+        {/* Section 1: Matched Questions from fortu.ai */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Database className="w-5 h-5 text-[#003079]" />
+            <h2 className="text-xl font-semibold text-[#003079]">
+              Matched Questions from fortu.ai
             </h2>
-            {questions.map((question) => (
-              <div key={question.id} className="bg-white/70 p-4 rounded-lg border border-[#6EFFC6]/30 hover:bg-white/90 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-medium text-[#003079] flex-1 mr-4">
-                    {question.question}
-                  </h3>
-                  {question.status && (
-                    <Badge 
-                      variant="outline" 
-                      className={getStatusColor(question.status)}
-                    >
-                      {question.status}
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  {question.context && (
-                    <p className="text-sm text-[#1D253A]/70">
-                      <span className="font-medium">Context:</span> {question.context}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center gap-4 text-sm text-[#1D253A]/60">
-                    {question.relevance && (
-                      <span>Relevance: {question.relevance}%</span>
+            {isLoadingFortu && (
+              <Loader2 className="w-4 h-4 animate-spin text-[#753BBD]" />
+            )}
+          </div>
+          
+          {fortuQuestions.length > 0 ? (
+            <div className="space-y-4">
+              {fortuQuestions.map((question) => (
+                <div key={question.id} className="bg-white/70 p-4 rounded-lg border border-[#6EFFC6]/30 hover:bg-white/90 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-medium text-[#003079] flex-1 mr-4">
+                      {question.question}
+                    </h3>
+                    {question.status && (
+                      <Badge 
+                        variant="outline" 
+                        className={getStatusColor(question.status)}
+                      >
+                        {question.status}
+                      </Badge>
                     )}
-                    {question.organisations && (
-                      <span>{question.organisations} organisations</span>
-                    )}
-                    <span className="capitalize">{question.source}</span>
                   </div>
                   
-                  {question.insights && (
-                    <p className="text-sm text-[#753BBD] font-medium">
-                      {question.insights}
-                    </p>
-                  )}
+                  <div className="space-y-2">
+                    {question.context && (
+                      <p className="text-sm text-[#1D253A]/70">
+                        <span className="font-medium">Context:</span> {question.context}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center gap-4 text-sm text-[#1D253A]/60">
+                      {question.relevance && (
+                        <span>Relevance: {question.relevance}%</span>
+                      )}
+                      {question.organisations && (
+                        <span>{question.organisations} organisations</span>
+                      )}
+                      <span className="capitalize">fortu.ai</span>
+                    </div>
+                    
+                    {question.insights && (
+                      <p className="text-sm text-[#003079] font-medium">
+                        {question.insights}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : !isLoadingFortu && (
+            <div className="text-center py-8 text-[#1D253A]/60">
+              <Database className="w-12 h-12 mx-auto mb-2 text-[#6EFFC6]" />
+              <p>No fortu.ai questions generated yet</p>
+            </div>
+          )}
+        </div>
 
-        {/* Empty State */}
-        {!isLoading && questions.length === 0 && !error && (
+        {/* Section 2: Suggested Questions from CleverBot */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Bot className="w-5 h-5 text-[#753BBD]" />
+            <h2 className="text-xl font-semibold text-[#003079]">
+              Suggested Questions from CleverBot
+            </h2>
+            {isLoadingAI && (
+              <Loader2 className="w-4 h-4 animate-spin text-[#753BBD]" />
+            )}
+          </div>
+          
+          {aiQuestions.length > 0 ? (
+            <div className="space-y-4">
+              {aiQuestions.map((question) => (
+                <div key={question.id} className="bg-white/70 p-4 rounded-lg border border-[#753BBD]/20 hover:bg-white/90 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-medium text-[#003079] flex-1 mr-4">
+                      {question.question}
+                    </h3>
+                    <Badge 
+                      variant="outline" 
+                      className={getStatusColor('AI')}
+                    >
+                      AI
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-sm text-[#1D253A]/60">
+                    <span className="capitalize">CleverBot AI</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !isLoadingAI && (
+            <div className="text-center py-8 text-[#1D253A]/60">
+              <Bot className="w-12 h-12 mx-auto mb-2 text-[#753BBD]" />
+              <p>No AI suggestions generated yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Empty State - only show if no questions and not loading */}
+        {!hasQuestions && !isLoading && !error && (
           <div className="text-center py-12">
             <Sparkles className="w-16 h-16 text-[#6EFFC6] mx-auto mb-4" />
             <h3 className="text-lg font-medium text-[#003079] mb-2">
@@ -215,6 +308,21 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ payl
             <p className="text-[#1D253A]/70">
               Click "Generate Questions" to discover relevant insights for your challenge.
             </p>
+          </div>
+        )}
+
+        {/* Refresh button when questions are loaded */}
+        {hasQuestions && isSearchReady && (
+          <div className="text-center">
+            <Button
+              onClick={generateAllQuestions}
+              disabled={isLoading}
+              variant="outline"
+              className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh All Questions
+            </Button>
           </div>
         )}
       </div>

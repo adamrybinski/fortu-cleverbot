@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, ChatUIProps, CanvasTrigger, CanvasPreviewData } from './chat/types';
@@ -49,7 +50,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   };
 
-  // Simplified detection - create fortu Questions canvas when ready
+  // Enhanced detection with confirmation requirement
   const shouldCreateCanvasPreview = (
     message: string, 
     agentUsed?: string, 
@@ -58,11 +59,11 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
     
-    // Primary trigger: Prospect Agent indicates readiness
+    // Primary trigger: Prospect Agent indicates readiness AND user has confirmed
     if (readyForFortu && agentUsed === 'prospect') {
       return createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge || message,
-        challengeContext: 'prospect_refined',
+        challengeContext: 'user_confirmed',
         searchReady: true,
         timestamp: new Date().toISOString()
       });
@@ -70,7 +71,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     
     // Fallback triggers for explicit requests
     if (agentUsed === 'prospect' && messages.length >= 6) {
-      // User explicitly asks for questions/solutions
+      // User explicitly asks for questions/solutions after question presentation
       if (lowerInput.includes('question') || 
           lowerInput.includes('solution') || 
           lowerInput.includes('example') ||
