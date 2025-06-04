@@ -9,6 +9,7 @@ interface Question {
   question: string;
   status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
   source: 'fortu' | 'openai';
+  selected?: boolean;
 }
 
 interface QuestionSectionProps {
@@ -21,6 +22,8 @@ interface QuestionSectionProps {
   iconColor?: string;
   emptyIconColor?: string;
   onQuestionClick?: (question: Question) => void;
+  onSelectionChange?: (questionId: string | number, selected: boolean) => void;
+  showSelection?: boolean;
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -32,7 +35,9 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
   borderColor = 'border-[#6EFFC6]/30',
   iconColor = 'text-[#003079]',
   emptyIconColor = 'text-[#6EFFC6]',
-  onQuestionClick
+  onQuestionClick,
+  onSelectionChange,
+  showSelection = false
 }) => {
   return (
     <div className="mb-8">
@@ -54,6 +59,8 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
               question={question}
               borderColor={borderColor}
               onClick={onQuestionClick}
+              onSelectionChange={onSelectionChange}
+              showSelection={showSelection}
             />
           ))}
         </div>

@@ -6,12 +6,25 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, Square } from 'lucide-react';
 import { useCanvas } from '@/hooks/useCanvas';
 
+interface Question {
+  id: string | number;
+  question: string;
+  source: 'fortu' | 'openai';
+  selected?: boolean;
+}
+
 export const ChatCanvas: React.FC = () => {
   const [activeView, setActiveView] = useState<'chat' | 'canvas'>('chat');
+  const [selectedQuestionsFromCanvas, setSelectedQuestionsFromCanvas] = useState<Question[]>([]);
   const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
 
   const handleCloseCanvas = () => {
     closeCanvas();
+    setActiveView('chat');
+  };
+
+  const handleSendQuestionsToChat = (questions: Question[]) => {
+    setSelectedQuestionsFromCanvas(questions);
     setActiveView('chat');
   };
 
@@ -70,6 +83,8 @@ export const ChatCanvas: React.FC = () => {
               onOpenCanvas={openCanvas}
               onTriggerCanvas={triggerCanvas}
               isCanvasOpen={isCanvasOpen}
+              selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+              onClearSelectedQuestions={() => setSelectedQuestionsFromCanvas([])}
             />
           </div>
 
@@ -90,6 +105,7 @@ export const ChatCanvas: React.FC = () => {
               isVisible={isCanvasOpen}
               trigger={currentTrigger}
               isMobile={isMobile}
+              onSendQuestionsToChat={handleSendQuestionsToChat}
             />
           </div>
         </div>

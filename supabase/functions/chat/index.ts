@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -85,10 +84,24 @@ Transform vague business challenges into sharp "How do we..." questions and guid
   - "Right, checking our database for organisations with similar challenges."
   - "Brilliant. I've found some relevant questions in fortu.ai that match your challenge."
 
+**Stage 5: Post-Canvas Question Refinement (NEW)**
+- **DETECT when user returns from canvas with selected questions**
+- **Key indicators:**
+  - Message contains selectedQuestions data
+  - User mentions specific questions from the canvas
+  - User says they've "selected" or "chosen" questions
+- **When detected, respond with:**
+  - "I see you've explored the questions and selected [X] that caught your attention."
+  - "These are particularly relevant: [list selected questions]"
+  - "Let's use these to refine your challenge further. Which of these resonates most with your situation?"
+- **Use selected questions to create an even more refined "How do we..." statement**
+- **Ask targeted follow-up questions based on the selected questions**
+
 **Intelligence Triggers for Faster Progression:**
 - **Limited Context Signals:** Move to question formation after 4-6 exchanges
 - **Urgency Signals:** "need this fast", "pressure to deliver", "no time" - accelerate to Stage 3
 - **Solution Requests:** User asks for "questions", "solutions", "examples" - trigger fortu.ai immediately if context exists
+- **Canvas Return Signals:** Detect selectedQuestions data - trigger Stage 5
 
 **Key Behaviours:**
 - **Minimum 6 exchanges before fortu.ai trigger, but be flexible based on context richness**
@@ -97,6 +110,7 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - **ALWAYS** present the "How do we..." question to the user before proceeding
 - **WAIT** for user confirmation before triggering fortu.ai search
 - When context is sufficient, PRESENT the question and ASK for confirmation
+- **NEW: When selectedQuestions detected, reference them specifically and use them for deeper refinement**
 
 **fortu.ai Trigger Conditions (ALL of these must be met):**
 - You've formed a clear "How do we...for...so that..." question with measurable outcome
@@ -104,11 +118,22 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 - User has confirmed the question is accurate (or asked to proceed to fortu.ai)
 - You've referenced ICS experience and expressed confidence about the challenge
 
+**Post-Canvas Refinement Conditions:**
+- selectedQuestions data is present in the conversation
+- User has returned from canvas interaction
+- Use selected questions to create ultra-refined challenges
+- Guide towards more targeted solutions based on their selections
+
 **Confirmation Language Examples:**
 - "Based on our chat, I'd frame your challenge as: 'How do we...'"
 - "Does this capture what you're trying to solve?"
 - "If this looks right, shall I search fortu.ai for matching approaches?"
 - "Perfect. Let me check fortu.ai for organisations that have tackled this."
+
+**Post-Canvas Language Examples:**
+- "I see you've selected [X] questions from fortu.ai. Let's use these to sharpen your challenge further."
+- "Based on your selections, it looks like [insight]. Does this change how we should frame your challenge?"
+- "These selected questions suggest you're particularly focused on [theme]. Let's refine accordingly."
 
 **Confidence Building Language:**
 - "ICS has tackled this exact challenge in [specific context]"
@@ -119,8 +144,13 @@ Transform vague business challenges into sharp "How do we..." questions and guid
 **Tone:** Maintain CleverBot's direct, confident, British tone while being progressively more consultative and always seeking user confirmation before fortu.ai connection.`;
 
 // Enhanced agent detection function
-function shouldUseProspectAgent(message: string, conversationHistory: any[]): boolean {
+function shouldUseProspectAgent(message: string, conversationHistory: any[], selectedQuestions?: any[]): boolean {
   const lowerMessage = message.toLowerCase();
+  
+  // If selectedQuestions are present, always use prospect agent for refinement
+  if (selectedQuestions && selectedQuestions.length > 0) {
+    return true;
+  }
   
   // Emotional/vague problem indicators
   const emotionalIndicators = [
@@ -263,7 +293,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory = [] } = await req.json();
+    const { message, conversationHistory = [], selectedQuestions = [] } = await req.json();
     
     if (!message) {
       throw new Error('Message is required');
@@ -276,22 +306,36 @@ serve(async (req) => {
 
     console.log('Processing message:', message);
     console.log('Conversation history length:', conversationHistory.length);
+    console.log('Selected questions:', selectedQuestions);
 
-    // Determine which agent to use
-    const useProspectAgent = shouldUseProspectAgent(message, conversationHistory);
+    // Determine which agent to use - include selectedQuestions in detection
+    const useProspectAgent = shouldUseProspectAgent(message, conversationHistory, selectedQuestions);
     const systemPrompt = useProspectAgent ? PROSPECT_AGENT_PROMPT : CLEVERBOT_SYSTEM_PROMPT;
     
     console.log('Using agent:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
     // Build messages array with appropriate system prompt and conversation history
-    const messages = [
+    let messages = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.map((msg: any) => ({
         role: msg.role,
         content: msg.text
-      })),
-      { role: 'user', content: message }
+      }))
     ];
+
+    // Add selected questions context if present
+    if (selectedQuestions.length > 0) {
+      const selectedQuestionsText = selectedQuestions.map((q: any) => 
+        `- ${q.question} (from ${q.source})`
+      ).join('\n');
+      
+      messages.push({
+        role: 'system',
+        content: `The user has just returned from the canvas and selected the following questions that are relevant to their challenge:\n${selectedQuestionsText}\n\nUse these selections to refine their challenge further and ask targeted follow-up questions.`
+      });
+    }
+
+    messages.push({ role: 'user', content: message });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -320,7 +364,7 @@ serve(async (req) => {
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
 
     // Check if the response indicates readiness for fortu questions (now requires confirmation)
-    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message);
+    const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
     // Extract refined challenge if ready for fortu

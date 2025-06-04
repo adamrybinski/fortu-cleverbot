@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,6 +10,7 @@ interface Question {
   status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
   insights?: string;
   source: 'fortu' | 'openai';
+  selected?: boolean;
 }
 
 export const useQuestionGeneration = () => {
@@ -19,6 +19,7 @@ export const useQuestionGeneration = () => {
   const [isLoadingFortu, setIsLoadingFortu] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSelection, setShowSelection] = useState(false);
   
   // Summary-related state
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
@@ -40,7 +41,8 @@ export const useQuestionGeneration = () => {
       const questions: Question[] = (fortuData.questions || []).slice(0, 5).map((q: any, i: number) => ({
         ...q,
         id: `fortu-${i}`,
-        source: 'fortu'
+        source: 'fortu',
+        selected: false
       }));
 
       setFortuQuestions(questions);
@@ -71,7 +73,8 @@ export const useQuestionGeneration = () => {
         id: `ai-${i}`,
         question: q,
         source: 'openai',
-        status: 'AI'
+        status: 'AI',
+        selected: false
       }));
 
       setAiQuestions(questions);
@@ -115,6 +118,30 @@ export const useQuestionGeneration = () => {
     setQuestionSummary(null);
   };
 
+  const handleQuestionSelection = (questionId: string | number, selected: boolean) => {
+    setFortuQuestions(prev => 
+      prev.map(q => q.id === questionId ? { ...q, selected } : q)
+    );
+    setAiQuestions(prev => 
+      prev.map(q => q.id === questionId ? { ...q, selected } : q)
+    );
+  };
+
+  const getSelectedQuestions = () => {
+    const selectedFortu = fortuQuestions.filter(q => q.selected);
+    const selectedAI = aiQuestions.filter(q => q.selected);
+    return [...selectedFortu, ...selectedAI];
+  };
+
+  const toggleSelectionMode = () => {
+    setShowSelection(!showSelection);
+  };
+
+  const clearSelections = () => {
+    setFortuQuestions(prev => prev.map(q => ({ ...q, selected: false })));
+    setAiQuestions(prev => prev.map(q => ({ ...q, selected: false })));
+  };
+
   const generateAllQuestions = async (refinedChallenge: string) => {
     if (!refinedChallenge) return;
 
@@ -142,6 +169,11 @@ export const useQuestionGeneration = () => {
     error,
     generateAllQuestions,
     setError,
+    showSelection,
+    toggleSelectionMode,
+    handleQuestionSelection,
+    getSelectedQuestions,
+    clearSelections,
     // Summary-related exports
     selectedQuestion,
     questionSummary,

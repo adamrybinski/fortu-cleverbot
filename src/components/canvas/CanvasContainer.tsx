@@ -54,12 +54,20 @@ export interface CanvasTrigger {
   payload?: Record<string, any>;
 }
 
+interface Question {
+  id: string | number;
+  question: string;
+  source: 'fortu' | 'openai';
+  selected?: boolean;
+}
+
 interface CanvasContainerProps {
   onClose: () => void;
   isVisible: boolean;
   trigger: CanvasTrigger | null;
   isMobile?: boolean;
   useShineBorder?: boolean;
+  onSendQuestionsToChat?: (questions: Question[]) => void;
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({ 
@@ -67,7 +75,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   isVisible, 
   trigger,
   isMobile = false,
-  useShineBorder = false
+  useShineBorder = false,
+  onSendQuestionsToChat
 }) => {
   if (!isVisible || !trigger) return null;
 
@@ -102,7 +111,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       {/* Canvas Content Area with ScrollArea */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full w-full">
-          <CanvasModule trigger={trigger} />
+          <CanvasModule trigger={trigger} onSendQuestionsToChat={onSendQuestionsToChat} />
         </ScrollArea>
       </div>
     </div>

@@ -5,6 +5,14 @@ export interface Message {
   text: string;
   timestamp: Date;
   canvasData?: CanvasPreviewData;
+  selectedQuestions?: Question[];
+}
+
+export interface Question {
+  id: string | number;
+  question: string;
+  source: 'fortu' | 'openai';
+  selected?: boolean;
 }
 
 export interface CanvasPreviewData {
