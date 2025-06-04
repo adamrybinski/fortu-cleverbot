@@ -8,6 +8,7 @@ import { QuestionSection } from './QuestionSection';
 import { MainEmptyState } from './MainEmptyState';
 import { QuestionSummaryDialog } from './QuestionSummaryDialog';
 import { QuestionSelectionToolbar } from './QuestionSelectionToolbar';
+import { ChallengeSession } from '@/hooks/useChallengeHistory';
 
 interface Question {
   id: string | number;
@@ -16,14 +17,28 @@ interface Question {
   selected?: boolean;
 }
 
+interface ChallengeHistoryHook {
+  challengeHistory: ChallengeSession[];
+  currentSessionId: string | null;
+  getCurrentSession: () => ChallengeSession | null;
+  createNewSession: (originalChallenge: string) => string;
+  updateSession: (sessionId: string, updates: Partial<ChallengeSession>) => void;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  getUnselectedQuestions: (sessionId: string) => Question[];
+  markSessionCompleted: (sessionId: string) => void;
+}
+
 interface FortuQuestionsCanvasProps {
   payload?: Record<string, any>;
   onSendQuestionsToChat?: (questions: Question[]) => void;
+  challengeHistory?: ChallengeHistoryHook;
 }
 
 export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ 
   payload,
-  onSendQuestionsToChat 
+  onSendQuestionsToChat,
+  challengeHistory
 }) => {
   const {
     fortuQuestions,
