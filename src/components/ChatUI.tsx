@@ -36,7 +36,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const previousMessagesLength = useRef(messages.length);
-  const storedScrollPositionRef = useRef<number | null>(null);
 
   const {
     hasCanvasBeenTriggered,
@@ -78,24 +77,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       setPendingCanvasGuidance(null);
     }
   }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance]);
-
-  // Store and restore scroll position during canvas transitions
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      // Store current scroll position before canvas state changes
-      storedScrollPositionRef.current = messagesContainerRef.current.scrollTop;
-      
-      // Restore scroll position after transition completes and layout settles
-      const timeoutId = setTimeout(() => {
-        if (messagesContainerRef.current && storedScrollPositionRef.current !== null) {
-          messagesContainerRef.current.scrollTop = storedScrollPositionRef.current;
-          storedScrollPositionRef.current = null;
-        }
-      }, 600);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isCanvasOpen]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
