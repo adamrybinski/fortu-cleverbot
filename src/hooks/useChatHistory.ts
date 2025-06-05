@@ -19,6 +19,7 @@ export interface ChatSession {
   messages: ChatMessage[];
   createdAt: Date;
   lastActivity: Date;
+  isStarred?: boolean;
 }
 
 const STORAGE_KEY = 'cleverbot_chat_history';
@@ -96,7 +97,8 @@ export const useChatHistory = () => {
         timestamp: new Date(),
       }],
       createdAt: new Date(),
-      lastActivity: new Date()
+      lastActivity: new Date(),
+      isStarred: false
     };
 
     setSessions(prev => [newSession, ...prev]);
@@ -175,6 +177,16 @@ export const useChatHistory = () => {
     );
   }, []);
 
+  const toggleStarSession = useCallback((sessionId: string) => {
+    setSessions(prev =>
+      prev.map(session =>
+        session.id === sessionId
+          ? { ...session, isStarred: !session.isStarred }
+          : session
+      )
+    );
+  }, []);
+
   return {
     sessions,
     activeSessionId,
@@ -185,6 +197,7 @@ export const useChatHistory = () => {
     updateSessionMessages,
     switchToSession,
     deleteSession,
-    renameSession
+    renameSession,
+    toggleStarSession
   };
 };

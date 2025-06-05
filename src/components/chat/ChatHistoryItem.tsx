@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MoreHorizontal, Trash2, Edit2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, Edit2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +17,7 @@ interface ChatHistoryItemProps {
   onSelect: (sessionId: string) => void;
   onDelete: (sessionId: string) => void;
   onRename: (sessionId: string, newTitle: string) => void;
+  onToggleStar: (sessionId: string) => void;
 }
 
 export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
@@ -24,7 +25,8 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
   isActive,
   onSelect,
   onDelete,
-  onRename
+  onRename,
+  onToggleStar
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(session.title);
@@ -87,8 +89,13 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
           />
         ) : (
           <>
-            <div className="text-sm font-medium text-[#003079] truncate">
-              {session.title}
+            <div className="flex items-center gap-2">
+              {session.isStarred && (
+                <Star className="h-3 w-3 text-[#753BBD] fill-current" />
+              )}
+              <div className="text-sm font-medium text-[#003079] truncate">
+                {session.title}
+              </div>
             </div>
             <div className="text-xs text-gray-500">
               {formatTime(session.lastActivity)}
@@ -109,6 +116,10 @@ export const ChatHistoryItem: React.FC<ChatHistoryItemProps> = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onToggleStar(session.id)}>
+            <Star className="h-4 w-4 mr-2" />
+            {session.isStarred ? 'Unstar' : 'Star'}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleEdit}>
             <Edit2 className="h-4 w-4 mr-2" />
             Rename

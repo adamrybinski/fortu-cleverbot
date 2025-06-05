@@ -63,6 +63,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleCloseSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       {/* Chat UI - Always Full Width */}
@@ -106,7 +110,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }`}
       >
         <div className="w-80 h-full shadow-lg">
-          <ChatHistorySidebar onNewChat={handleNewChat} />
+          <ChatHistorySidebar 
+            onNewChat={handleNewChat} 
+            onClose={handleCloseSidebar}
+          />
         </div>
       </div>
 
