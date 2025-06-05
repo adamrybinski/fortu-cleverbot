@@ -100,23 +100,41 @@ export const useMessageHandler = ({
       const readyForFortuInstance = data.readyForFortuInstance;
       const refinedChallenge = data.refinedChallenge;
 
-      console.log('Agent used:', agentUsed);
-      console.log('Ready for fortu:', readyForFortu);
-      console.log('Ready for fortu instance:', readyForFortuInstance);
-      console.log('Refined challenge:', refinedChallenge);
+      console.log('🔄 Message Handler - Response data:', {
+        agentUsed,
+        readyForFortu,
+        readyForFortuInstance,
+        refinedChallenge,
+        hasQuestionSessions: !!questionSessions
+      });
 
-      // Create new session only when we have both refined challenge and are ready for fortu search
+      // Create new session and trigger canvas when ready for fortu search
       if (readyForFortu && refinedChallenge && questionSessions) {
-        console.log('Creating new session with refined challenge:', refinedChallenge);
+        console.log('🚀 Creating new session and triggering canvas:', refinedChallenge);
         const sessionId = questionSessions.createNewSession(refinedChallenge);
         questionSessions.updateSession(sessionId, {
           refinedChallenge,
           status: 'searching'
         });
+
+        // Trigger canvas immediately after session creation
+        if (onTriggerCanvas) {
+          console.log('🎯 Triggering canvas with search ready payload');
+          onTriggerCanvas({
+            type: 'fortuQuestions',
+            payload: {
+              refinedChallenge,
+              searchReady: true,
+              sessionId
+            }
+          });
+          setHasCanvasBeenTriggered(true);
+        }
       }
 
       // Update active session with refined challenge if we have one but session already exists
       if (refinedChallenge && questionSessions?.activeSessionId && !readyForFortu) {
+        console.log('📝 Updating existing session with refined challenge:', refinedChallenge);
         questionSessions.updateSession(questionSessions.activeSessionId, {
           refinedChallenge
         });
@@ -130,24 +148,30 @@ export const useMessageHandler = ({
           "**Next Step:** Take this to your fortu.ai instance to find specific, actionable solutions from organisations that have successfully tackled this exact challenge.";
       }
 
-      // Check if we should create a canvas preview and auto-open
-      const canvasPreviewData = shouldCreateCanvasPreview(
-        messageText, 
-        agentUsed, 
-        readyForFortu,
-        false, // No multi-challenge in simplified flow
-        refinedChallenge,
-        onTriggerCanvas
-      );
-      
-      if (canvasPreviewData) {
-        setHasCanvasBeenTriggered(true);
+      // Only create canvas preview for non-fortu cases (fortu is handled above)
+      let canvasPreviewData = null;
+      if (!readyForFortu) {
+        canvasPreviewData = shouldCreateCanvasPreview(
+          messageText, 
+          agentUsed, 
+          readyForFortu,
+          false, // No multi-challenge in simplified flow
+          refinedChallenge,
+          onTriggerCanvas
+        );
         
-        if (canvasPreviewData.type === 'fortuQuestions') {
-          assistantText += "\n\nI've opened the question explorer below where you can browse relevant approaches from our database. Select the questions that best align with your challenge to help me create the perfect refined statement for your fortu.ai instance.";
-        } else {
-          assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
+        if (canvasPreviewData) {
+          setHasCanvasBeenTriggered(true);
+          
+          if (canvasPreviewData.type === 'fortuQuestions') {
+            assistantText += "\n\nI've opened the question explorer below where you can browse relevant approaches from our database. Select the questions that best align with your challenge to help me create the perfect refined statement for your fortu.ai instance.";
+          } else {
+            assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
+          }
         }
+      } else {
+        // For fortu cases, add message about searching
+        assistantText += "\n\nI've opened the question explorer below where I'm searching for relevant approaches from our database.";
       }
 
       const assistantMessage: Message = {

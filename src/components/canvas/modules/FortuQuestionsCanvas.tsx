@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -48,11 +49,12 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   onClearSelections,
   showSelection = false
 }) => {
-  console.log('FortuQuestionsCanvas mounted with payload:', payload);
+  console.log('🎨 FortuQuestionsCanvas mounted with payload:', payload);
   
-  // Add ref to track when we're loading from session to prevent infinite loops
+  // Add ref to track when we're loading from session to prevent loops
   const loadingFromSessionRef = useRef(false);
   const lastSessionIdRef = useRef<string | null>(null);
+  const hasTriggeredGenerationRef = useRef(false);
   
   const {
     fortuQuestions,
@@ -79,33 +81,48 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   const activeSession = questionSessions?.getActiveSession();
   const refinedChallenge = activeSession?.refinedChallenge || payload?.refinedChallenge;
   const isSearchReady = payload?.searchReady;
+  const payloadSessionId = payload?.sessionId;
   
-  console.log('Canvas state:', {
-    activeSession: activeSession?.id,
+  console.log('🔍 Canvas state analysis:', {
+    activeSessionId: activeSession?.id,
+    payloadSessionId,
     refinedChallenge,
     isSearchReady,
     fortuQuestionsCount: fortuQuestions.length,
     aiQuestionsCount: aiQuestions.length,
     isLoadingFortu,
     isLoadingAI,
-    hasSessionQuestions: activeSession ? (activeSession.fortuQuestions.length + activeSession.aiQuestions.length) : 0
+    hasSessionQuestions: activeSession ? (activeSession.fortuQuestions.length + activeSession.aiQuestions.length) : 0,
+    hasTriggeredGeneration: hasTriggeredGenerationRef.current
   });
+
+  // Handle immediate generation when canvas loads with searchReady payload
+  useEffect(() => {
+    if (isSearchReady && refinedChallenge && !hasTriggeredGenerationRef.current && !isLoadingFortu && !isLoadingAI) {
+      console.log('🚀 IMMEDIATE GENERATION - SearchReady payload detected:', refinedChallenge);
+      hasTriggeredGenerationRef.current = true;
+      generateAllQuestions(refinedChallenge);
+    }
+  }, [isSearchReady, refinedChallenge, isLoadingFortu, isLoadingAI, generateAllQuestions]);
 
   // Handle session switching - clear questions and load from new session
   useEffect(() => {
     if (activeSession && activeSession.id !== lastSessionIdRef.current) {
-      console.log('Session changed to:', activeSession.id);
+      console.log('📋 Session changed to:', activeSession.id);
       lastSessionIdRef.current = activeSession.id;
+      
+      // Reset generation trigger when switching sessions
+      hasTriggeredGenerationRef.current = false;
       
       // Set loading flag to prevent save effect from running
       loadingFromSessionRef.current = true;
       
       // If session has questions, load them; otherwise clear questions
       if (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0) {
-        console.log('Loading existing questions from session:', activeSession.id);
+        console.log('📥 Loading existing questions from session:', activeSession.id);
         loadQuestionsFromSession(activeSession.fortuQuestions, activeSession.aiQuestions, activeSession.selectedQuestions);
       } else {
-        console.log('Clearing questions for new/empty session:', activeSession.id);
+        console.log('🧹 Clearing questions for new/empty session:', activeSession.id);
         clearQuestions();
       }
       
@@ -118,13 +135,14 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
   // Auto-generate questions for sessions with refined challenges but no questions
   useEffect(() => {
-    // Skip if we're loading from session, already loading, or no session
-    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI || !activeSession) {
-      console.log('Skipping auto-generation:', {
+    // Skip if we're loading from session, already loading, no session, or already triggered
+    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI || !activeSession || hasTriggeredGenerationRef.current) {
+      console.log('⏸️ Skipping auto-generation:', {
         loadingFromSession: loadingFromSessionRef.current,
         isLoadingFortu,
         isLoadingAI,
-        hasActiveSession: !!activeSession
+        hasActiveSession: !!activeSession,
+        hasTriggeredGeneration: hasTriggeredGenerationRef.current
       });
       return;
     }
@@ -137,7 +155,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
     const shouldGenerate = activeSession.refinedChallenge && hasNoQuestions;
 
-    console.log('Auto-generation decision:', {
+    console.log('🤔 Auto-generation decision:', {
       sessionId: activeSession.id,
       refinedChallenge: activeSession.refinedChallenge,
       sessionFortuCount: activeSession.fortuQuestions.length,
@@ -149,7 +167,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     });
 
     if (shouldGenerate) {
-      console.log('🚀 Auto-generating questions for challenge:', activeSession.refinedChallenge);
+      console.log('🚀 AUTO-GENERATION - Generating questions for challenge:', activeSession.refinedChallenge);
+      hasTriggeredGenerationRef.current = true;
       generateAllQuestions(activeSession.refinedChallenge);
     }
   }, [
@@ -200,8 +219,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   }, [showSelection, selectedQuestions, hasQuestions, onSelectionStateChange]);
 
   const handleGenerateQuestions = () => {
-    console.log('Manual generation triggered with challenge:', refinedChallenge);
+    console.log('🔄 Manual generation triggered with challenge:', refinedChallenge);
     if (refinedChallenge) {
+      hasTriggeredGenerationRef.current = true;
       generateAllQuestions(refinedChallenge);
     }
   };
