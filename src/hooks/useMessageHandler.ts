@@ -75,23 +75,9 @@ export const useMessageHandler = ({
       return;
     }
 
-    // Get or create active session
-    let activeSession = getActiveSession();
-    if (!activeSession) {
-      console.log('🆕 No active session found, creating new session');
-      const newSessionId = createNewSession();
-      activeSession = getActiveSession(); // Get the newly created session
-      
-      if (!activeSession) {
-        console.error('❌ Failed to create new session');
-        return;
-      }
-    }
-
     console.log('📤 Starting message send:', {
       messageText: messageText.substring(0, 50) + '...',
-      isAutoMessage,
-      activeSessionId: activeSession.id
+      isAutoMessage
     });
 
     // Prevent duplicate processing of the same selected questions
@@ -104,27 +90,44 @@ export const useMessageHandler = ({
       setLastProcessedQuestions(questionsKey);
     }
 
-    const newMessage = createUserMessage(
-      messageText,
-      selectedQuestionsFromCanvas,
-      selectedAction,
-      isAutoMessage
-    );
-
-    console.log('💬 Created user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
-
-    // Add user message to session immediately
-    const userChatMessage = convertMessageToChatMessage(newMessage);
-    addMessageToSession(activeSession.id, userChatMessage);
-
     setIsLoading(true);
 
-    // Clear selected questions after sending (only for manual messages)
-    if (!isAutoMessage && onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
-      onClearSelectedQuestions();
-    }
-
     try {
+      // Get or create active session - this ensures we always have a session before processing
+      let activeSession = getActiveSession();
+      if (!activeSession) {
+        console.log('🆕 No active session found, creating new session');
+        const newSessionId = createNewSession();
+        // Wait a bit for the session to be created and state to update
+        await new Promise(resolve => setTimeout(resolve, 10));
+        activeSession = getActiveSession();
+        
+        if (!activeSession) {
+          console.error('❌ Failed to create new session');
+          throw new Error('Failed to create new session');
+        }
+      }
+
+      console.log('✅ Using session:', activeSession.id);
+
+      const newMessage = createUserMessage(
+        messageText,
+        selectedQuestionsFromCanvas,
+        selectedAction,
+        isAutoMessage
+      );
+
+      console.log('💬 Created user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
+
+      // Add user message to session immediately
+      const userChatMessage = convertMessageToChatMessage(newMessage);
+      addMessageToSession(activeSession.id, userChatMessage);
+
+      // Clear selected questions after sending (only for manual messages)
+      if (!isAutoMessage && onClearSelectedQuestions && selectedQuestionsFromCanvas.length > 0) {
+        onClearSelectedQuestions();
+      }
+
       // Get the current session with the newly added message
       const currentSession = getActiveSession();
       if (!currentSession) {
@@ -202,15 +205,25 @@ export const useMessageHandler = ({
 
       // Add assistant message to session
       const assistantChatMessage = convertMessageToChatMessage(assistantMessage);
-      addMessageToSession(activeSession.id, assistantChatMessage);
+      addMessageToSession(currentSession.id, assistantChatMessage);
 
       console.log('✅ Message handling completed successfully');
 
     } catch (error) {
       console.error('❌ Error in handleSendMessage:', error);
-      const errorMessage = createErrorMessage();
-      const errorChatMessage = convertMessageToChatMessage(errorMessage);
-      addMessageToSession(activeSession.id, errorChatMessage);
+      
+      // Ensure we have a session for the error message
+      let activeSession = getActiveSession();
+      if (!activeSession) {
+        const newSessionId = createNewSession();
+        activeSession = getActiveSession();
+      }
+      
+      if (activeSession) {
+        const errorMessage = createErrorMessage();
+        const errorChatMessage = convertMessageToChatMessage(errorMessage);
+        addMessageToSession(activeSession.id, errorChatMessage);
+      }
     } finally {
       setIsLoading(false);
     }

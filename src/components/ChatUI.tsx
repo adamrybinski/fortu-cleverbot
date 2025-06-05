@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { MessagesContainer } from './chat/MessagesContainer';
@@ -66,7 +67,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     getActiveSession, 
     addMessageToSession, 
     switchToSession,
-    createNewSession
+    createNewSession,
+    allSessions
   } = useChatHistory();
 
   // Get messages from active session or use default
@@ -80,7 +82,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     },
   ];
   
-  const messages: Message[] = activeSession?.messages 
+  // Show default messages if no session exists or if session has no messages
+  const messages: Message[] = activeSession?.messages && activeSession.messages.length > 0
     ? activeSession.messages.map(convertChatMessageToMessage)
     : defaultMessages;
 

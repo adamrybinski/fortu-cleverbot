@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChatUI } from './ChatUI';
 import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
@@ -54,16 +55,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     sessions
   } = useChatHistory();
 
-  // Create initial session if none exists and there are no sessions at all
-  useEffect(() => {
-    console.log('ChatInterface effect - allSessions:', allSessions.length, 'activeSessionId:', currentActiveSessionId);
-    
-    // Only create a new session if there are no sessions at all (including unsaved ones)
-    if (allSessions.length === 0) {
-      console.log('No sessions exist, creating initial session...');
-      createNewSession();
-    }
-  }, [allSessions.length, createNewSession]);
+  // Remove the automatic session creation effect that was causing the race condition
+  // Session creation will now be handled only by useMessageHandler when a message is sent
 
   const handleNewChat = () => {
     console.log('Creating new chat from sidebar...');
