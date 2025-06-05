@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { MessagesContainer } from './chat/MessagesContainer';
@@ -74,7 +73,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const { 
     getActiveSession, 
     addMessageToSession, 
-    updateSessionMessages,
     switchToSession 
   } = useChatHistory();
 
@@ -93,31 +91,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     ? activeSession.messages.map(convertChatMessageToMessage)
     : defaultMessages;
 
-  // Fixed setMessages function to work directly with session storage
-  const setMessages = (newMessages: Message[] | ((prev: Message[]) => Message[])) => {
-    if (!activeSession) return;
-    
-    // Get the most current messages from the session
-    const currentSession = getActiveSession();
-    const currentMessages = currentSession?.messages 
-      ? currentSession.messages.map(convertChatMessageToMessage)
-      : defaultMessages;
-    
-    const updatedMessages = typeof newMessages === 'function' 
-      ? newMessages(currentMessages)
-      : newMessages;
-    
-    console.log('💾 Updating session messages:', {
-      sessionId: activeSession.id,
-      currentCount: currentMessages.length,
-      newCount: updatedMessages.length,
-      updatedMessages: updatedMessages.map(m => ({ id: m.id, role: m.role, text: m.text.substring(0, 50) + '...' }))
-    });
-    
-    const chatMessages = updatedMessages.map(convertMessageToChatMessage);
-    updateSessionMessages(activeSession.id, chatMessages);
-  };
-
   const [inputValue, setInputValue] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -135,8 +108,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   } = useCanvasPreview();
 
   const { isLoading, handleSendMessage } = useMessageHandler({
-    messages,
-    setMessages,
     selectedQuestionsFromCanvas,
     selectedAction,
     onClearSelectedQuestions,
@@ -144,7 +115,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setHasCanvasBeenTriggered,
     onTriggerCanvas,
     questionSessions,
-    activeSession
+    activeSession,
+    addMessageToSession,
+    getActiveSession
   });
 
   // Handle selected questions from canvas with different actions

@@ -6,7 +6,7 @@ import { QuestionSession } from './useQuestionSessions';
 import { createUserMessage, createAssistantMessage, createErrorMessage } from './utils/messageUtils';
 import { handleSessionManagement } from './utils/sessionUtils';
 import { enhanceAssistantText, processApiResponse } from './utils/responseUtils';
-import { ChatSession } from './useChatHistory';
+import { ChatSession, ChatMessage } from './useChatHistory';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -19,8 +19,6 @@ interface QuestionSessionsHook {
 }
 
 interface UseMessageHandlerProps {
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   selectedQuestionsFromCanvas: Question[];
   selectedAction: 'refine' | 'instance' | 'both';
   onClearSelectedQuestions?: () => void;
@@ -36,11 +34,24 @@ interface UseMessageHandlerProps {
   onTriggerCanvas?: (trigger: any) => void;
   questionSessions?: QuestionSessionsHook;
   activeSession?: ChatSession | null;
+  addMessageToSession: (sessionId: string, message: ChatMessage) => void;
+  getActiveSession: () => ChatSession | null;
 }
 
+// Helper function to convert Message to ChatMessage
+const convertMessageToChatMessage = (message: Message): ChatMessage => {
+  return {
+    id: message.id,
+    role: message.role,
+    text: message.text,
+    timestamp: message.timestamp,
+    selectedQuestions: message.selectedQuestions,
+    selectedAction: message.selectedAction,
+    canvasData: message.canvasData,
+  };
+};
+
 export const useMessageHandler = ({
-  messages,
-  setMessages,
   selectedQuestionsFromCanvas,
   selectedAction,
   onClearSelectedQuestions,
@@ -48,19 +59,27 @@ export const useMessageHandler = ({
   setHasCanvasBeenTriggered,
   onTriggerCanvas,
   questionSessions,
-  activeSession
+  activeSession,
+  addMessageToSession,
+  getActiveSession
 }: UseMessageHandlerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
 
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
-    if (!messageText.trim() || isLoading || !activeSession) return;
+    if (!messageText.trim() || isLoading || !activeSession) {
+      console.log('⚠️ Message sending blocked:', {
+        hasText: !!messageText.trim(),
+        isLoading,
+        hasActiveSession: !!activeSession
+      });
+      return;
+    }
 
-    console.log('📤 Sending message:', {
+    console.log('📤 Starting message send:', {
       messageText: messageText.substring(0, 50) + '...',
       isAutoMessage,
-      activeSessionId: activeSession.id,
-      currentMessageCount: messages.length
+      activeSessionId: activeSession.id
     });
 
     // Prevent duplicate processing of the same selected questions
@@ -80,18 +99,11 @@ export const useMessageHandler = ({
       isAutoMessage
     );
 
-    console.log('💬 Adding user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
+    console.log('💬 Created user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
 
-    // Add user message immediately to prevent race conditions
-    setMessages(prev => {
-      const updated = [...prev, newMessage];
-      console.log('📝 Updated messages after user message:', {
-        previousCount: prev.length,
-        newCount: updated.length,
-        lastMessage: updated[updated.length - 1]
-      });
-      return updated;
-    });
+    // Add user message to session immediately
+    const userChatMessage = convertMessageToChatMessage(newMessage);
+    addMessageToSession(activeSession.id, userChatMessage);
 
     setIsLoading(true);
 
@@ -101,12 +113,22 @@ export const useMessageHandler = ({
     }
 
     try {
-      const conversationHistory = messages.map(msg => ({
+      // Get the current session with the newly added message
+      const currentSession = getActiveSession();
+      if (!currentSession) {
+        throw new Error('Active session not found');
+      }
+
+      // Build conversation history from session messages
+      const conversationHistory = currentSession.messages.map(msg => ({
         role: msg.role === 'bot' ? 'assistant' : 'user',
         text: msg.text
       }));
 
-      console.log('🚀 Calling chat API with conversation history length:', conversationHistory.length);
+      console.log('🚀 Calling chat API with conversation history:', {
+        historyLength: conversationHistory.length,
+        lastMessage: conversationHistory[conversationHistory.length - 1]
+      });
 
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
@@ -117,7 +139,10 @@ export const useMessageHandler = ({
         }
       });
 
-      if (error || data?.error) throw new Error(data?.error || error.message);
+      if (error || data?.error) {
+        console.error('❌ API Error:', error || data?.error);
+        throw new Error(data?.error || error.message);
+      }
 
       const {
         assistantText,
@@ -161,23 +186,19 @@ export const useMessageHandler = ({
 
       const assistantMessage = createAssistantMessage(enhancedAssistantText, canvasPreviewData);
       
-      console.log('🤖 Adding assistant message:', { id: assistantMessage.id, text: assistantMessage.text.substring(0, 50) + '...' });
+      console.log('🤖 Created assistant message:', { id: assistantMessage.id, text: assistantMessage.text.substring(0, 50) + '...' });
 
-      // Add assistant message
-      setMessages(prev => {
-        const updated = [...prev, assistantMessage];
-        console.log('📝 Updated messages after assistant message:', {
-          previousCount: prev.length,
-          newCount: updated.length,
-          messages: updated.map(m => ({ id: m.id, role: m.role, text: m.text.substring(0, 30) + '...' }))
-        });
-        return updated;
-      });
+      // Add assistant message to session
+      const assistantChatMessage = convertMessageToChatMessage(assistantMessage);
+      addMessageToSession(activeSession.id, assistantChatMessage);
+
+      console.log('✅ Message handling completed successfully');
 
     } catch (error) {
       console.error('❌ Error in handleSendMessage:', error);
       const errorMessage = createErrorMessage();
-      setMessages(prev => [...prev, errorMessage]);
+      const errorChatMessage = convertMessageToChatMessage(errorMessage);
+      addMessageToSession(activeSession.id, errorChatMessage);
     } finally {
       setIsLoading(false);
     }
