@@ -20,6 +20,7 @@ export interface ChatSession {
   createdAt: Date;
   lastActivity: Date;
   isStarred?: boolean;
+  isSaved?: boolean; // New flag to track if session is saved to localStorage
 }
 
 const STORAGE_KEY = 'cleverbot_chat_history';
@@ -39,6 +40,7 @@ export const useChatHistory = () => {
           ...session,
           createdAt: new Date(session.createdAt),
           lastActivity: new Date(session.lastActivity),
+          isSaved: true, // All loaded sessions are considered saved
           messages: session.messages.map((msg: any) => ({
             ...msg,
             timestamp: new Date(msg.timestamp)
@@ -56,10 +58,13 @@ export const useChatHistory = () => {
     }
   }, []);
 
-  // Save sessions to localStorage whenever sessions change
+  // Save only saved sessions to localStorage
   useEffect(() => {
-    if (sessions.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    const savedSessions = sessions.filter(session => session.isSaved);
+    if (savedSessions.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedSessions));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, [sessions]);
 
@@ -98,7 +103,8 @@ export const useChatHistory = () => {
       }],
       createdAt: new Date(),
       lastActivity: new Date(),
-      isStarred: false
+      isStarred: false,
+      isSaved: false // Start as unsaved until user sends first message
     };
 
     setSessions(prev => [newSession, ...prev]);
@@ -116,10 +122,13 @@ export const useChatHistory = () => {
       prev.map(session => {
         if (session.id === sessionId) {
           const updatedMessages = [...session.messages, message];
+          const isFirstUserMessage = message.role === 'user' && !session.isSaved;
+          
           const updatedSession = {
             ...session,
             messages: updatedMessages,
-            lastActivity: new Date()
+            lastActivity: new Date(),
+            isSaved: session.isSaved || isFirstUserMessage // Mark as saved when user sends first message
           };
 
           // Generate title if this is the first user message and title is still "New Chat"
@@ -158,14 +167,21 @@ export const useChatHistory = () => {
     setSessions(prev => {
       const filtered = prev.filter(session => session.id !== sessionId);
       
-      // If we deleted the active session, switch to the first available one
+      // If we deleted the active session, handle appropriately
       if (activeSessionId === sessionId) {
-        setActiveSessionId(filtered.length > 0 ? filtered[0].id : null);
+        if (filtered.length > 0) {
+          // Switch to the first available session
+          setActiveSessionId(filtered[0].id);
+        } else {
+          // No sessions left, create a new one
+          const newSessionId = createNewSession();
+          // Don't set active here as createNewSession already does it
+        }
       }
       
       return filtered;
     });
-  }, [activeSessionId]);
+  }, [activeSessionId, createNewSession]);
 
   const renameSession = useCallback((sessionId: string, newTitle: string) => {
     setSessions(prev =>
@@ -188,7 +204,8 @@ export const useChatHistory = () => {
   }, []);
 
   return {
-    sessions,
+    sessions: sessions.filter(session => session.isSaved), // Only return saved sessions for sidebar
+    allSessions: sessions, // Return all sessions for internal use
     activeSessionId,
     isGeneratingTitle,
     getActiveSession,

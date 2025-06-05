@@ -13,7 +13,7 @@ interface ChatHistorySidebarProps {
 
 export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewChat, onClose }) => {
   const {
-    sessions,
+    sessions, // This now only returns saved sessions
     activeSessionId,
     switchToSession,
     deleteSession,
@@ -62,7 +62,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
           {/* Starred Section */}
           {starredSessions.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-[#003079] mb-2 px-2">Starred</h3>
+              <h3 className="text-sm font-medium text-[#003079] mb-2 px-2 font-['Montserrat']">Starred</h3>
               <div className="space-y-2">
                 {starredSessions.map((session) => (
                   <ChatHistoryItem
@@ -82,7 +82,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
           {/* Recent Section */}
           {recentSessions.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-[#003079] mb-2 px-2">
+              <h3 className="text-sm font-medium text-[#003079] mb-2 px-2 font-['Montserrat']">
                 {starredSessions.length > 0 ? 'Recent' : 'Chats'}
               </h3>
               <div className="space-y-2">
@@ -103,7 +103,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
 
           {/* Empty State */}
           {sessions.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center text-gray-500 py-8 font-['Montserrat']">
               No chat history yet
             </div>
           )}

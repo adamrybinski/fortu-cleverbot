@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatUI } from './ChatUI';
 import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
 import { Button } from '@/components/ui/button';
@@ -47,16 +46,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSessionChange
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { createNewSession, switchToSession } = useChatHistory();
+  const { createNewSession, switchToSession, allSessions, activeSessionId: currentActiveSessionId } = useChatHistory();
+
+  // Create initial session if none exists
+  useEffect(() => {
+    if (allSessions.length === 0 && !currentActiveSessionId) {
+      createNewSession();
+    }
+  }, [allSessions.length, currentActiveSessionId, createNewSession]);
 
   const handleNewChat = () => {
     const newSessionId = createNewSession();
-    setIsSidebarOpen(false); // Close sidebar after creating new chat
+    setIsSidebarOpen(false);
   };
 
   const handleSessionChange = (sessionId: string) => {
     switchToSession(sessionId);
-    setIsSidebarOpen(false); // Close sidebar after switching
+    setIsSidebarOpen(false);
   };
 
   const handleToggleSidebar = () => {
