@@ -31,7 +31,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#F1EDFF]/30 border-r border-gray-200">
+    <div className="h-full flex flex-col bg-[#F1EDFF] border-r border-gray-200">
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-2 mb-4">
