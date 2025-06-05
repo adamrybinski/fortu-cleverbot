@@ -157,7 +157,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
   return (
     <ScrollArea className="h-full w-full">
-      <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
+      <div className="relative p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
         <div className={`max-w-4xl mx-auto ${showSelection ? 'pb-32' : ''}`}>
           {/* Header */}
           <FortuQuestionsHeader
@@ -216,18 +216,18 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
           {/* Empty State - only show if no questions and not loading */}
           {!hasQuestions && !isLoading && !error && <MainEmptyState />}
         </div>
-      </div>
 
-      {/* Integrated Question Selection Toolbar - outside the main container but inside ScrollArea */}
-      {hasQuestions && (
-        <SimpleQuestionToolbar
-          showSelection={showSelection}
-          selectedQuestions={selectedQuestions}
-          onToggleSelection={toggleSelectionMode}
-          onSendToChat={handleSendToChat}
-          onClearSelections={clearSelections}
-        />
-      )}
+        {/* Integrated Question Selection Toolbar - positioned absolutely within this container */}
+        {hasQuestions && (
+          <SimpleQuestionToolbar
+            showSelection={showSelection}
+            selectedQuestions={selectedQuestions}
+            onToggleSelection={toggleSelectionMode}
+            onSendToChat={handleSendToChat}
+            onClearSelections={clearSelections}
+          />
+        )}
+      </div>
     </ScrollArea>
   );
 };

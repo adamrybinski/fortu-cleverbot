@@ -24,7 +24,7 @@ export const SimpleQuestionToolbar: React.FC<SimpleQuestionToolbarProps> = ({
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6">
+    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6">
       <div className="bg-white/95 backdrop-blur-sm border border-[#6EFFC6]/30 rounded-lg p-4 shadow-lg">
         <div className="flex items-center justify-between">
           {/* Selection Count */}
