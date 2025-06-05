@@ -26,12 +26,18 @@ export const useQuestionGeneration = () => {
       if (error) throw error;
 
       if (data && data.questions) {
-        const questionsWithIds = data.questions.map((q: string, index: number) => ({
-          id: `fortu-${Date.now()}-${index}`,
-          question: q,
-          source: 'fortu' as const,
-          selected: false
-        }));
+        // Handle both string arrays and object arrays from the API
+        const questionsWithIds = data.questions.map((q: any, index: number) => {
+          // If q is an object with a question property, extract it; otherwise treat as string
+          const questionText = typeof q === 'object' && q.question ? q.question : q;
+          
+          return {
+            id: `fortu-${Date.now()}-${index}`,
+            question: questionText,
+            source: 'fortu' as const,
+            selected: false
+          };
+        });
         
         setFortuQuestions(questionsWithIds);
         console.log('Generated fortu questions:', questionsWithIds);
