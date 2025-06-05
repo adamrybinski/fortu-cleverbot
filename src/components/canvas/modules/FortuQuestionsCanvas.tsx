@@ -158,7 +158,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   return (
     <ScrollArea className="h-full w-full">
       <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
-        <div className="max-w-4xl mx-auto">
+        <div className={`max-w-4xl mx-auto ${showSelection ? 'pb-32' : ''}`}>
           {/* Header */}
           <FortuQuestionsHeader
             refinedChallenge={refinedChallenge}
@@ -180,7 +180,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
             isLoading={isLoadingFortu}
             emptyMessage="No fortu.ai questions generated yet"
             borderColor="border-[#6EFFC6]/30"
-            iconColor="text-[#003079]"
+            iconColor="text-[#753BBD]"
             emptyIconColor="text-[#6EFFC6]"
             onSelectionChange={showSelection ? handleQuestionSelection : undefined}
             showSelection={showSelection}
