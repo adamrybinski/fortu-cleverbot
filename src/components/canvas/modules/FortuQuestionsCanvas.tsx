@@ -196,7 +196,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
   return (
     <ScrollArea className="h-full w-full">
-      <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
+      <div className={`p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full ${
+        showSelection && hasQuestions ? 'pb-32' : ''
+      }`}>
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <FortuQuestionsHeader
