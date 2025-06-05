@@ -8,7 +8,6 @@ export const useQuestionGeneration = () => {
   const [isLoadingFortu, setIsLoadingFortu] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSelection, setShowSelection] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string | number>>(new Set());
   const [questionSummaries, setQuestionSummaries] = useState<Record<string | number, string>>({});
   const [loadingSummaries, setLoadingSummaries] = useState<Set<string | number>>(new Set());
@@ -92,7 +91,6 @@ export const useQuestionGeneration = () => {
     setFortuQuestions([]);
     setAiQuestions([]);
     setError(null);
-    setShowSelection(false);
     setExpandedQuestions(new Set());
     setQuestionSummaries({});
     setLoadingSummaries(new Set());
@@ -126,20 +124,7 @@ export const useQuestionGeneration = () => {
     
     setFortuQuestions(fortuWithSelection);
     setAiQuestions(aiWithSelection);
-    
-    // If there are selected questions, enable selection mode
-    if (selectedQuestions.length > 0) {
-      setShowSelection(true);
-    }
   }, [clearQuestions]);
-
-  const toggleSelectionMode = () => {
-    setShowSelection(!showSelection);
-    if (showSelection) {
-      // Clear all selections when exiting selection mode
-      clearSelections();
-    }
-  };
 
   const handleQuestionSelection = (questionId: string | number) => {
     const updateQuestions = (questions: Question[]) =>
@@ -274,8 +259,6 @@ export const useQuestionGeneration = () => {
     error,
     generateAllQuestions,
     setError,
-    showSelection,
-    toggleSelectionMode,
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,

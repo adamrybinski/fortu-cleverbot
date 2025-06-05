@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -249,6 +248,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
               onSendToChat={handleSendToChat}
               onToggleSelection={handleToggleSelection}
               onClearSelections={handleClearSelections}
+              showSelection={toolbarState.showSelection}
             />
           )}
         </ScrollArea>

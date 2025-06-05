@@ -30,6 +30,7 @@ interface CanvasModuleProps {
   onSendToChat?: (questions: Question[]) => void;
   onToggleSelection?: () => void;
   onClearSelections?: () => void;
+  showSelection?: boolean;
 }
 
 export const CanvasModule: React.FC<CanvasModuleProps> = ({ 
@@ -40,7 +41,8 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
   onSelectionStateChange,
   onSendToChat,
   onToggleSelection,
-  onClearSelections
+  onClearSelections,
+  showSelection
 }) => {
   console.log('Canvas triggered with:', trigger);
 
@@ -56,6 +58,7 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           onSendToChat={onSendToChat}
           onToggleSelection={onToggleSelection}
           onClearSelections={onClearSelections}
+          showSelection={showSelection}
         />
       );
     

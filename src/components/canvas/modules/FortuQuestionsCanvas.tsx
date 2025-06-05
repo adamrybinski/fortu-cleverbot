@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -25,7 +24,7 @@ interface FortuQuestionsCanvasProps {
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
   questionSessions?: QuestionSessionsHook;
-  // New props to expose selection state
+  // Props to expose selection state to parent
   onSelectionStateChange?: (state: {
     showSelection: boolean;
     selectedQuestions: Question[];
@@ -34,6 +33,8 @@ interface FortuQuestionsCanvasProps {
   onSendToChat?: (questions: Question[]) => void;
   onToggleSelection?: () => void;
   onClearSelections?: () => void;
+  // New prop to receive selection state from parent
+  showSelection?: boolean;
 }
 
 export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ 
@@ -44,7 +45,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   onSelectionStateChange,
   onSendToChat,
   onToggleSelection,
-  onClearSelections
+  onClearSelections,
+  showSelection = false
 }) => {
   console.log('FortuQuestionsCanvas mounted with payload:', payload);
   
@@ -56,8 +58,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     error,
     generateAllQuestions,
     setError,
-    showSelection,
-    toggleSelectionMode,
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
@@ -176,11 +176,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
       onSendQuestionsToChat(questions, 'refine');
     }
     
-    // Use parent handlers if provided, otherwise use local ones
+    // Use parent handlers if provided
     if (onToggleSelection) {
       onToggleSelection();
-    } else {
-      toggleSelectionMode();
     }
     
     if (onClearSelections) {
@@ -193,8 +191,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   const handleToggleSelection = () => {
     if (onToggleSelection) {
       onToggleSelection();
-    } else {
-      toggleSelectionMode();
     }
   };
 
