@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/canvas/modules/types';
@@ -21,7 +20,7 @@ export const useQuestionGeneration = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-fortu-questions', {
-        body: { challenge }
+        body: { refinedChallenge: challenge }
       });
 
       if (error) throw error;
@@ -51,7 +50,7 @@ export const useQuestionGeneration = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
-        body: { challenge }
+        body: { refinedChallenge: challenge }
       });
 
       if (error) throw error;
