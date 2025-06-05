@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CLEVERBOT_SYSTEM_PROMPT, PROSPECT_AGENT_PROMPT } from './prompts/index.ts';
@@ -81,7 +80,7 @@ serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: messages,
         temperature: useProspectAgent ? 0.8 : 0.7,
-        max_tokens: 50,
+        max_tokens: 1000,
       }),
     });
 
@@ -92,12 +91,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let aiResponse = data.choices[0].message.content;
-
-    // Truncate response to 200 characters maximum
-    if (aiResponse.length > 200) {
-      aiResponse = aiResponse.substring(0, 197) + '...';
-    }
+    const aiResponse = data.choices[0].message.content;
 
     console.log('AI response generated:', aiResponse);
     console.log('Agent used:', useProspectAgent ? 'Prospect Agent' : 'General CleverBot');
