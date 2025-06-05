@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, Sparkles, CheckSquare } from 'lucide-react';
 
 interface FortuQuestionsHeaderProps {
   refinedChallenge?: string;
@@ -10,6 +10,7 @@ interface FortuQuestionsHeaderProps {
   hasQuestions: boolean;
   onGenerateQuestions: () => void;
   showSelection: boolean;
+  onToggleSelection: () => void;
 }
 
 export const FortuQuestionsHeader: React.FC<FortuQuestionsHeaderProps> = ({
@@ -18,7 +19,8 @@ export const FortuQuestionsHeader: React.FC<FortuQuestionsHeaderProps> = ({
   isLoading,
   hasQuestions,
   onGenerateQuestions,
-  showSelection
+  showSelection,
+  onToggleSelection
 }) => {
   return (
     <div className="mb-6">
@@ -67,18 +69,27 @@ export const FortuQuestionsHeader: React.FC<FortuQuestionsHeaderProps> = ({
         </div>
       )}
 
-      {/* Refresh button when questions are loaded */}
+      {/* Refresh and Select Questions buttons when questions are loaded */}
       {hasQuestions && isSearchReady && !showSelection && (
         <div className="text-center mt-6">
-          <Button
-            onClick={onGenerateQuestions}
-            disabled={isLoading}
-            variant="outline"
-            className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh All Questions
-          </Button>
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={onGenerateQuestions}
+              disabled={isLoading}
+              variant="outline"
+              className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh All Questions
+            </Button>
+            <Button
+              onClick={onToggleSelection}
+              className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white"
+            >
+              <CheckSquare className="w-4 h-4 mr-2" />
+              Select Questions
+            </Button>
+          </div>
         </div>
       )}
     </div>

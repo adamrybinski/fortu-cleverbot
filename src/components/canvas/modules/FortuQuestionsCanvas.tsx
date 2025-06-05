@@ -167,6 +167,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
             hasQuestions={hasQuestions}
             onGenerateQuestions={handleGenerateQuestions}
             showSelection={showSelection}
+            onToggleSelection={toggleSelectionMode}
           />
 
           {/* Error Display */}
@@ -214,19 +215,19 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
           {/* Empty State - only show if no questions and not loading */}
           {!hasQuestions && !isLoading && !error && <MainEmptyState />}
-
-          {/* Integrated Question Selection Toolbar */}
-          {hasQuestions && (
-            <SimpleQuestionToolbar
-              showSelection={showSelection}
-              selectedQuestions={selectedQuestions}
-              onToggleSelection={toggleSelectionMode}
-              onSendToChat={handleSendToChat}
-              onClearSelections={clearSelections}
-            />
-          )}
         </div>
       </div>
+
+      {/* Integrated Question Selection Toolbar - outside the main container but inside ScrollArea */}
+      {hasQuestions && (
+        <SimpleQuestionToolbar
+          showSelection={showSelection}
+          selectedQuestions={selectedQuestions}
+          onToggleSelection={toggleSelectionMode}
+          onSendToChat={handleSendToChat}
+          onClearSelections={clearSelections}
+        />
+      )}
     </ScrollArea>
   );
 };
