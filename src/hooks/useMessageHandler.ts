@@ -6,6 +6,7 @@ import { QuestionSession } from './useQuestionSessions';
 import { createUserMessage, createAssistantMessage, createErrorMessage } from './utils/messageUtils';
 import { handleSessionManagement } from './utils/sessionUtils';
 import { enhanceAssistantText, processApiResponse } from './utils/responseUtils';
+import { ChatSession } from './useChatHistory';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -34,6 +35,7 @@ interface UseMessageHandlerProps {
   setHasCanvasBeenTriggered: (value: boolean) => void;
   onTriggerCanvas?: (trigger: any) => void;
   questionSessions?: QuestionSessionsHook;
+  activeSession?: ChatSession | null;
 }
 
 export const useMessageHandler = ({
@@ -45,13 +47,21 @@ export const useMessageHandler = ({
   shouldCreateCanvasPreview,
   setHasCanvasBeenTriggered,
   onTriggerCanvas,
-  questionSessions
+  questionSessions,
+  activeSession
 }: UseMessageHandlerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
 
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
-    if (!messageText.trim() || isLoading) return;
+    if (!messageText.trim() || isLoading || !activeSession) return;
+
+    console.log('📤 Sending message:', {
+      messageText: messageText.substring(0, 50) + '...',
+      isAutoMessage,
+      activeSessionId: activeSession.id,
+      currentMessageCount: messages.length
+    });
 
     // Prevent duplicate processing of the same selected questions
     if (isAutoMessage && selectedQuestionsFromCanvas.length > 0) {
@@ -70,7 +80,19 @@ export const useMessageHandler = ({
       isAutoMessage
     );
 
-    setMessages(prev => [...prev, newMessage]);
+    console.log('💬 Adding user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
+
+    // Add user message immediately to prevent race conditions
+    setMessages(prev => {
+      const updated = [...prev, newMessage];
+      console.log('📝 Updated messages after user message:', {
+        previousCount: prev.length,
+        newCount: updated.length,
+        lastMessage: updated[updated.length - 1]
+      });
+      return updated;
+    });
+
     setIsLoading(true);
 
     // Clear selected questions after sending (only for manual messages)
@@ -83,6 +105,8 @@ export const useMessageHandler = ({
         role: msg.role === 'bot' ? 'assistant' : 'user',
         text: msg.text
       }));
+
+      console.log('🚀 Calling chat API with conversation history length:', conversationHistory.length);
 
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
@@ -102,6 +126,13 @@ export const useMessageHandler = ({
         readyForFortuInstance,
         refinedChallenge
       } = processApiResponse(data);
+
+      console.log('✅ Received API response:', {
+        assistantTextLength: assistantText.length,
+        agentUsed,
+        readyForFortu,
+        refinedChallenge: refinedChallenge?.substring(0, 50) + '...'
+      });
 
       // Handle session management
       handleSessionManagement(readyForFortu, refinedChallenge, questionSessions);
@@ -129,8 +160,22 @@ export const useMessageHandler = ({
       );
 
       const assistantMessage = createAssistantMessage(enhancedAssistantText, canvasPreviewData);
-      setMessages(prev => [...prev, assistantMessage]);
+      
+      console.log('🤖 Adding assistant message:', { id: assistantMessage.id, text: assistantMessage.text.substring(0, 50) + '...' });
+
+      // Add assistant message
+      setMessages(prev => {
+        const updated = [...prev, assistantMessage];
+        console.log('📝 Updated messages after assistant message:', {
+          previousCount: prev.length,
+          newCount: updated.length,
+          messages: updated.map(m => ({ id: m.id, role: m.role, text: m.text.substring(0, 30) + '...' }))
+        });
+        return updated;
+      });
+
     } catch (error) {
+      console.error('❌ Error in handleSendMessage:', error);
       const errorMessage = createErrorMessage();
       setMessages(prev => [...prev, errorMessage]);
     } finally {
