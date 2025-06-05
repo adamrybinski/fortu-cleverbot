@@ -1,18 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Question {
-  id: string | number;
-  question: string;
-  relevance?: number;
-  context?: string;
-  organisations?: number;
-  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
-  insights?: string;
-  source: 'fortu' | 'openai';
-  selected?: boolean;
-}
+import { Question } from '@/components/canvas/modules/types';
 
 export const useQuestionGeneration = () => {
   const [fortuQuestions, setFortuQuestions] = useState<Question[]>([]);
@@ -21,109 +10,159 @@ export const useQuestionGeneration = () => {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSelection, setShowSelection] = useState(false);
-  
-  // Summary-related state
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [questionSummary, setQuestionSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
-  const generateFortuQuestions = async (refinedChallenge: string) => {
-    if (!refinedChallenge) return [];
-
-    console.log('generateFortuQuestions called with:', refinedChallenge);
+  const generateFortuQuestions = async (challenge: string) => {
     setIsLoadingFortu(true);
+    setError(null);
+    
     try {
-      console.log('Calling generate-fortu-questions edge function...');
-      const { data: fortuData, error: fortuError } = await supabase.functions.invoke('generate-fortu-questions', {
-        body: { refinedChallenge }
+      const { data, error } = await supabase.functions.invoke('generate-fortu-questions', {
+        body: { challenge }
       });
 
-      if (fortuError) {
-        console.error('Fortu function error:', fortuError);
-        throw fortuError;
+      if (error) throw error;
+
+      if (data && data.questions) {
+        const questionsWithIds = data.questions.map((q: string, index: number) => ({
+          id: `fortu-${Date.now()}-${index}`,
+          question: q,
+          source: 'fortu' as const,
+          selected: false
+        }));
+        
+        setFortuQuestions(questionsWithIds);
+        console.log('Generated fortu questions:', questionsWithIds);
       }
-
-      console.log('Fortu function response:', fortuData);
-
-      const questions: Question[] = (fortuData.questions || []).slice(0, 5).map((q: any, i: number) => ({
-        ...q,
-        id: `fortu-${i}`,
-        source: 'fortu',
-        selected: false
-      }));
-
-      console.log('Processed fortu questions:', questions);
-      setFortuQuestions(questions);
-      return questions;
-    } catch (err) {
-      console.error('Fortu question generation error:', err);
-      throw err;
+    } catch (error) {
+      console.error('Error generating fortu questions:', error);
+      setError('Failed to generate fortu.ai questions. Please try again.');
     } finally {
       setIsLoadingFortu(false);
     }
   };
 
-  const generateAIQuestions = async (refinedChallenge: string, relatedQuestions: string[] = []) => {
-    if (!refinedChallenge) return [];
-
-    console.log('generateAIQuestions called with:', { refinedChallenge, relatedQuestions });
+  const generateAIQuestions = async (challenge: string) => {
     setIsLoadingAI(true);
+    setError(null);
+    
     try {
-      console.log('Calling generate-ai-questions edge function...');
-      const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-ai-questions', {
-        body: {
-          refinedChallenge,
-          relatedQuestions
-        }
+      const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
+        body: { challenge }
       });
 
-      if (aiError) {
-        console.error('AI function error:', aiError);
-        throw aiError;
+      if (error) throw error;
+
+      if (data && data.questions) {
+        const questionsWithIds = data.questions.map((q: string, index: number) => ({
+          id: `ai-${Date.now()}-${index}`,
+          question: q,
+          source: 'openai' as const,
+          selected: false
+        }));
+        
+        setAiQuestions(questionsWithIds);
+        console.log('Generated AI questions:', questionsWithIds);
       }
-
-      console.log('AI function response:', aiData);
-
-      const questions: Question[] = (aiData.questions || []).map((q: string, i: number) => ({
-        id: `ai-${i}`,
-        question: q,
-        source: 'openai',
-        status: 'AI',
-        selected: false
-      }));
-
-      console.log('Processed AI questions:', questions);
-      setAiQuestions(questions);
-      return questions;
-    } catch (err) {
-      console.error('AI question generation error:', err);
-      throw err;
+    } catch (error) {
+      console.error('Error generating AI questions:', error);
+      setError('Failed to generate AI questions. Please try again.');
     } finally {
       setIsLoadingAI(false);
     }
   };
 
+  const generateAllQuestions = useCallback(async (challenge: string) => {
+    console.log('Generating all questions for challenge:', challenge);
+    await Promise.all([
+      generateFortuQuestions(challenge),
+      generateAIQuestions(challenge)
+    ]);
+  }, []);
+
+  const loadQuestionsFromSession = useCallback((
+    sessionFortuQuestions: Question[],
+    sessionAiQuestions: Question[],
+    selectedQuestions: Question[] = []
+  ) => {
+    console.log('Loading questions from session:', {
+      fortu: sessionFortuQuestions.length,
+      ai: sessionAiQuestions.length,
+      selected: selectedQuestions.length
+    });
+    
+    // Restore the selected state for questions
+    const fortuWithSelection = sessionFortuQuestions.map(q => ({
+      ...q,
+      selected: selectedQuestions.some(sel => sel.id === q.id)
+    }));
+    
+    const aiWithSelection = sessionAiQuestions.map(q => ({
+      ...q,
+      selected: selectedQuestions.some(sel => sel.id === q.id)
+    }));
+    
+    setFortuQuestions(fortuWithSelection);
+    setAiQuestions(aiWithSelection);
+    
+    // If there are selected questions, enable selection mode
+    if (selectedQuestions.length > 0) {
+      setShowSelection(true);
+    }
+  }, []);
+
+  const toggleSelectionMode = () => {
+    setShowSelection(!showSelection);
+    if (showSelection) {
+      // Clear all selections when exiting selection mode
+      clearSelections();
+    }
+  };
+
+  const handleQuestionSelection = (questionId: string | number) => {
+    const updateQuestions = (questions: Question[]) =>
+      questions.map(q => 
+        q.id === questionId ? { ...q, selected: !q.selected } : q
+      );
+
+    setFortuQuestions(prev => updateQuestions(prev));
+    setAiQuestions(prev => updateQuestions(prev));
+  };
+
+  const getSelectedQuestions = () => {
+    return [...fortuQuestions, ...aiQuestions].filter(q => q.selected);
+  };
+
+  const clearSelections = () => {
+    const clearSelected = (questions: Question[]) =>
+      questions.map(q => ({ ...q, selected: false }));
+    
+    setFortuQuestions(prev => clearSelected(prev));
+    setAiQuestions(prev => clearSelected(prev));
+  };
+
   const generateQuestionSummary = async (question: Question) => {
     setSelectedQuestion(question);
-    setQuestionSummary(null);
-    setIsLoadingSummary(true);
     setIsSummaryDialogOpen(true);
+    setIsLoadingSummary(true);
+    setQuestionSummary(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-question-summary', {
-        body: {
-          question: question.question,
-          source: question.source
-        }
+        body: { question: question.question }
       });
 
       if (error) throw error;
 
-      setQuestionSummary(data.summary);
-    } catch (err) {
-      console.error('Summary generation error:', err);
-      setQuestionSummary('Sorry, we could not generate a summary for this question at the moment.');
+      if (data && data.summary) {
+        setQuestionSummary(data.summary);
+      }
+    } catch (error) {
+      console.error('Error generating question summary:', error);
+      setQuestionSummary('Failed to generate summary. Please try again.');
     } finally {
       setIsLoadingSummary(false);
     }
@@ -133,56 +172,6 @@ export const useQuestionGeneration = () => {
     setIsSummaryDialogOpen(false);
     setSelectedQuestion(null);
     setQuestionSummary(null);
-  };
-
-  const handleQuestionSelection = (questionId: string | number, selected: boolean) => {
-    setFortuQuestions(prev => 
-      prev.map(q => q.id === questionId ? { ...q, selected } : q)
-    );
-    setAiQuestions(prev => 
-      prev.map(q => q.id === questionId ? { ...q, selected } : q)
-    );
-  };
-
-  const getSelectedQuestions = () => {
-    const selectedFortu = fortuQuestions.filter(q => q.selected);
-    const selectedAI = aiQuestions.filter(q => q.selected);
-    return [...selectedFortu, ...selectedAI];
-  };
-
-  const toggleSelectionMode = () => {
-    setShowSelection(!showSelection);
-  };
-
-  const clearSelections = () => {
-    setFortuQuestions(prev => prev.map(q => ({ ...q, selected: false })));
-    setAiQuestions(prev => prev.map(q => ({ ...q, selected: false })));
-  };
-
-  const generateAllQuestions = async (refinedChallenge: string) => {
-    if (!refinedChallenge) {
-      console.warn('generateAllQuestions called without refinedChallenge');
-      return;
-    }
-
-    console.log('generateAllQuestions called with:', refinedChallenge);
-    setError(null);
-
-    try {
-      // Step 1: Generate fortu questions
-      console.log('Step 1: Generating fortu questions...');
-      const fortuQs = await generateFortuQuestions(refinedChallenge);
-      
-      // Step 2: Generate AI questions based on fortu questions
-      console.log('Step 2: Generating AI questions...');
-      const relatedQuestionsText = fortuQs.map(q => q.question);
-      await generateAIQuestions(refinedChallenge, relatedQuestionsText);
-
-      console.log('All questions generated successfully');
-    } catch (err) {
-      console.error('Question generation error:', err);
-      setError('Something went wrong while generating questions. Please try again.');
-    }
   };
 
   return {
@@ -198,12 +187,12 @@ export const useQuestionGeneration = () => {
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
-    // Summary-related exports
     selectedQuestion,
     questionSummary,
     isLoadingSummary,
     isSummaryDialogOpen,
     generateQuestionSummary,
-    closeSummaryDialog
+    closeSummaryDialog,
+    loadQuestionsFromSession
   };
 };

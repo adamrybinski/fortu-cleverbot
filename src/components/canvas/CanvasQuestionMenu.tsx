@@ -22,8 +22,13 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  if (questionSessions.length <= 1) {
-    return null; // Don't show menu if there's only one or no sessions
+  // Only show menu if there are multiple sessions with refined challenges
+  const sessionsWithRefinedChallenges = questionSessions.filter(session => 
+    session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
+  );
+
+  if (sessionsWithRefinedChallenges.length <= 1) {
+    return null; // Don't show menu if there's only one or no sessions with refined challenges
   }
 
   const getStatusBadge = (session: QuestionSession) => {
@@ -52,6 +57,11 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
       default:
         return null;
     }
+  };
+
+  const getDisplayTitle = (session: QuestionSession) => {
+    // Use refined challenge if available, otherwise fall back to original question
+    return session.refinedChallenge || session.question;
   };
 
   return (
@@ -91,7 +101,7 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
 
             <ScrollArea className="max-h-60 mb-4">
               <div className="space-y-2">
-                {questionSessions.map((session) => (
+                {sessionsWithRefinedChallenges.map((session) => (
                   <div
                     key={session.id}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -107,7 +117,7 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[#003079] truncate">
-                          {session.question}
+                          {getDisplayTitle(session)}
                         </p>
                         <div className="flex items-center justify-between mt-1">
                           {getStatusBadge(session)}

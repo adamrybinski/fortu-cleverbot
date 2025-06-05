@@ -47,29 +47,6 @@ export const useMessageHandler = ({
   const [isLoading, setIsLoading] = useState(false);
   const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
 
-  // Function to detect if user is asking a new question
-  const isNewQuestion = (message: string): boolean => {
-    const newQuestionIndicators = [
-      'another challenge',
-      'another question',
-      'new challenge',
-      'new question',
-      'different challenge',
-      'different question',
-      'second challenge',
-      'next challenge',
-      'help with something else',
-      'help me with',
-      'work on something',
-      'another problem',
-      'different problem',
-      'new problem'
-    ];
-
-    const lowerMessage = message.toLowerCase();
-    return newQuestionIndicators.some(indicator => lowerMessage.includes(indicator));
-  };
-
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -81,15 +58,6 @@ export const useMessageHandler = ({
         return;
       }
       setLastProcessedQuestions(questionsKey);
-    }
-
-    // Check if this is a new question and create a session if needed
-    if (!isAutoMessage && isNewQuestion(messageText) && questionSessions) {
-      console.log('Detected new question, creating new session:', messageText);
-      const sessionId = questionSessions.createNewSession(messageText);
-      questionSessions.updateSession(sessionId, {
-        status: 'asking'
-      });
     }
 
     const newMessage: Message = {
@@ -137,11 +105,20 @@ export const useMessageHandler = ({
       console.log('Ready for fortu instance:', readyForFortuInstance);
       console.log('Refined challenge:', refinedChallenge);
 
-      // Update active question session with refined challenge if available
-      if (refinedChallenge && questionSessions?.activeSessionId) {
-        questionSessions.updateSession(questionSessions.activeSessionId, {
+      // Create new session only when we have both refined challenge and are ready for fortu search
+      if (readyForFortu && refinedChallenge && questionSessions) {
+        console.log('Creating new session with refined challenge:', refinedChallenge);
+        const sessionId = questionSessions.createNewSession(refinedChallenge);
+        questionSessions.updateSession(sessionId, {
           refinedChallenge,
           status: 'searching'
+        });
+      }
+
+      // Update active session with refined challenge if we have one but session already exists
+      if (refinedChallenge && questionSessions?.activeSessionId && !readyForFortu) {
+        questionSessions.updateSession(questionSessions.activeSessionId, {
+          refinedChallenge
         });
       }
 

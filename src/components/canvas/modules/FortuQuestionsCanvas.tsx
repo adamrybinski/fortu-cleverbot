@@ -55,12 +55,15 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     isLoadingSummary,
     isSummaryDialogOpen,
     generateQuestionSummary,
-    closeSummaryDialog
+    closeSummaryDialog,
+    loadQuestionsFromSession
   } = useQuestionGeneration();
 
-  const refinedChallenge = payload?.refinedChallenge;
+  const activeSession = questionSessions?.getActiveSession();
+  const refinedChallenge = activeSession?.refinedChallenge || payload?.refinedChallenge;
   const isSearchReady = payload?.searchReady;
   
+  console.log('Active session:', activeSession);
   console.log('Extracted values:', {
     refinedChallenge,
     isSearchReady,
@@ -68,31 +71,29 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     aiQuestionsCount: aiQuestions.length
   });
 
-  // Create new question session when starting a new question
+  // Load questions from active session when switching sessions
   useEffect(() => {
-    if (refinedChallenge && questionSessions && !questionSessions.activeSessionId) {
-      const sessionId = questionSessions.createNewSession(refinedChallenge);
-      questionSessions.updateSession(sessionId, {
-        refinedChallenge,
-        status: 'searching'
-      });
+    if (activeSession && (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0)) {
+      console.log('Loading questions from active session:', activeSession.id);
+      loadQuestionsFromSession(activeSession.fortuQuestions, activeSession.aiQuestions, activeSession.selectedQuestions);
     }
-  }, [refinedChallenge, questionSessions]);
+  }, [activeSession?.id, loadQuestionsFromSession]);
 
-  // Auto-generate when search is ready
+  // Auto-generate when search is ready for new sessions
   useEffect(() => {
     console.log('useEffect triggered with:', {
       isSearchReady,
       refinedChallenge,
       fortuQuestionsLength: fortuQuestions.length,
-      aiQuestionsLength: aiQuestions.length
+      aiQuestionsLength: aiQuestions.length,
+      activeSessionId: activeSession?.id
     });
     
     if (isSearchReady && refinedChallenge && fortuQuestions.length === 0 && aiQuestions.length === 0) {
       console.log('Conditions met, calling generateAllQuestions with:', refinedChallenge);
       generateAllQuestions(refinedChallenge);
     }
-  }, [isSearchReady, refinedChallenge, fortuQuestions.length, aiQuestions.length, generateAllQuestions]);
+  }, [isSearchReady, refinedChallenge, fortuQuestions.length, aiQuestions.length, generateAllQuestions, activeSession?.id]);
 
   // Update question session when questions are loaded
   useEffect(() => {
