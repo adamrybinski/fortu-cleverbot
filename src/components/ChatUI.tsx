@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { MessagesContainer } from './chat/MessagesContainer';
@@ -44,19 +45,6 @@ const convertChatMessageToMessage = (chatMessage: ChatMessage): Message => {
   };
 };
 
-// Helper function to convert Message to ChatMessage
-const convertMessageToChatMessage = (message: Message): ChatMessage => {
-  return {
-    id: message.id,
-    role: message.role,
-    text: message.text,
-    timestamp: message.timestamp,
-    selectedQuestions: message.selectedQuestions,
-    selectedAction: message.selectedAction,
-    canvasData: message.canvasData,
-  };
-};
-
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
   onOpenCanvas, 
   onTriggerCanvas, 
@@ -73,7 +61,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const { 
     getActiveSession, 
     addMessageToSession, 
-    switchToSession 
+    switchToSession,
+    createNewSession
   } = useChatHistory();
 
   // Get messages from active session or use default
@@ -115,9 +104,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setHasCanvasBeenTriggered,
     onTriggerCanvas,
     questionSessions,
-    activeSession,
     addMessageToSession,
-    getActiveSession
+    getActiveSession,
+    createNewSession
   });
 
   // Handle selected questions from canvas with different actions

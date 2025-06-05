@@ -33,9 +33,9 @@ interface UseMessageHandlerProps {
   setHasCanvasBeenTriggered: (value: boolean) => void;
   onTriggerCanvas?: (trigger: any) => void;
   questionSessions?: QuestionSessionsHook;
-  activeSession?: ChatSession | null;
   addMessageToSession: (sessionId: string, message: ChatMessage) => void;
   getActiveSession: () => ChatSession | null;
+  createNewSession: () => string;
 }
 
 // Helper function to convert Message to ChatMessage
@@ -59,21 +59,33 @@ export const useMessageHandler = ({
   setHasCanvasBeenTriggered,
   onTriggerCanvas,
   questionSessions,
-  activeSession,
   addMessageToSession,
-  getActiveSession
+  getActiveSession,
+  createNewSession
 }: UseMessageHandlerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
 
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
-    if (!messageText.trim() || isLoading || !activeSession) {
+    if (!messageText.trim() || isLoading) {
       console.log('⚠️ Message sending blocked:', {
         hasText: !!messageText.trim(),
-        isLoading,
-        hasActiveSession: !!activeSession
+        isLoading
       });
       return;
+    }
+
+    // Get or create active session
+    let activeSession = getActiveSession();
+    if (!activeSession) {
+      console.log('🆕 No active session found, creating new session');
+      const newSessionId = createNewSession();
+      activeSession = getActiveSession(); // Get the newly created session
+      
+      if (!activeSession) {
+        console.error('❌ Failed to create new session');
+        return;
+      }
     }
 
     console.log('📤 Starting message send:', {
@@ -116,7 +128,7 @@ export const useMessageHandler = ({
       // Get the current session with the newly added message
       const currentSession = getActiveSession();
       if (!currentSession) {
-        throw new Error('Active session not found');
+        throw new Error('Active session not found after adding message');
       }
 
       // Build conversation history from session messages
