@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
 import { ChallengeHistory } from './modules/ChallengeHistory';
 import { CanvasQuestionMenu } from './CanvasQuestionMenu';
+import { SimpleQuestionToolbar } from './modules/SimpleQuestionToolbar';
 import { useChallengeHistory } from '@/hooks/useChallengeHistory';
 import { Question } from './modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
@@ -92,6 +93,12 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   onSendMessageToChat
 }) => {
   const [showChallengeHistory, setShowChallengeHistory] = useState(false);
+  const [toolbarState, setToolbarState] = useState({
+    showSelection: false,
+    selectedQuestions: [] as Question[],
+    hasQuestions: false
+  });
+
   const {
     challengeHistory,
     currentSessionId,
@@ -129,8 +136,31 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     }
   };
 
+  const handleSelectionStateChange = (state: {
+    showSelection: boolean;
+    selectedQuestions: Question[];
+    hasQuestions: boolean;
+  }) => {
+    setToolbarState(state);
+  };
+
+  const handleSendToChat = (questions: Question[]) => {
+    if (onSendQuestionsToChat) {
+      onSendQuestionsToChat(questions, 'refine');
+    }
+    setToolbarState(prev => ({ ...prev, showSelection: false, selectedQuestions: [] }));
+  };
+
+  const handleToggleSelection = () => {
+    setToolbarState(prev => ({ ...prev, showSelection: !prev.showSelection }));
+  };
+
+  const handleClearSelections = () => {
+    setToolbarState(prev => ({ ...prev, selectedQuestions: [] }));
+  };
+
   const content = (
-    <div className="flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
+    <div className="relative flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3] flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -185,7 +215,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       </div>
       
       {/* Canvas Content Area with ScrollArea */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
         <ScrollArea className="h-full w-full">
           {showChallengeHistory ? (
             <ChallengeHistory
@@ -215,9 +245,30 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
                 markSessionCompleted
               }}
               questionSessions={questionSessions}
+              onSelectionStateChange={handleSelectionStateChange}
+              onSendToChat={handleSendToChat}
+              onToggleSelection={handleToggleSelection}
+              onClearSelections={handleClearSelections}
             />
           )}
         </ScrollArea>
+
+        {/* Floating Question Selection Toolbar - positioned outside ScrollArea */}
+        {!showChallengeHistory && toolbarState.hasQuestions && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="relative h-full w-full">
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6 pointer-events-auto">
+                <SimpleQuestionToolbar
+                  showSelection={toolbarState.showSelection}
+                  selectedQuestions={toolbarState.selectedQuestions}
+                  onToggleSelection={handleToggleSelection}
+                  onSendToChat={handleSendToChat}
+                  onClearSelections={handleClearSelections}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

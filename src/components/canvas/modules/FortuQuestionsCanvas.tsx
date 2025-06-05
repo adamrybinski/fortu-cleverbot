@@ -1,10 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
 import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
 import { QuestionSection } from './QuestionSection';
 import { MainEmptyState } from './MainEmptyState';
-import { SimpleQuestionToolbar } from './SimpleQuestionToolbar';
 import { FortuQuestionsHeader } from './FortuQuestionsHeader';
 import { ErrorDisplay } from './ErrorDisplay';
 import { Question, ChallengeHistoryHook } from './types';
@@ -25,13 +25,26 @@ interface FortuQuestionsCanvasProps {
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
   questionSessions?: QuestionSessionsHook;
+  // New props to expose selection state
+  onSelectionStateChange?: (state: {
+    showSelection: boolean;
+    selectedQuestions: Question[];
+    hasQuestions: boolean;
+  }) => void;
+  onSendToChat?: (questions: Question[]) => void;
+  onToggleSelection?: () => void;
+  onClearSelections?: () => void;
 }
 
 export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ 
   payload,
   onSendQuestionsToChat,
   challengeHistory,
-  questionSessions
+  questionSessions,
+  onSelectionStateChange,
+  onSendToChat,
+  onToggleSelection,
+  onClearSelections
 }) => {
   console.log('FortuQuestionsCanvas mounted with payload:', payload);
   
@@ -131,6 +144,17 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   const isLoading = isLoadingFortu || isLoadingAI;
   const selectedQuestions = getSelectedQuestions();
 
+  // Expose selection state to parent
+  useEffect(() => {
+    if (onSelectionStateChange) {
+      onSelectionStateChange({
+        showSelection,
+        selectedQuestions,
+        hasQuestions
+      });
+    }
+  }, [showSelection, selectedQuestions, hasQuestions, onSelectionStateChange]);
+
   const handleGenerateQuestions = () => {
     console.log('Manual generation triggered with challenge:', refinedChallenge);
     if (refinedChallenge) {
@@ -151,14 +175,33 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
       // Default to 'refine' action for simplicity
       onSendQuestionsToChat(questions, 'refine');
     }
-    toggleSelectionMode();
-    clearSelections();
+    
+    // Use parent handlers if provided, otherwise use local ones
+    if (onToggleSelection) {
+      onToggleSelection();
+    } else {
+      toggleSelectionMode();
+    }
+    
+    if (onClearSelections) {
+      onClearSelections();
+    } else {
+      clearSelections();
+    }
+  };
+
+  const handleToggleSelection = () => {
+    if (onToggleSelection) {
+      onToggleSelection();
+    } else {
+      toggleSelectionMode();
+    }
   };
 
   return (
     <ScrollArea className="h-full w-full">
-      <div className="relative p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
-        <div className={`max-w-4xl mx-auto ${showSelection ? 'pb-32' : ''}`}>
+      <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <FortuQuestionsHeader
             refinedChallenge={refinedChallenge}
@@ -167,7 +210,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
             hasQuestions={hasQuestions}
             onGenerateQuestions={handleGenerateQuestions}
             showSelection={showSelection}
-            onToggleSelection={toggleSelectionMode}
+            onToggleSelection={handleToggleSelection}
           />
 
           {/* Error Display */}
@@ -216,17 +259,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
           {/* Empty State - only show if no questions and not loading */}
           {!hasQuestions && !isLoading && !error && <MainEmptyState />}
         </div>
-
-        {/* Integrated Question Selection Toolbar - positioned absolutely within this container */}
-        {hasQuestions && (
-          <SimpleQuestionToolbar
-            showSelection={showSelection}
-            selectedQuestions={selectedQuestions}
-            onToggleSelection={toggleSelectionMode}
-            onSendToChat={handleSendToChat}
-            onClearSelections={clearSelections}
-          />
-        )}
       </div>
     </ScrollArea>
   );

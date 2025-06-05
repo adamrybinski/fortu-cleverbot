@@ -22,13 +22,25 @@ interface CanvasModuleProps {
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
   questionSessions?: QuestionSessionsHook;
+  onSelectionStateChange?: (state: {
+    showSelection: boolean;
+    selectedQuestions: Question[];
+    hasQuestions: boolean;
+  }) => void;
+  onSendToChat?: (questions: Question[]) => void;
+  onToggleSelection?: () => void;
+  onClearSelections?: () => void;
 }
 
 export const CanvasModule: React.FC<CanvasModuleProps> = ({ 
   trigger, 
   onSendQuestionsToChat,
   challengeHistory,
-  questionSessions
+  questionSessions,
+  onSelectionStateChange,
+  onSendToChat,
+  onToggleSelection,
+  onClearSelections
 }) => {
   console.log('Canvas triggered with:', trigger);
 
@@ -40,6 +52,10 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           onSendQuestionsToChat={onSendQuestionsToChat}
           challengeHistory={challengeHistory}
           questionSessions={questionSessions}
+          onSelectionStateChange={onSelectionStateChange}
+          onSendToChat={onSendToChat}
+          onToggleSelection={onToggleSelection}
+          onClearSelections={onClearSelections}
         />
       );
     
