@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
 import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
@@ -50,6 +51,10 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 }) => {
   console.log('FortuQuestionsCanvas mounted with payload:', payload);
   
+  // Add ref to track when we're loading from session to prevent infinite loops
+  const loadingFromSessionRef = useRef(false);
+  const lastSessionIdRef = useRef<string | null>(null);
+  
   const {
     fortuQuestions,
     aiQuestions,
@@ -87,8 +92,12 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 
   // Handle session switching - clear questions and load from new session
   useEffect(() => {
-    if (activeSession) {
+    if (activeSession && activeSession.id !== lastSessionIdRef.current) {
       console.log('Session changed to:', activeSession.id);
+      lastSessionIdRef.current = activeSession.id;
+      
+      // Set loading flag to prevent save effect from running
+      loadingFromSessionRef.current = true;
       
       // If session has questions, load them; otherwise clear questions
       if (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0) {
@@ -98,19 +107,27 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
         console.log('Clearing questions for new/empty session:', activeSession.id);
         clearQuestions();
       }
+      
+      // Reset loading flag after a brief delay to allow state updates
+      setTimeout(() => {
+        loadingFromSessionRef.current = false;
+      }, 100);
     }
   }, [activeSession?.id, loadQuestionsFromSession, clearQuestions]);
 
   // Auto-generate questions for new sessions with refined challenges but no questions
   useEffect(() => {
+    // Don't run during session loading or if already loading
+    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI) {
+      return;
+    }
+
     const shouldGenerateQuestions = activeSession && 
       activeSession.refinedChallenge && 
       activeSession.fortuQuestions.length === 0 && 
       activeSession.aiQuestions.length === 0 &&
       fortuQuestions.length === 0 && 
-      aiQuestions.length === 0 &&
-      !isLoadingFortu && 
-      !isLoadingAI;
+      aiQuestions.length === 0;
 
     console.log('Auto-generation check:', {
       shouldGenerate: shouldGenerateQuestions,
@@ -119,18 +136,24 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
       sessionFortuCount: activeSession?.fortuQuestions.length,
       sessionAiCount: activeSession?.aiQuestions.length,
       localFortuCount: fortuQuestions.length,
-      localAiCount: aiQuestions.length
+      localAiCount: aiQuestions.length,
+      isLoadingFromSession: loadingFromSessionRef.current
     });
 
     if (shouldGenerateQuestions) {
       console.log('Auto-generating questions for session:', activeSession.id, 'with challenge:', activeSession.refinedChallenge);
       generateAllQuestions(activeSession.refinedChallenge);
     }
-  }, [activeSession?.id, activeSession?.refinedChallenge, activeSession?.fortuQuestions.length, activeSession?.aiQuestions.length, fortuQuestions.length, aiQuestions.length, isLoadingFortu, isLoadingAI, generateAllQuestions]);
+  }, [activeSession?.id, activeSession?.refinedChallenge, fortuQuestions.length, aiQuestions.length, isLoadingFortu, isLoadingAI, generateAllQuestions]);
 
-  // Save generated questions to active session
+  // Save generated questions to active session - only when not loading from session
   useEffect(() => {
-    if (questionSessions?.activeSessionId && (fortuQuestions.length > 0 || aiQuestions.length > 0)) {
+    // Don't save if we're currently loading from session or if there are no questions
+    if (loadingFromSessionRef.current || (!fortuQuestions.length && !aiQuestions.length)) {
+      return;
+    }
+
+    if (questionSessions?.activeSessionId) {
       console.log('Saving questions to session:', questionSessions.activeSessionId);
       questionSessions.updateSession(questionSessions.activeSessionId, {
         fortuQuestions,
@@ -138,7 +161,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
         status: 'matches_found'
       });
     }
-  }, [fortuQuestions, aiQuestions, questionSessions]);
+  }, [fortuQuestions, aiQuestions, questionSessions?.activeSessionId, questionSessions?.updateSession]);
 
   const hasQuestions = fortuQuestions.length > 0 || aiQuestions.length > 0;
   const isLoading = isLoadingFortu || isLoadingAI;
