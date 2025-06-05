@@ -7,12 +7,24 @@ import { ChatInput } from './chat/ChatInput';
 import { useCanvasPreview } from '@/hooks/useCanvasPreview';
 import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
+import { QuestionSession } from '@/hooks/useQuestionSessions';
+
+interface QuestionSessionsHook {
+  questionSessions: QuestionSession[];
+  activeSessionId: string | null;
+  getActiveSession: () => QuestionSession | null;
+  createNewSession: (question: string) => string;
+  updateSession: (sessionId: string, updates: Partial<QuestionSession>) => void;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+}
 
 interface ExtendedChatUIProps extends ChatUIProps {
   isCanvasOpen?: boolean;
   selectedQuestionsFromCanvas?: Question[];
   selectedAction?: 'refine' | 'instance' | 'both';
   onClearSelectedQuestions?: () => void;
+  questionSessions?: QuestionSessionsHook;
 }
 
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
@@ -21,7 +33,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   isCanvasOpen,
   selectedQuestionsFromCanvas = [],
   selectedAction = 'refine',
-  onClearSelectedQuestions
+  onClearSelectedQuestions,
+  questionSessions
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -55,7 +68,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     onClearSelectedQuestions,
     shouldCreateCanvasPreview,
     setHasCanvasBeenTriggered,
-    onTriggerCanvas
+    onTriggerCanvas,
+    questionSessions
   });
 
   // Handle selected questions from canvas with different actions

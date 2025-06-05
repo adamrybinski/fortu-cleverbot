@@ -5,6 +5,7 @@ import { CanvasContainer } from './canvas/CanvasContainer';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Square } from 'lucide-react';
 import { useCanvas } from '@/hooks/useCanvas';
+import { useQuestionSessions } from '@/hooks/useQuestionSessions';
 
 interface Question {
   id: string | number;
@@ -18,6 +19,17 @@ export const ChatCanvas: React.FC = () => {
   const [selectedQuestionsFromCanvas, setSelectedQuestionsFromCanvas] = useState<Question[]>([]);
   const [selectedAction, setSelectedAction] = useState<'refine' | 'instance' | 'both'>('refine');
   const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
+  
+  // Move question sessions management to this level
+  const {
+    questionSessions,
+    activeSessionId,
+    getActiveSession,
+    createNewSession: createNewQuestionSession,
+    updateSession: updateQuestionSession,
+    switchToSession: switchToQuestionSession,
+    deleteSession: deleteQuestionSession
+  } = useQuestionSessions();
 
   const handleCloseCanvas = () => {
     closeCanvas();
@@ -36,6 +48,12 @@ export const ChatCanvas: React.FC = () => {
     console.log('Clearing selected questions');
     setSelectedQuestionsFromCanvas([]);
     setSelectedAction('refine');
+  };
+
+  const handleCreateNewQuestionSession = () => {
+    if (handleSendQuestionsToChat) {
+      handleSendQuestionsToChat([], 'refine');
+    }
   };
 
   // Check if mobile viewport
@@ -101,6 +119,15 @@ export const ChatCanvas: React.FC = () => {
               selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
               selectedAction={selectedAction}
               onClearSelectedQuestions={handleClearSelectedQuestions}
+              questionSessions={{
+                questionSessions,
+                activeSessionId,
+                getActiveSession,
+                createNewSession: createNewQuestionSession,
+                updateSession: updateQuestionSession,
+                switchToSession: switchToQuestionSession,
+                deleteSession: deleteQuestionSession
+              }}
             />
           </div>
 
@@ -122,6 +149,15 @@ export const ChatCanvas: React.FC = () => {
               trigger={currentTrigger}
               isMobile={isMobile}
               onSendQuestionsToChat={handleSendQuestionsToChat}
+              questionSessions={{
+                questionSessions,
+                activeSessionId,
+                getActiveSession,
+                createNewSession: createNewQuestionSession,
+                updateSession: updateQuestionSession,
+                switchToSession: switchToQuestionSession,
+                deleteSession: deleteQuestionSession
+              }}
             />
           </div>
         </div>

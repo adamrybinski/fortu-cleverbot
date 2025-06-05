@@ -2,6 +2,17 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Question, CanvasPreviewData } from '@/components/chat/types';
+import { QuestionSession } from './useQuestionSessions';
+
+interface QuestionSessionsHook {
+  questionSessions: QuestionSession[];
+  activeSessionId: string | null;
+  getActiveSession: () => QuestionSession | null;
+  createNewSession: (question: string) => string;
+  updateSession: (sessionId: string, updates: Partial<QuestionSession>) => void;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+}
 
 interface UseMessageHandlerProps {
   messages: Message[];
@@ -19,6 +30,7 @@ interface UseMessageHandlerProps {
   ) => CanvasPreviewData | null;
   setHasCanvasBeenTriggered: (value: boolean) => void;
   onTriggerCanvas?: (trigger: any) => void;
+  questionSessions?: QuestionSessionsHook;
 }
 
 export const useMessageHandler = ({
@@ -29,10 +41,34 @@ export const useMessageHandler = ({
   onClearSelectedQuestions,
   shouldCreateCanvasPreview,
   setHasCanvasBeenTriggered,
-  onTriggerCanvas
+  onTriggerCanvas,
+  questionSessions
 }: UseMessageHandlerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastProcessedQuestions, setLastProcessedQuestions] = useState<string>('');
+
+  // Function to detect if user is asking a new question
+  const isNewQuestion = (message: string): boolean => {
+    const newQuestionIndicators = [
+      'another challenge',
+      'another question',
+      'new challenge',
+      'new question',
+      'different challenge',
+      'different question',
+      'second challenge',
+      'next challenge',
+      'help with something else',
+      'help me with',
+      'work on something',
+      'another problem',
+      'different problem',
+      'new problem'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return newQuestionIndicators.some(indicator => lowerMessage.includes(indicator));
+  };
 
   const handleSendMessage = async (messageText: string, isAutoMessage = false) => {
     if (!messageText.trim() || isLoading) return;
@@ -45,6 +81,15 @@ export const useMessageHandler = ({
         return;
       }
       setLastProcessedQuestions(questionsKey);
+    }
+
+    // Check if this is a new question and create a session if needed
+    if (!isAutoMessage && isNewQuestion(messageText) && questionSessions) {
+      console.log('Detected new question, creating new session:', messageText);
+      const sessionId = questionSessions.createNewSession(messageText);
+      questionSessions.updateSession(sessionId, {
+        status: 'asking'
+      });
     }
 
     const newMessage: Message = {
@@ -91,6 +136,14 @@ export const useMessageHandler = ({
       console.log('Ready for fortu:', readyForFortu);
       console.log('Ready for fortu instance:', readyForFortuInstance);
       console.log('Refined challenge:', refinedChallenge);
+
+      // Update active question session with refined challenge if available
+      if (refinedChallenge && questionSessions?.activeSessionId) {
+        questionSessions.updateSession(questionSessions.activeSessionId, {
+          refinedChallenge,
+          status: 'searching'
+        });
+      }
 
       // Handle fortu.ai instance guidance (when user selects what to submit)
       if (readyForFortuInstance && refinedChallenge) {
