@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChatUI } from './ChatUI';
 import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
@@ -46,21 +47,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSessionChange
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { createNewSession, switchToSession, allSessions, activeSessionId: currentActiveSessionId } = useChatHistory();
+  const { 
+    createNewSession, 
+    switchToSession, 
+    allSessions, 
+    activeSessionId: currentActiveSessionId,
+    sessions
+  } = useChatHistory();
 
-  // Create initial session if none exists
+  // Create initial session if none exists and there are no sessions at all
   useEffect(() => {
-    if (allSessions.length === 0 && !currentActiveSessionId) {
+    console.log('ChatInterface effect - allSessions:', allSessions.length, 'activeSessionId:', currentActiveSessionId);
+    
+    // Only create a new session if there are no sessions at all (including unsaved ones)
+    if (allSessions.length === 0) {
+      console.log('No sessions exist, creating initial session...');
       createNewSession();
     }
-  }, [allSessions.length, currentActiveSessionId, createNewSession]);
+  }, [allSessions.length, createNewSession]);
 
   const handleNewChat = () => {
+    console.log('Creating new chat from sidebar...');
     const newSessionId = createNewSession();
     setIsSidebarOpen(false);
   };
 
   const handleSessionChange = (sessionId: string) => {
+    console.log('Switching to session from sidebar:', sessionId);
     switchToSession(sessionId);
     setIsSidebarOpen(false);
   };
@@ -87,6 +100,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           >
             {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
           </Button>
+          {/* Show session count for debugging */}
+          <span className="ml-2 text-xs text-gray-500">
+            Sessions: {sessions.length} | All: {allSessions.length}
+          </span>
         </div>
 
         {/* Chat UI Component */}
