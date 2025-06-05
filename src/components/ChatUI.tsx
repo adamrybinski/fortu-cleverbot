@@ -1,15 +1,15 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
-import { MessagesContainer } from './chat/MessagesContainer';
-import { ChatInput } from './chat/ChatInput';
-import { ChatHeader } from './chat/ChatHeader';
 import { useCanvasPreview } from '@/hooks/useCanvasPreview';
 import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
 import { CanvasTrigger } from './canvas/CanvasContainer';
-import { useChatHistory, ChatMessage } from '@/hooks/useChatHistory';
+import { useChatHistory } from '@/hooks/useChatHistory';
+import { useChatUIState } from '@/hooks/useChatUIState';
+import { useChatTransitions } from '@/hooks/useChatTransitions';
+import { ChatContainer } from './chat/ChatContainer';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -36,7 +36,7 @@ interface ExtendedChatUIProps extends ChatUIProps {
 }
 
 // Helper function to convert ChatMessage to Message
-const convertChatMessageToMessage = (chatMessage: ChatMessage): Message => {
+const convertChatMessageToMessage = (chatMessage: any): Message => {
   return {
     id: chatMessage.id,
     role: chatMessage.role,
@@ -66,34 +66,21 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   const { 
     getActiveSession, 
     addMessageToSession, 
-    switchToSession,
-    createNewSession,
-    allSessions
+    createNewSession
   } = useChatHistory();
 
-  // Get messages from active session or use default
-  const activeSession = getActiveSession();
-  const defaultMessages: Message[] = [
-    {
-      id: '1',
-      role: 'bot' as const,
-      text: 'Right, let\'s get started. What\'s the challenge you\'re looking to crack? Don\'t worry about having it perfectly formed — I\'ll help sharpen it.',
-      timestamp: new Date(),
-    },
-  ];
-  
-  // Show default messages if no session exists or if session has no messages
-  const messages: Message[] = activeSession?.messages && activeSession.messages.length > 0
-    ? activeSession.messages.map(convertChatMessageToMessage)
-    : defaultMessages;
-
-  const [inputValue, setInputValue] = useState('');
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const previousMessagesLength = useRef(messages.length);
-  const savedScrollPosition = useRef<number>(0);
+  const {
+    inputValue,
+    setInputValue,
+    isTransitioning,
+    setIsTransitioning,
+    shouldAutoScroll,
+    setShouldAutoScroll,
+    scrollRef,
+    messagesContainerRef,
+    previousMessagesLength,
+    savedScrollPosition,
+  } = useChatUIState();
 
   const {
     hasCanvasBeenTriggered,
@@ -102,6 +89,16 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     setPendingCanvasGuidance,
     shouldCreateCanvasPreview
   } = useCanvasPreview();
+
+  // Handle canvas transitions
+  useChatTransitions({
+    isCanvasOpen,
+    isTransitioning,
+    setIsTransitioning,
+    setShouldAutoScroll,
+    messagesContainerRef,
+    savedScrollPosition,
+  });
 
   const { isLoading, handleSendMessage } = useMessageHandler({
     selectedQuestionsFromCanvas,
@@ -123,21 +120,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     onSendMessage: handleSendMessage
   });
 
-  // Handle canvas guidance when canvas opens
-  useEffect(() => {
-    if (isCanvasOpen && pendingCanvasGuidance && activeSession) {
-      const guidanceMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: pendingCanvasGuidance,
-        timestamp: new Date(),
-      };
-
-      addMessageToSession(activeSession.id, guidanceMessage);
-      setPendingCanvasGuidance(null);
-    }
-  }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance, activeSession, addMessageToSession]);
-
   // Handle external message sending (from canvas)
   useEffect(() => {
     if (onSendMessageToChat) {
@@ -146,96 +128,46 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     }
   }, [onSendMessageToChat]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage(inputValue);
-      setInputValue('');
-    }
-  };
-
-  const handleSendClick = () => {
-    handleSendMessage(inputValue);
-    setInputValue('');
-  };
-
-  // Only auto-scroll when new messages are added, not when canvas state changes
-  useEffect(() => {
-    const hasNewMessages = messages.length > previousMessagesLength.current;
-    previousMessagesLength.current = messages.length;
-
-    if (hasNewMessages && shouldAutoScroll && scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, shouldAutoScroll]);
-
-  // Handle canvas transition with scroll position preservation
-  useEffect(() => {
-    if (isTransitioning) return; // Prevent multiple simultaneous transitions
-
-    // Capture current scroll position
-    if (messagesContainerRef.current) {
-      savedScrollPosition.current = messagesContainerRef.current.scrollTop;
-    }
-
-    // Start transition
-    setIsTransitioning(true);
-    setShouldAutoScroll(false);
-
-    // Phase 1: Show overlay (100ms)
-    const phase1Timer = setTimeout(() => {
-      // Canvas transition happens here (handled by CSS)
-    }, 100);
-
-    // Phase 2: Restore scroll position and hide overlay (500ms total)
-    const phase2Timer = setTimeout(() => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = savedScrollPosition.current;
-      }
-      setIsTransitioning(false);
-      setShouldAutoScroll(true);
-    }, 500);
-
-    return () => {
-      clearTimeout(phase1Timer);
-      clearTimeout(phase2Timer);
-    };
-  }, [isCanvasOpen]);
-
-  const handleCloseCanvas = () => {
-    // This will be handled by the parent component that manages canvas state
-    // For now, we'll just trigger the canvas with a close action
-    onTriggerCanvas?.({ type: 'close', payload: {} });
-  };
+  // Get messages from active session or use default
+  const activeSession = getActiveSession();
+  const defaultMessages: Message[] = [
+    {
+      id: '1',
+      role: 'bot' as const,
+      text: 'Right, let\'s get started. What\'s the challenge you\'re looking to crack? Don\'t worry about having it perfectly formed — I\'ll help sharpen it.',
+      timestamp: new Date(),
+    },
+  ];
+  
+  // Show default messages if no session exists or if session has no messages
+  const messages: Message[] = activeSession?.messages && activeSession.messages.length > 0
+    ? activeSession.messages.map(convertChatMessageToMessage)
+    : defaultMessages;
 
   return (
-    <div className="flex flex-col h-full bg-white min-h-0">
-      <ChatHeader
-        onOpenCanvas={onOpenCanvas}
-        onCloseCanvas={handleCloseCanvas}
-        isCanvasOpen={isCanvasOpen}
-        hasCanvasBeenTriggered={hasCanvasBeenTriggered}
-        currentTrigger={currentTrigger}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={onToggleSidebar}
-      />
-
-      <MessagesContainer
-        messages={messages}
-        isLoading={isLoading}
-        messagesContainerRef={messagesContainerRef}
-        scrollRef={scrollRef}
-        onTriggerCanvas={onTriggerCanvas}
-        isTransitioning={isTransitioning}
-      />
-
-      <ChatInput
-        inputValue={inputValue}
-        isLoading={isLoading}
-        onInputChange={setInputValue}
-        onSendMessage={handleSendClick}
-        onKeyPress={handleKeyPress}
-      />
-    </div>
+    <ChatContainer
+      messages={messages}
+      inputValue={inputValue}
+      setInputValue={setInputValue}
+      isLoading={isLoading}
+      handleSendMessage={handleSendMessage}
+      messagesContainerRef={messagesContainerRef}
+      scrollRef={scrollRef}
+      isTransitioning={isTransitioning}
+      shouldAutoScroll={shouldAutoScroll}
+      previousMessagesLength={previousMessagesLength}
+      onOpenCanvas={onOpenCanvas}
+      onTriggerCanvas={onTriggerCanvas}
+      isCanvasOpen={isCanvasOpen}
+      hasCanvasBeenTriggered={hasCanvasBeenTriggered}
+      currentTrigger={currentTrigger}
+      isSidebarOpen={isSidebarOpen}
+      onToggleSidebar={onToggleSidebar}
+      isCanvasOpenProp={isCanvasOpen}
+      pendingCanvasGuidance={pendingCanvasGuidance}
+      setPendingCanvasGuidance={setPendingCanvasGuidance}
+      activeSession={activeSession}
+      addMessageToSession={addMessageToSession}
+    />
   );
 };
