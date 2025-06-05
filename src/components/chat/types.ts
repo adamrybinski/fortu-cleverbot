@@ -14,6 +14,7 @@ export interface Question {
   question: string;
   source: 'fortu' | 'openai';
   selected?: boolean;
+  status?: string;
 }
 
 export interface CanvasPreviewData {

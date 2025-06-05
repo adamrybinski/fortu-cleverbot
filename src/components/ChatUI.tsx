@@ -25,6 +25,7 @@ interface ExtendedChatUIProps extends ChatUIProps {
   selectedAction?: 'refine' | 'instance' | 'both';
   onClearSelectedQuestions?: () => void;
   questionSessions?: QuestionSessionsHook;
+  onSendMessageToChat?: (message: string) => void;
 }
 
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
@@ -34,7 +35,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   selectedQuestionsFromCanvas = [],
   selectedAction = 'refine',
   onClearSelectedQuestions,
-  questionSessions
+  questionSessions,
+  onSendMessageToChat
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -93,6 +95,14 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       setPendingCanvasGuidance(null);
     }
   }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance]);
+
+  // Handle external message sending (from canvas)
+  useEffect(() => {
+    if (onSendMessageToChat) {
+      // This allows external components to send messages through this chat
+      // The function is available for canvas components to use
+    }
+  }, [onSendMessageToChat]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
