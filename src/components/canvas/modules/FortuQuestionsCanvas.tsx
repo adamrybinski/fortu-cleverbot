@@ -50,6 +50,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
+    clearQuestions,
     selectedQuestion,
     questionSummary,
     isLoadingSummary,
@@ -68,36 +69,57 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     refinedChallenge,
     isSearchReady,
     fortuQuestionsCount: fortuQuestions.length,
-    aiQuestionsCount: aiQuestions.length
+    aiQuestionsCount: aiQuestions.length,
+    activeSessionId: activeSession?.id
   });
 
-  // Load questions from active session when switching sessions
+  // Handle session switching - clear questions and load from new session
   useEffect(() => {
-    if (activeSession && (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0)) {
-      console.log('Loading questions from active session:', activeSession.id);
-      loadQuestionsFromSession(activeSession.fortuQuestions, activeSession.aiQuestions, activeSession.selectedQuestions);
+    if (activeSession) {
+      console.log('Session changed to:', activeSession.id);
+      
+      // If session has questions, load them; otherwise clear questions
+      if (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0) {
+        console.log('Loading existing questions from session:', activeSession.id);
+        loadQuestionsFromSession(activeSession.fortuQuestions, activeSession.aiQuestions, activeSession.selectedQuestions);
+      } else {
+        console.log('Clearing questions for new/empty session:', activeSession.id);
+        clearQuestions();
+      }
     }
-  }, [activeSession?.id, loadQuestionsFromSession]);
+  }, [activeSession?.id, loadQuestionsFromSession, clearQuestions]);
 
-  // Auto-generate when search is ready for new sessions
+  // Auto-generate questions for new sessions with refined challenges but no questions
   useEffect(() => {
-    console.log('useEffect triggered with:', {
-      isSearchReady,
-      refinedChallenge,
-      fortuQuestionsLength: fortuQuestions.length,
-      aiQuestionsLength: aiQuestions.length,
-      activeSessionId: activeSession?.id
+    const shouldGenerateQuestions = activeSession && 
+      activeSession.refinedChallenge && 
+      activeSession.fortuQuestions.length === 0 && 
+      activeSession.aiQuestions.length === 0 &&
+      fortuQuestions.length === 0 && 
+      aiQuestions.length === 0 &&
+      !isLoadingFortu && 
+      !isLoadingAI;
+
+    console.log('Auto-generation check:', {
+      shouldGenerate: shouldGenerateQuestions,
+      activeSessionId: activeSession?.id,
+      refinedChallenge: activeSession?.refinedChallenge,
+      sessionFortuCount: activeSession?.fortuQuestions.length,
+      sessionAiCount: activeSession?.aiQuestions.length,
+      localFortuCount: fortuQuestions.length,
+      localAiCount: aiQuestions.length
     });
-    
-    if (isSearchReady && refinedChallenge && fortuQuestions.length === 0 && aiQuestions.length === 0) {
-      console.log('Conditions met, calling generateAllQuestions with:', refinedChallenge);
-      generateAllQuestions(refinedChallenge);
-    }
-  }, [isSearchReady, refinedChallenge, fortuQuestions.length, aiQuestions.length, generateAllQuestions, activeSession?.id]);
 
-  // Update question session when questions are loaded
+    if (shouldGenerateQuestions) {
+      console.log('Auto-generating questions for session:', activeSession.id, 'with challenge:', activeSession.refinedChallenge);
+      generateAllQuestions(activeSession.refinedChallenge);
+    }
+  }, [activeSession?.id, activeSession?.refinedChallenge, activeSession?.fortuQuestions.length, activeSession?.aiQuestions.length, fortuQuestions.length, aiQuestions.length, isLoadingFortu, isLoadingAI, generateAllQuestions]);
+
+  // Save generated questions to active session
   useEffect(() => {
     if (questionSessions?.activeSessionId && (fortuQuestions.length > 0 || aiQuestions.length > 0)) {
+      console.log('Saving questions to session:', questionSessions.activeSessionId);
       questionSessions.updateSession(questionSessions.activeSessionId, {
         fortuQuestions,
         aiQuestions,

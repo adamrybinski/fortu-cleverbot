@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/canvas/modules/types';
@@ -88,6 +89,15 @@ export const useQuestionGeneration = () => {
     ]);
   }, []);
 
+  const clearQuestions = useCallback(() => {
+    console.log('Clearing all questions');
+    setFortuQuestions([]);
+    setAiQuestions([]);
+    setError(null);
+    setShowSelection(false);
+    clearSelections();
+  }, []);
+
   const loadQuestionsFromSession = useCallback((
     sessionFortuQuestions: Question[],
     sessionAiQuestions: Question[],
@@ -98,6 +108,9 @@ export const useQuestionGeneration = () => {
       ai: sessionAiQuestions.length,
       selected: selectedQuestions.length
     });
+    
+    // Clear existing questions first
+    clearQuestions();
     
     // Restore the selected state for questions
     const fortuWithSelection = sessionFortuQuestions.map(q => ({
@@ -117,7 +130,7 @@ export const useQuestionGeneration = () => {
     if (selectedQuestions.length > 0) {
       setShowSelection(true);
     }
-  }, []);
+  }, [clearQuestions]);
 
   const toggleSelectionMode = () => {
     setShowSelection(!showSelection);
@@ -192,6 +205,7 @@ export const useQuestionGeneration = () => {
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
+    clearQuestions,
     selectedQuestion,
     questionSummary,
     isLoadingSummary,
