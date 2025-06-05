@@ -169,9 +169,6 @@ export const useMessageHandler = ({
             assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
           }
         }
-      } else {
-        // For fortu cases, add message about searching
-        assistantText += "\n\nI've opened the question explorer below where I'm searching for relevant approaches from our database.";
       }
 
       const assistantMessage: Message = {
