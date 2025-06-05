@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
@@ -8,6 +9,7 @@ import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
 import { CanvasTrigger } from './canvas/CanvasContainer';
+import { useChatHistory, ChatMessage } from '@/hooks/useChatHistory';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -27,6 +29,8 @@ interface ExtendedChatUIProps extends ChatUIProps {
   questionSessions?: QuestionSessionsHook;
   onSendMessageToChat?: (message: string) => void;
   currentTrigger?: CanvasTrigger | null;
+  activeSessionId?: string | null;
+  onSessionChange?: (sessionId: string | null) => void;
 }
 
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
@@ -38,16 +42,38 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   onClearSelectedQuestions,
   questionSessions,
   onSendMessageToChat,
-  currentTrigger
+  currentTrigger,
+  activeSessionId,
+  onSessionChange
 }) => {
-  const [messages, setMessages] = useState<Message[]>([
+  const { 
+    getActiveSession, 
+    addMessageToSession, 
+    updateSessionMessages,
+    switchToSession 
+  } = useChatHistory();
+
+  // Get messages from active session or use default
+  const activeSession = getActiveSession();
+  const messages = activeSession?.messages || [
     {
       id: '1',
-      role: 'bot',
+      role: 'bot' as const,
       text: 'Right, let\'s get started. What\'s the challenge you\'re looking to crack? Don\'t worry about having it perfectly formed — I\'ll help sharpen it.',
       timestamp: new Date(),
     },
-  ]);
+  ];
+
+  const setMessages = (newMessages: Message[] | ((prev: Message[]) => Message[])) => {
+    if (!activeSession) return;
+    
+    const updatedMessages = typeof newMessages === 'function' 
+      ? newMessages(messages)
+      : newMessages;
+    
+    updateSessionMessages(activeSession.id, updatedMessages as ChatMessage[]);
+  };
+
   const [inputValue, setInputValue] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -85,18 +111,18 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
   // Handle canvas guidance when canvas opens
   useEffect(() => {
-    if (isCanvasOpen && pendingCanvasGuidance) {
-      const guidanceMessage: Message = {
+    if (isCanvasOpen && pendingCanvasGuidance && activeSession) {
+      const guidanceMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
         text: pendingCanvasGuidance,
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, guidanceMessage]);
+      addMessageToSession(activeSession.id, guidanceMessage);
       setPendingCanvasGuidance(null);
     }
-  }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance]);
+  }, [isCanvasOpen, pendingCanvasGuidance, setPendingCanvasGuidance, activeSession, addMessageToSession]);
 
   // Handle external message sending (from canvas)
   useEffect(() => {

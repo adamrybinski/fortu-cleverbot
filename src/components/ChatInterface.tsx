@@ -25,6 +25,8 @@ interface ChatInterfaceProps {
   questionSessions?: QuestionSessionsHook;
   onSendMessageToChat?: (message: string) => void;
   currentTrigger?: CanvasTrigger | null;
+  activeSessionId?: string | null;
+  onSessionChange?: (sessionId: string | null) => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -36,7 +38,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onClearSelectedQuestions,
   questionSessions,
   onSendMessageToChat,
-  currentTrigger
+  currentTrigger,
+  activeSessionId,
+  onSessionChange
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -51,6 +55,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         questionSessions={questionSessions}
         onSendMessageToChat={onSendMessageToChat}
         currentTrigger={currentTrigger}
+        activeSessionId={activeSessionId}
+        onSessionChange={onSessionChange}
       />
     </div>
   );
