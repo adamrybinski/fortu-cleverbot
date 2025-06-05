@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/canvas/modules/types';
@@ -176,6 +175,43 @@ export const useQuestionGeneration = () => {
     });
   }, []);
 
+  // New bulk expand/collapse functions
+  const expandAllFortuQuestions = useCallback(() => {
+    const fortuIds = fortuQuestions.map(q => q.id);
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      fortuIds.forEach(id => newSet.add(id));
+      return newSet;
+    });
+  }, [fortuQuestions]);
+
+  const collapseAllFortuQuestions = useCallback(() => {
+    const fortuIds = new Set(fortuQuestions.map(q => q.id));
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      fortuIds.forEach(id => newSet.delete(id));
+      return newSet;
+    });
+  }, [fortuQuestions]);
+
+  const expandAllAIQuestions = useCallback(() => {
+    const aiIds = aiQuestions.map(q => q.id);
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      aiIds.forEach(id => newSet.add(id));
+      return newSet;
+    });
+  }, [aiQuestions]);
+
+  const collapseAllAIQuestions = useCallback(() => {
+    const aiIds = new Set(aiQuestions.map(q => q.id));
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      aiIds.forEach(id => newSet.delete(id));
+      return newSet;
+    });
+  }, [aiQuestions]);
+
   const generateQuestionSummary = async (question: Question) => {
     if (loadingSummaries.has(question.id) || questionSummaries[question.id]) {
       return;
@@ -230,6 +266,11 @@ export const useQuestionGeneration = () => {
     loadingSummaries,
     toggleQuestionExpansion,
     generateQuestionSummary,
-    loadQuestionsFromSession
+    loadQuestionsFromSession,
+    // New bulk expand/collapse functions
+    expandAllFortuQuestions,
+    collapseAllFortuQuestions,
+    expandAllAIQuestions,
+    collapseAllAIQuestions
   };
 };

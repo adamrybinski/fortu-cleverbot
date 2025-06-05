@@ -1,11 +1,10 @@
-
 import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
 import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
 import { QuestionSection } from './QuestionSection';
 import { MainEmptyState } from './MainEmptyState';
-import { QuestionSelectionToolbar } from './QuestionSelectionToolbar';
+import { SimpleQuestionToolbar } from './SimpleQuestionToolbar';
 import { FortuQuestionsHeader } from './FortuQuestionsHeader';
 import { ErrorDisplay } from './ErrorDisplay';
 import { Question, ChallengeHistoryHook } from './types';
@@ -55,7 +54,11 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     loadingSummaries,
     toggleQuestionExpansion,
     generateQuestionSummary,
-    loadQuestionsFromSession
+    loadQuestionsFromSession,
+    expandAllFortuQuestions,
+    collapseAllFortuQuestions,
+    expandAllAIQuestions,
+    collapseAllAIQuestions
   } = useQuestionGeneration();
 
   const activeSession = questionSessions?.getActiveSession();
@@ -137,7 +140,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
   };
 
-  const handleSendToChat = (questions: Question[], action: 'refine' | 'instance' | 'both') => {
+  const handleSendToChat = (questions: Question[]) => {
     // Update question session with selections
     if (questionSessions?.activeSessionId) {
       questionSessions.updateSession(questionSessions.activeSessionId, {
@@ -147,7 +150,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
 
     if (onSendQuestionsToChat) {
-      onSendQuestionsToChat(questions, action);
+      // Default to 'refine' action for simplicity
+      onSendQuestionsToChat(questions, 'refine');
     }
     toggleSelectionMode();
     clearSelections();
@@ -188,6 +192,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
               loadingSummaries={loadingSummaries}
               onToggleExpansion={toggleQuestionExpansion}
               onGenerateSummary={generateQuestionSummary}
+              onExpandAll={expandAllFortuQuestions}
+              onCollapseAll={collapseAllFortuQuestions}
             />
 
             {/* Section 2: Suggested Questions from CleverBot */}
@@ -207,6 +213,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
               loadingSummaries={loadingSummaries}
               onToggleExpansion={toggleQuestionExpansion}
               onGenerateSummary={generateQuestionSummary}
+              onExpandAll={expandAllAIQuestions}
+              onCollapseAll={collapseAllAIQuestions}
             />
 
             {/* Empty State - only show if no questions and not loading */}
@@ -215,9 +223,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Question Selection Toolbar */}
+      {/* Simple Question Selection Toolbar */}
       {hasQuestions && (
-        <QuestionSelectionToolbar
+        <SimpleQuestionToolbar
           showSelection={showSelection}
           selectedQuestions={selectedQuestions}
           onToggleSelection={toggleSelectionMode}
