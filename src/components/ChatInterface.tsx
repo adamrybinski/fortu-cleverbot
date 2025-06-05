@@ -1,9 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ChatUI } from './ChatUI';
+import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
+import { Button } from '@/components/ui/button';
+import { History, X } from 'lucide-react';
 import { CanvasTrigger } from './canvas/CanvasContainer';
 import { Question } from './canvas/modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
+import { useChatHistory } from '@/hooks/useChatHistory';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -42,22 +46,74 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   activeSessionId,
   onSessionChange
 }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { createNewSession, switchToSession } = useChatHistory();
+
+  const handleNewChat = () => {
+    const newSessionId = createNewSession();
+    setIsSidebarOpen(false); // Close sidebar after creating new chat
+  };
+
+  const handleSessionChange = (sessionId: string) => {
+    switchToSession(sessionId);
+    setIsSidebarOpen(false); // Close sidebar after switching
+  };
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Check if mobile viewport
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Chat UI - Direct placement with flex-1 for proper height flow */}
-      <ChatUI 
-        onOpenCanvas={onOpenCanvas} 
-        onTriggerCanvas={onTriggerCanvas}
-        isCanvasOpen={isCanvasOpen}
-        selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
-        selectedAction={selectedAction}
-        onClearSelectedQuestions={onClearSelectedQuestions}
-        questionSessions={questionSessions}
-        onSendMessageToChat={onSendMessageToChat}
-        currentTrigger={currentTrigger}
-        activeSessionId={activeSessionId}
-        onSessionChange={onSessionChange}
-      />
+      <div className="flex h-full min-w-0">
+        {/* Sidebar */}
+        <div
+          className={`transition-all duration-300 ease-in-out border-r border-gray-200 ${
+            isSidebarOpen 
+              ? 'w-full md:w-80' 
+              : 'w-0'
+          } ${
+            isSidebarOpen && isMobile ? 'absolute inset-0 z-20 bg-white' : ''
+          } overflow-hidden`}
+        >
+          <ChatHistorySidebar onNewChat={handleNewChat} />
+        </div>
+
+        {/* Chat UI */}
+        <div className={`flex-1 flex flex-col min-w-0 ${isSidebarOpen && isMobile ? 'hidden' : ''}`}>
+          {/* Sidebar Toggle Button */}
+          <div className="flex items-center p-2 border-b border-gray-200 bg-[#F1EDFF]/30">
+            <Button
+              onClick={handleToggleSidebar}
+              variant="outline"
+              size="sm"
+              className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+            >
+              {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
+            </Button>
+          </div>
+
+          {/* Chat UI Component */}
+          <div className="flex-1 min-h-0">
+            <ChatUI 
+              onOpenCanvas={onOpenCanvas} 
+              onTriggerCanvas={onTriggerCanvas}
+              isCanvasOpen={isCanvasOpen}
+              selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+              selectedAction={selectedAction}
+              onClearSelectedQuestions={onClearSelectedQuestions}
+              questionSessions={questionSessions}
+              onSendMessageToChat={onSendMessageToChat}
+              currentTrigger={currentTrigger}
+              activeSessionId={activeSessionId}
+              onSessionChange={onSessionChange}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

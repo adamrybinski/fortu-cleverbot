@@ -1,6 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
-import { ChatHeader } from './chat/ChatHeader';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
 import { useCanvasPreview } from '@/hooks/useCanvasPreview';
@@ -220,13 +220,6 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white min-h-0">
-      <ChatHeader 
-        onOpenCanvas={onOpenCanvas}
-        isCanvasOpen={isCanvasOpen}
-        hasCanvasBeenTriggered={hasCanvasBeenTriggered}
-        currentTrigger={currentTrigger}
-      />
-      
       <MessagesContainer
         messages={messages}
         isLoading={isLoading}

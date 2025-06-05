@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { ChatInterface } from './ChatInterface';
 import { CanvasContainer } from './canvas/CanvasContainer';
-import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Square, History, X } from 'lucide-react';
+import { MessageSquare, Square } from 'lucide-react';
 import { useCanvas } from '@/hooks/useCanvas';
 import { useQuestionSessions } from '@/hooks/useQuestionSessions';
 import { useChatHistory } from '@/hooks/useChatHistory';
@@ -20,15 +19,10 @@ export const ChatCanvas: React.FC = () => {
   const [activeView, setActiveView] = useState<'chat' | 'canvas'>('chat');
   const [selectedQuestionsFromCanvas, setSelectedQuestionsFromCanvas] = useState<Question[]>([]);
   const [selectedAction, setSelectedAction] = useState<'refine' | 'instance' | 'both'>('refine');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
   
   // Chat history management
-  const {
-    activeSessionId,
-    createNewSession,
-    switchToSession
-  } = useChatHistory();
+  const { activeSessionId, switchToSession } = useChatHistory();
 
   // Move question sessions management to this level
   const {
@@ -60,14 +54,8 @@ export const ChatCanvas: React.FC = () => {
     setSelectedAction('refine');
   };
 
-  const handleNewChat = () => {
-    const newSessionId = createNewSession();
-    setIsSidebarOpen(false); // Close sidebar on mobile after creating new chat
-  };
-
   const handleSessionChange = (sessionId: string) => {
     switchToSession(sessionId);
-    setIsSidebarOpen(false); // Close sidebar on mobile after switching
   };
 
   // Check if mobile viewport
@@ -79,15 +67,6 @@ export const ChatCanvas: React.FC = () => {
         
         {/* Mobile Toggle Buttons */}
         <div className="md:hidden flex gap-2 bg-white/90 backdrop-blur-sm p-2 border-b border-gray-200">
-          <Button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            variant="outline"
-            size="sm"
-            className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-          >
-            {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
-          </Button>
-          
           {isCanvasOpen && (
             <>
               <Button
@@ -126,98 +105,70 @@ export const ChatCanvas: React.FC = () => {
         </div>
 
         <div className="flex h-full">
-          {/* Sidebar */}
+          {/* Chat Panel */}
           <div
-            className={`transition-all duration-300 ease-in-out border-r border-gray-200 ${
-              isSidebarOpen 
-                ? 'w-full md:w-80' 
-                : 'w-0 md:w-0'
+            className={`transition-all duration-500 ease-in-out ${
+              isCanvasOpen
+                ? 'hidden md:flex md:w-[30%] lg:w-[35%]'
+                : 'w-full'
             } ${
-              isSidebarOpen && isMobile ? 'absolute inset-0 z-20 bg-white' : ''
-            } overflow-hidden`}
+              isCanvasOpen && activeView === 'chat' ? 'flex md:flex' : ''
+            } ${
+              isCanvasOpen && activeView === 'canvas' ? 'hidden md:flex' : ''
+            }`}
           >
-            <ChatHistorySidebar onNewChat={handleNewChat} />
+            <ChatInterface
+              onOpenCanvas={openCanvas}
+              onTriggerCanvas={triggerCanvas}
+              isCanvasOpen={isCanvasOpen}
+              selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+              selectedAction={selectedAction}
+              onClearSelectedQuestions={handleClearSelectedQuestions}
+              currentTrigger={currentTrigger}
+              activeSessionId={activeSessionId}
+              onSessionChange={handleSessionChange}
+              questionSessions={{
+                questionSessions,
+                activeSessionId: questionSessionId,
+                getActiveSession,
+                createNewSession: createNewQuestionSession,
+                updateSession: updateQuestionSession,
+                switchToSession: switchToQuestionSession,
+                deleteSession: deleteQuestionSession
+              }}
+            />
           </div>
 
-          {/* Main Content Area */}
-          <div className={`flex flex-1 min-w-0 ${isSidebarOpen && isMobile ? 'hidden' : ''}`}>
-            {/* Chat Panel */}
-            <div
-              className={`transition-all duration-500 ease-in-out ${
-                isCanvasOpen
-                  ? 'hidden md:flex md:w-[30%] lg:w-[35%]'
-                  : 'w-full'
-              } ${
-                isCanvasOpen && activeView === 'chat' ? 'flex md:flex' : ''
-              } ${
-                isCanvasOpen && activeView === 'canvas' ? 'hidden md:flex' : ''
-              }`}
-            >
-              <ChatInterface
-                onOpenCanvas={openCanvas}
-                onTriggerCanvas={triggerCanvas}
-                isCanvasOpen={isCanvasOpen}
-                selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
-                selectedAction={selectedAction}
-                onClearSelectedQuestions={handleClearSelectedQuestions}
-                currentTrigger={currentTrigger}
-                activeSessionId={activeSessionId}
-                onSessionChange={handleSessionChange}
-                questionSessions={{
-                  questionSessions,
-                  activeSessionId: questionSessionId,
-                  getActiveSession,
-                  createNewSession: createNewQuestionSession,
-                  updateSession: updateQuestionSession,
-                  switchToSession: switchToQuestionSession,
-                  deleteSession: deleteQuestionSession
-                }}
-              />
-            </div>
-
-            {/* Canvas Panel */}
-            <div
-              className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                isCanvasOpen
-                  ? 'w-full md:w-[70%] lg:w-[65%]'
-                  : 'w-0 overflow-hidden'
-              } ${
-                isCanvasOpen && activeView === 'canvas' ? 'flex md:flex' : ''
-              } ${
-                isCanvasOpen && activeView === 'chat' ? 'hidden md:flex' : ''
-              }`}
-            >
-              <CanvasContainer
-                onClose={handleCloseCanvas}
-                isVisible={isCanvasOpen}
-                trigger={currentTrigger}
-                isMobile={isMobile}
-                onSendQuestionsToChat={handleSendQuestionsToChat}
-                questionSessions={{
-                  questionSessions,
-                  activeSessionId: questionSessionId,
-                  getActiveSession,
-                  createNewSession: createNewQuestionSession,
-                  updateSession: updateQuestionSession,
-                  switchToSession: switchToQuestionSession,
-                  deleteSession: deleteQuestionSession
-                }}
-              />
-            </div>
+          {/* Canvas Panel */}
+          <div
+            className={`transition-all duration-500 ease-in-out overflow-hidden ${
+              isCanvasOpen
+                ? 'w-full md:w-[70%] lg:w-[65%]'
+                : 'w-0 overflow-hidden'
+            } ${
+              isCanvasOpen && activeView === 'canvas' ? 'flex md:flex' : ''
+            } ${
+              isCanvasOpen && activeView === 'chat' ? 'hidden md:flex' : ''
+            }`}
+          >
+            <CanvasContainer
+              onClose={handleCloseCanvas}
+              isVisible={isCanvasOpen}
+              trigger={currentTrigger}
+              isMobile={isMobile}
+              onSendQuestionsToChat={handleSendQuestionsToChat}
+              questionSessions={{
+                questionSessions,
+                activeSessionId: questionSessionId,
+                getActiveSession,
+                createNewSession: createNewQuestionSession,
+                updateSession: updateQuestionSession,
+                switchToSession: switchToQuestionSession,
+                deleteSession: deleteQuestionSession
+              }}
+            />
           </div>
         </div>
-
-        {/* Desktop Sidebar Toggle */}
-        <Button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          variant="outline"
-          size="sm"
-          className={`hidden md:flex fixed top-6 left-6 z-10 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20 transition-all duration-300 ${
-            isSidebarOpen ? 'translate-x-80' : 'translate-x-0'
-          }`}
-        >
-          <History className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );
