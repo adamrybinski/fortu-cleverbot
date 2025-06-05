@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -81,13 +80,15 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   const refinedChallenge = activeSession?.refinedChallenge || payload?.refinedChallenge;
   const isSearchReady = payload?.searchReady;
   
-  console.log('Active session:', activeSession);
-  console.log('Extracted values:', {
+  console.log('Canvas state:', {
+    activeSession: activeSession?.id,
     refinedChallenge,
     isSearchReady,
     fortuQuestionsCount: fortuQuestions.length,
     aiQuestionsCount: aiQuestions.length,
-    activeSessionId: activeSession?.id
+    isLoadingFortu,
+    isLoadingAI,
+    hasSessionQuestions: activeSession ? (activeSession.fortuQuestions.length + activeSession.aiQuestions.length) : 0
   });
 
   // Handle session switching - clear questions and load from new session
@@ -115,36 +116,53 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
   }, [activeSession?.id, loadQuestionsFromSession, clearQuestions]);
 
-  // Auto-generate questions for new sessions with refined challenges but no questions
+  // Auto-generate questions for sessions with refined challenges but no questions
   useEffect(() => {
-    // Don't run during session loading or if already loading
-    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI) {
+    // Skip if we're loading from session, already loading, or no session
+    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI || !activeSession) {
+      console.log('Skipping auto-generation:', {
+        loadingFromSession: loadingFromSessionRef.current,
+        isLoadingFortu,
+        isLoadingAI,
+        hasActiveSession: !!activeSession
+      });
       return;
     }
 
-    const shouldGenerateQuestions = activeSession && 
-      activeSession.refinedChallenge && 
-      activeSession.fortuQuestions.length === 0 && 
-      activeSession.aiQuestions.length === 0 &&
-      fortuQuestions.length === 0 && 
-      aiQuestions.length === 0;
+    // Check if we need to generate questions
+    const hasNoQuestions = activeSession.fortuQuestions.length === 0 && 
+                          activeSession.aiQuestions.length === 0 &&
+                          fortuQuestions.length === 0 && 
+                          aiQuestions.length === 0;
 
-    console.log('Auto-generation check:', {
-      shouldGenerate: shouldGenerateQuestions,
-      activeSessionId: activeSession?.id,
-      refinedChallenge: activeSession?.refinedChallenge,
-      sessionFortuCount: activeSession?.fortuQuestions.length,
-      sessionAiCount: activeSession?.aiQuestions.length,
+    const shouldGenerate = activeSession.refinedChallenge && hasNoQuestions;
+
+    console.log('Auto-generation decision:', {
+      sessionId: activeSession.id,
+      refinedChallenge: activeSession.refinedChallenge,
+      sessionFortuCount: activeSession.fortuQuestions.length,
+      sessionAiCount: activeSession.aiQuestions.length,
       localFortuCount: fortuQuestions.length,
       localAiCount: aiQuestions.length,
-      isLoadingFromSession: loadingFromSessionRef.current
+      hasNoQuestions,
+      shouldGenerate
     });
 
-    if (shouldGenerateQuestions) {
-      console.log('Auto-generating questions for session:', activeSession.id, 'with challenge:', activeSession.refinedChallenge);
+    if (shouldGenerate) {
+      console.log('🚀 Auto-generating questions for challenge:', activeSession.refinedChallenge);
       generateAllQuestions(activeSession.refinedChallenge);
     }
-  }, [activeSession?.id, activeSession?.refinedChallenge, fortuQuestions.length, aiQuestions.length, isLoadingFortu, isLoadingAI, generateAllQuestions]);
+  }, [
+    activeSession?.id, 
+    activeSession?.refinedChallenge, 
+    activeSession?.fortuQuestions.length,
+    activeSession?.aiQuestions.length,
+    fortuQuestions.length, 
+    aiQuestions.length, 
+    isLoadingFortu, 
+    isLoadingAI, 
+    generateAllQuestions
+  ]);
 
   // Save generated questions to active session - only when not loading from session
   useEffect(() => {
@@ -154,7 +172,10 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
 
     if (questionSessions?.activeSessionId) {
-      console.log('Saving questions to session:', questionSessions.activeSessionId);
+      console.log('💾 Saving questions to session:', questionSessions.activeSessionId, {
+        fortuCount: fortuQuestions.length,
+        aiCount: aiQuestions.length
+      });
       questionSessions.updateSession(questionSessions.activeSessionId, {
         fortuQuestions,
         aiQuestions,

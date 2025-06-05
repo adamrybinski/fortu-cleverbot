@@ -33,7 +33,8 @@ export const useQuestionGeneration = () => {
     setAiQuestions
   });
 
-  const generateFortuQuestions = async (challenge: string) => {
+  const generateFortuQuestions = useCallback(async (challenge: string) => {
+    console.log('Starting fortu questions generation for:', challenge);
     setIsLoadingFortu(true);
     setError(null);
     
@@ -42,7 +43,10 @@ export const useQuestionGeneration = () => {
         body: { refinedChallenge: challenge }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       if (data && data.questions) {
         // Handle both string arrays and object arrays from the API
@@ -58,8 +62,10 @@ export const useQuestionGeneration = () => {
           };
         });
         
-        setFortuQuestions(questionsWithIds);
         console.log('Generated fortu questions:', questionsWithIds);
+        setFortuQuestions(questionsWithIds);
+      } else {
+        console.warn('No questions received from fortu API');
       }
     } catch (error) {
       console.error('Error generating fortu questions:', error);
@@ -67,9 +73,10 @@ export const useQuestionGeneration = () => {
     } finally {
       setIsLoadingFortu(false);
     }
-  };
+  }, []);
 
-  const generateAIQuestions = async (challenge: string) => {
+  const generateAIQuestions = useCallback(async (challenge: string) => {
+    console.log('Starting AI questions generation for:', challenge);
     setIsLoadingAI(true);
     setError(null);
     
@@ -78,7 +85,10 @@ export const useQuestionGeneration = () => {
         body: { refinedChallenge: challenge }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       if (data && data.questions) {
         const questionsWithIds = data.questions.map((q: string, index: number) => ({
@@ -88,8 +98,10 @@ export const useQuestionGeneration = () => {
           selected: false
         }));
         
-        setAiQuestions(questionsWithIds);
         console.log('Generated AI questions:', questionsWithIds);
+        setAiQuestions(questionsWithIds);
+      } else {
+        console.warn('No questions received from AI API');
       }
     } catch (error) {
       console.error('Error generating AI questions:', error);
@@ -97,18 +109,22 @@ export const useQuestionGeneration = () => {
     } finally {
       setIsLoadingAI(false);
     }
-  };
+  }, []);
 
   const generateAllQuestions = useCallback(async (challenge: string) => {
-    console.log('Generating all questions for challenge:', challenge);
+    console.log('Starting generation of all questions for challenge:', challenge);
+    
+    // Generate both types of questions in parallel
     await Promise.all([
       generateFortuQuestions(challenge),
       generateAIQuestions(challenge)
     ]);
-  }, []);
+    
+    console.log('Completed generation of all questions');
+  }, [generateFortuQuestions, generateAIQuestions]);
 
   const clearQuestions = useCallback(() => {
-    console.log('Clearing all questions');
+    console.log('Clearing all questions and related data');
     setFortuQuestions([]);
     setAiQuestions([]);
     setError(null);
