@@ -175,42 +175,61 @@ export const useQuestionGeneration = () => {
     });
   }, []);
 
-  // New bulk expand/collapse functions
-  const expandAllFortuQuestions = useCallback(() => {
+  const toggleExpandAllFortuQuestions = useCallback(() => {
     const fortuIds = fortuQuestions.map(q => q.id);
-    setExpandedQuestions(prev => {
-      const newSet = new Set(prev);
-      fortuIds.forEach(id => newSet.add(id));
-      return newSet;
-    });
-  }, [fortuQuestions]);
+    const hasExpandedQuestions = fortuIds.some(id => expandedQuestions.has(id));
+    
+    if (hasExpandedQuestions) {
+      // Collapse all
+      setExpandedQuestions(prev => {
+        const newSet = new Set(prev);
+        fortuIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Expand all and generate summaries
+      setExpandedQuestions(prev => {
+        const newSet = new Set(prev);
+        fortuIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+      
+      // Auto-generate summaries for questions that don't have them
+      fortuQuestions.forEach(question => {
+        if (!questionSummaries[question.id] && !loadingSummaries.has(question.id)) {
+          generateQuestionSummary(question);
+        }
+      });
+    }
+  }, [fortuQuestions, expandedQuestions, questionSummaries, loadingSummaries]);
 
-  const collapseAllFortuQuestions = useCallback(() => {
-    const fortuIds = new Set(fortuQuestions.map(q => q.id));
-    setExpandedQuestions(prev => {
-      const newSet = new Set(prev);
-      fortuIds.forEach(id => newSet.delete(id));
-      return newSet;
-    });
-  }, [fortuQuestions]);
-
-  const expandAllAIQuestions = useCallback(() => {
+  const toggleExpandAllAIQuestions = useCallback(() => {
     const aiIds = aiQuestions.map(q => q.id);
-    setExpandedQuestions(prev => {
-      const newSet = new Set(prev);
-      aiIds.forEach(id => newSet.add(id));
-      return newSet;
-    });
-  }, [aiQuestions]);
-
-  const collapseAllAIQuestions = useCallback(() => {
-    const aiIds = new Set(aiQuestions.map(q => q.id));
-    setExpandedQuestions(prev => {
-      const newSet = new Set(prev);
-      aiIds.forEach(id => newSet.delete(id));
-      return newSet;
-    });
-  }, [aiQuestions]);
+    const hasExpandedQuestions = aiIds.some(id => expandedQuestions.has(id));
+    
+    if (hasExpandedQuestions) {
+      // Collapse all
+      setExpandedQuestions(prev => {
+        const newSet = new Set(prev);
+        aiIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Expand all and generate summaries
+      setExpandedQuestions(prev => {
+        const newSet = new Set(prev);
+        aiIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+      
+      // Auto-generate summaries for questions that don't have them
+      aiQuestions.forEach(question => {
+        if (!questionSummaries[question.id] && !loadingSummaries.has(question.id)) {
+          generateQuestionSummary(question);
+        }
+      });
+    }
+  }, [aiQuestions, expandedQuestions, questionSummaries, loadingSummaries]);
 
   const generateQuestionSummary = async (question: Question) => {
     if (loadingSummaries.has(question.id) || questionSummaries[question.id]) {
@@ -221,7 +240,7 @@ export const useQuestionGeneration = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-question-summary', {
-        body: { question: question.question }
+        body: { question: question.question, source: question.source }
       });
 
       if (error) throw error;
@@ -267,10 +286,7 @@ export const useQuestionGeneration = () => {
     toggleQuestionExpansion,
     generateQuestionSummary,
     loadQuestionsFromSession,
-    // New bulk expand/collapse functions
-    expandAllFortuQuestions,
-    collapseAllFortuQuestions,
-    expandAllAIQuestions,
-    collapseAllAIQuestions
+    toggleExpandAllFortuQuestions,
+    toggleExpandAllAIQuestions
   };
 };

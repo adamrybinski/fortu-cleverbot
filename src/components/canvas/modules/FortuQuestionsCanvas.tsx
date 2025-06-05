@@ -55,10 +55,8 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     toggleQuestionExpansion,
     generateQuestionSummary,
     loadQuestionsFromSession,
-    expandAllFortuQuestions,
-    collapseAllFortuQuestions,
-    expandAllAIQuestions,
-    collapseAllAIQuestions
+    toggleExpandAllFortuQuestions,
+    toggleExpandAllAIQuestions
   } = useQuestionGeneration();
 
   const activeSession = questionSessions?.getActiveSession();
@@ -158,81 +156,77 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   };
 
   return (
-    <>
-      <ScrollArea className="h-full w-full">
-        <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <FortuQuestionsHeader
-              refinedChallenge={refinedChallenge}
-              isSearchReady={isSearchReady}
-              isLoading={isLoading}
-              hasQuestions={hasQuestions}
-              onGenerateQuestions={handleGenerateQuestions}
+    <ScrollArea className="h-full w-full">
+      <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <FortuQuestionsHeader
+            refinedChallenge={refinedChallenge}
+            isSearchReady={isSearchReady}
+            isLoading={isLoading}
+            hasQuestions={hasQuestions}
+            onGenerateQuestions={handleGenerateQuestions}
+            showSelection={showSelection}
+          />
+
+          {/* Error Display */}
+          <ErrorDisplay error={error} />
+
+          {/* Section 1: Matched Questions from fortu.ai */}
+          <QuestionSection
+            title="Matched Questions from fortu.ai"
+            icon={Database}
+            questions={fortuQuestions}
+            isLoading={isLoadingFortu}
+            emptyMessage="No fortu.ai questions generated yet"
+            borderColor="border-[#6EFFC6]/30"
+            iconColor="text-[#003079]"
+            emptyIconColor="text-[#6EFFC6]"
+            onSelectionChange={showSelection ? handleQuestionSelection : undefined}
+            showSelection={showSelection}
+            expandedQuestions={expandedQuestions}
+            questionSummaries={questionSummaries}
+            loadingSummaries={loadingSummaries}
+            onToggleExpansion={toggleQuestionExpansion}
+            onGenerateSummary={generateQuestionSummary}
+            onToggleExpandAll={toggleExpandAllFortuQuestions}
+          />
+
+          {/* Section 2: Suggested Questions from CleverBot */}
+          <QuestionSection
+            title="Suggested Questions from CleverBot"
+            icon={Bot}
+            questions={aiQuestions}
+            isLoading={isLoadingAI}
+            emptyMessage="No AI suggestions generated yet"
+            borderColor="border-[#753BBD]/20"
+            iconColor="text-[#753BBD]"
+            emptyIconColor="text-[#753BBD]"
+            onSelectionChange={showSelection ? handleQuestionSelection : undefined}
+            showSelection={showSelection}
+            expandedQuestions={expandedQuestions}
+            questionSummaries={questionSummaries}
+            loadingSummaries={loadingSummaries}
+            onToggleExpansion={toggleQuestionExpansion}
+            onGenerateSummary={generateQuestionSummary}
+            onToggleExpandAll={toggleExpandAllAIQuestions}
+          />
+
+          {/* Empty State - only show if no questions and not loading */}
+          {!hasQuestions && !isLoading && !error && <MainEmptyState />}
+
+          {/* Integrated Question Selection Toolbar */}
+          {hasQuestions && (
+            <SimpleQuestionToolbar
               showSelection={showSelection}
+              selectedQuestions={selectedQuestions}
+              onToggleSelection={toggleSelectionMode}
+              onSendToChat={handleSendToChat}
+              onClearSelections={clearSelections}
             />
-
-            {/* Error Display */}
-            <ErrorDisplay error={error} />
-
-            {/* Section 1: Matched Questions from fortu.ai */}
-            <QuestionSection
-              title="Matched Questions from fortu.ai"
-              icon={Database}
-              questions={fortuQuestions}
-              isLoading={isLoadingFortu}
-              emptyMessage="No fortu.ai questions generated yet"
-              borderColor="border-[#6EFFC6]/30"
-              iconColor="text-[#003079]"
-              emptyIconColor="text-[#6EFFC6]"
-              onSelectionChange={showSelection ? handleQuestionSelection : undefined}
-              showSelection={showSelection}
-              expandedQuestions={expandedQuestions}
-              questionSummaries={questionSummaries}
-              loadingSummaries={loadingSummaries}
-              onToggleExpansion={toggleQuestionExpansion}
-              onGenerateSummary={generateQuestionSummary}
-              onExpandAll={expandAllFortuQuestions}
-              onCollapseAll={collapseAllFortuQuestions}
-            />
-
-            {/* Section 2: Suggested Questions from CleverBot */}
-            <QuestionSection
-              title="Suggested Questions from CleverBot"
-              icon={Bot}
-              questions={aiQuestions}
-              isLoading={isLoadingAI}
-              emptyMessage="No AI suggestions generated yet"
-              borderColor="border-[#753BBD]/20"
-              iconColor="text-[#753BBD]"
-              emptyIconColor="text-[#753BBD]"
-              onSelectionChange={showSelection ? handleQuestionSelection : undefined}
-              showSelection={showSelection}
-              expandedQuestions={expandedQuestions}
-              questionSummaries={questionSummaries}
-              loadingSummaries={loadingSummaries}
-              onToggleExpansion={toggleQuestionExpansion}
-              onGenerateSummary={generateQuestionSummary}
-              onExpandAll={expandAllAIQuestions}
-              onCollapseAll={collapseAllAIQuestions}
-            />
-
-            {/* Empty State - only show if no questions and not loading */}
-            {!hasQuestions && !isLoading && !error && <MainEmptyState />}
-          </div>
+          )}
         </div>
-      </ScrollArea>
-
-      {/* Simple Question Selection Toolbar */}
-      {hasQuestions && (
-        <SimpleQuestionToolbar
-          showSelection={showSelection}
-          selectedQuestions={selectedQuestions}
-          onToggleSelection={toggleSelectionMode}
-          onSendToChat={handleSendToChat}
-          onClearSelections={clearSelections}
-        />
-      )}
-    </>
+      </div>
+    </ScrollArea>
   );
 };

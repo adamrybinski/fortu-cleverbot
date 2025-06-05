@@ -23,13 +23,13 @@ serve(async (req) => {
 
     let systemPrompt = '';
     if (source === 'fortu') {
-      systemPrompt = `You are an expert business consultant summarizing a question from fortu.ai's database. 
+      systemPrompt = `You are an expert business consultant summarising a question from fortu.ai's database. 
       Create a realistic 100-word summary that includes:
       - Backstory: Why this challenge emerged
       - Context: Industry/company situation  
       - Outcomes: What results were achieved
       
-      Write in a professional, insightful tone as if summarizing real case study data.`;
+      Write in a professional, insightful tone as if summarising real case study data.`;
     } else {
       systemPrompt = `You are an AI assistant explaining why this question was suggested by CleverBot. 
       Create a 100-word summary that explains:

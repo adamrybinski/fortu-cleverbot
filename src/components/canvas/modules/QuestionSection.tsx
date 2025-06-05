@@ -22,8 +22,7 @@ interface QuestionSectionProps {
   loadingSummaries?: Set<string | number>;
   onToggleExpansion?: (questionId: string | number) => void;
   onGenerateSummary?: (question: Question) => void;
-  onExpandAll?: () => void;
-  onCollapseAll?: () => void;
+  onToggleExpandAll?: () => void;
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -42,13 +41,12 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
   loadingSummaries = new Set(),
   onToggleExpansion,
   onGenerateSummary,
-  onExpandAll,
-  onCollapseAll
+  onToggleExpandAll
 }) => {
   const hasQuestions = questions.length > 0;
-  const hasExpandableQuestions = hasQuestions && questions.some(q => 
-    expandedQuestions.has(q.id) || questionSummaries[q.id]
-  );
+  
+  // Check if any questions are expanded to determine button state
+  const hasExpandedQuestions = hasQuestions && questions.some(q => expandedQuestions.has(q.id));
 
   return (
     <div className="mb-8">
@@ -63,28 +61,26 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
           )}
         </div>
         
-        {/* Expand/Collapse Controls */}
-        {hasQuestions && onExpandAll && onCollapseAll && (
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={onExpandAll}
-              variant="outline"
-              size="sm"
-              className="text-xs h-8 px-3 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-            >
-              <ChevronDown className="w-3 h-3 mr-1" />
-              Expand All
-            </Button>
-            <Button
-              onClick={onCollapseAll}
-              variant="outline"
-              size="sm"
-              className="text-xs h-8 px-3 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-            >
-              <ChevronUp className="w-3 h-3 mr-1" />
-              Collapse All
-            </Button>
-          </div>
+        {/* Single Toggle Button */}
+        {hasQuestions && onToggleExpandAll && (
+          <Button
+            onClick={onToggleExpandAll}
+            variant="outline"
+            size="sm"
+            className="text-xs h-8 px-3 border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+          >
+            {hasExpandedQuestions ? (
+              <>
+                <ChevronUp className="w-3 h-3 mr-1" />
+                Collapse All
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3 h-3 mr-1" />
+                Expand All
+              </>
+            )}
+          </Button>
         )}
       </div>
       
