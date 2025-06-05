@@ -11,6 +11,7 @@ interface CanvasQuestionMenuProps {
   onSwitchToSession: (sessionId: string) => void;
   onCreateNewSession: () => void;
   onDeleteSession: (sessionId: string) => void;
+  onSendMessageToChat?: (message: string) => void;
 }
 
 export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
@@ -18,7 +19,8 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
   activeSessionId,
   onSwitchToSession,
   onCreateNewSession,
-  onDeleteSession
+  onDeleteSession,
+  onSendMessageToChat
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -62,6 +64,13 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
   const getDisplayTitle = (session: QuestionSession) => {
     // Use refined challenge if available, otherwise fall back to original question
     return session.refinedChallenge || session.question;
+  };
+
+  const handleAskNewQuestion = () => {
+    if (onSendMessageToChat) {
+      onSendMessageToChat("I'd like to explore a new challenge. Can you help me identify and refine it?");
+    }
+    setIsOpen(false);
   };
 
   return (
@@ -134,10 +143,7 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
 
             {/* New Question Button */}
             <Button
-              onClick={() => {
-                onCreateNewSession();
-                setIsOpen(false);
-              }}
+              onClick={handleAskNewQuestion}
               variant="outline"
               size="sm"
               className="w-full border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"

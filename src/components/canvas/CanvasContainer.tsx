@@ -78,6 +78,7 @@ interface CanvasContainerProps {
   useShineBorder?: boolean;
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   questionSessions?: QuestionSessionsHook;
+  onSendMessageToChat?: (message: string) => void;
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({ 
@@ -87,7 +88,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   isMobile = false,
   useShineBorder = false,
   onSendQuestionsToChat,
-  questionSessions
+  questionSessions,
+  onSendMessageToChat
 }) => {
   const [showChallengeHistory, setShowChallengeHistory] = useState(false);
   const {
@@ -122,8 +124,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   };
 
   const handleCreateNewQuestionSession = () => {
-    if (onSendQuestionsToChat) {
-      onSendQuestionsToChat([], 'refine');
+    if (onSendMessageToChat) {
+      onSendMessageToChat("I'd like to explore a new challenge. Can you help me identify and refine it?");
     }
   };
 
@@ -140,6 +142,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
               onSwitchToSession={questionSessions.switchToSession}
               onCreateNewSession={handleCreateNewQuestionSession}
               onDeleteSession={questionSessions.deleteSession}
+              onSendMessageToChat={onSendMessageToChat}
             />
           )}
           

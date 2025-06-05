@@ -10,10 +10,9 @@ export const useQuestionGeneration = () => {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSelection, setShowSelection] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [questionSummary, setQuestionSummary] = useState<string | null>(null);
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string | number>>(new Set());
+  const [questionSummaries, setQuestionSummaries] = useState<Record<string | number, string>>({});
+  const [loadingSummaries, setLoadingSummaries] = useState<Set<string | number>>(new Set());
 
   const generateFortuQuestions = async (challenge: string) => {
     setIsLoadingFortu(true);
@@ -95,6 +94,9 @@ export const useQuestionGeneration = () => {
     setAiQuestions([]);
     setError(null);
     setShowSelection(false);
+    setExpandedQuestions(new Set());
+    setQuestionSummaries({});
+    setLoadingSummaries(new Set());
     clearSelections();
   }, []);
 
@@ -162,11 +164,24 @@ export const useQuestionGeneration = () => {
     setAiQuestions(prev => clearSelected(prev));
   };
 
+  const toggleQuestionExpansion = useCallback((questionId: string | number) => {
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
+  }, []);
+
   const generateQuestionSummary = async (question: Question) => {
-    setSelectedQuestion(question);
-    setIsSummaryDialogOpen(true);
-    setIsLoadingSummary(true);
-    setQuestionSummary(null);
+    if (loadingSummaries.has(question.id) || questionSummaries[question.id]) {
+      return;
+    }
+
+    setLoadingSummaries(prev => new Set(prev).add(question.id));
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-question-summary', {
@@ -176,20 +191,24 @@ export const useQuestionGeneration = () => {
       if (error) throw error;
 
       if (data && data.summary) {
-        setQuestionSummary(data.summary);
+        setQuestionSummaries(prev => ({
+          ...prev,
+          [question.id]: data.summary
+        }));
       }
     } catch (error) {
       console.error('Error generating question summary:', error);
-      setQuestionSummary('Failed to generate summary. Please try again.');
+      setQuestionSummaries(prev => ({
+        ...prev,
+        [question.id]: 'Failed to generate summary. Please try again.'
+      }));
     } finally {
-      setIsLoadingSummary(false);
+      setLoadingSummaries(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(question.id);
+        return newSet;
+      });
     }
-  };
-
-  const closeSummaryDialog = () => {
-    setIsSummaryDialogOpen(false);
-    setSelectedQuestion(null);
-    setQuestionSummary(null);
   };
 
   return {
@@ -206,12 +225,11 @@ export const useQuestionGeneration = () => {
     getSelectedQuestions,
     clearSelections,
     clearQuestions,
-    selectedQuestion,
-    questionSummary,
-    isLoadingSummary,
-    isSummaryDialogOpen,
+    expandedQuestions,
+    questionSummaries,
+    loadingSummaries,
+    toggleQuestionExpansion,
     generateQuestionSummary,
-    closeSummaryDialog,
     loadQuestionsFromSession
   };
 };

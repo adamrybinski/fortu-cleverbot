@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LucideIcon, Loader2 } from 'lucide-react';
-import { QuestionCard } from './QuestionCard';
+import { ExpandableQuestionCard } from './ExpandableQuestionCard';
 import { EmptyState } from './EmptyState';
 import { Question } from './types';
 
@@ -14,9 +14,13 @@ interface QuestionSectionProps {
   borderColor?: string;
   iconColor?: string;
   emptyIconColor?: string;
-  onQuestionClick?: (question: Question) => void;
   onSelectionChange?: (questionId: string | number, selected: boolean) => void;
   showSelection?: boolean;
+  expandedQuestions?: Set<string | number>;
+  questionSummaries?: Record<string | number, string>;
+  loadingSummaries?: Set<string | number>;
+  onToggleExpansion?: (questionId: string | number) => void;
+  onGenerateSummary?: (question: Question) => void;
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -28,9 +32,13 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
   borderColor = 'border-[#6EFFC6]/30',
   iconColor = 'text-[#003079]',
   emptyIconColor = 'text-[#6EFFC6]',
-  onQuestionClick,
   onSelectionChange,
-  showSelection = false
+  showSelection = false,
+  expandedQuestions = new Set(),
+  questionSummaries = {},
+  loadingSummaries = new Set(),
+  onToggleExpansion,
+  onGenerateSummary
 }) => {
   return (
     <div className="mb-8">
@@ -47,13 +55,17 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
       {questions.length > 0 ? (
         <div className="space-y-4">
           {questions.map((question) => (
-            <QuestionCard 
+            <ExpandableQuestionCard 
               key={question.id} 
               question={question}
               borderColor={borderColor}
-              onClick={onQuestionClick}
               onSelectionChange={onSelectionChange}
               showSelection={showSelection}
+              isExpanded={expandedQuestions.has(question.id)}
+              onToggleExpansion={onToggleExpansion}
+              onGenerateSummary={onGenerateSummary}
+              summary={questionSummaries[question.id]}
+              isLoadingSummary={loadingSummaries.has(question.id)}
             />
           ))}
         </div>

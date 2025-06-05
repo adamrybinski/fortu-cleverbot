@@ -5,7 +5,6 @@ import { Database, Bot } from 'lucide-react';
 import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
 import { QuestionSection } from './QuestionSection';
 import { MainEmptyState } from './MainEmptyState';
-import { QuestionSummaryDialog } from './QuestionSummaryDialog';
 import { QuestionSelectionToolbar } from './QuestionSelectionToolbar';
 import { FortuQuestionsHeader } from './FortuQuestionsHeader';
 import { ErrorDisplay } from './ErrorDisplay';
@@ -51,12 +50,11 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     getSelectedQuestions,
     clearSelections,
     clearQuestions,
-    selectedQuestion,
-    questionSummary,
-    isLoadingSummary,
-    isSummaryDialogOpen,
+    expandedQuestions,
+    questionSummaries,
+    loadingSummaries,
+    toggleQuestionExpansion,
     generateQuestionSummary,
-    closeSummaryDialog,
     loadQuestionsFromSession
   } = useQuestionGeneration();
 
@@ -183,9 +181,13 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
               borderColor="border-[#6EFFC6]/30"
               iconColor="text-[#003079]"
               emptyIconColor="text-[#6EFFC6]"
-              onQuestionClick={showSelection ? undefined : generateQuestionSummary}
               onSelectionChange={showSelection ? handleQuestionSelection : undefined}
               showSelection={showSelection}
+              expandedQuestions={expandedQuestions}
+              questionSummaries={questionSummaries}
+              loadingSummaries={loadingSummaries}
+              onToggleExpansion={toggleQuestionExpansion}
+              onGenerateSummary={generateQuestionSummary}
             />
 
             {/* Section 2: Suggested Questions from CleverBot */}
@@ -198,9 +200,13 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
               borderColor="border-[#753BBD]/20"
               iconColor="text-[#753BBD]"
               emptyIconColor="text-[#753BBD]"
-              onQuestionClick={showSelection ? undefined : generateQuestionSummary}
               onSelectionChange={showSelection ? handleQuestionSelection : undefined}
               showSelection={showSelection}
+              expandedQuestions={expandedQuestions}
+              questionSummaries={questionSummaries}
+              loadingSummaries={loadingSummaries}
+              onToggleExpansion={toggleQuestionExpansion}
+              onGenerateSummary={generateQuestionSummary}
             />
 
             {/* Empty State - only show if no questions and not loading */}
@@ -219,15 +225,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
           onClearSelections={clearSelections}
         />
       )}
-
-      {/* Question Summary Dialog */}
-      <QuestionSummaryDialog
-        isOpen={isSummaryDialogOpen}
-        onClose={closeSummaryDialog}
-        question={selectedQuestion}
-        summary={questionSummary}
-        isLoading={isLoadingSummary}
-      />
     </>
   );
 };
