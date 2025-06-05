@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Question, CanvasPreviewData } from '@/components/chat/types';
 import { QuestionSession } from './useQuestionSessions';
+import { createUserMessage, createAssistantMessage, createErrorMessage } from './utils/messageUtils';
+import { handleSessionManagement } from './utils/sessionUtils';
+import { enhanceAssistantText, processApiResponse } from './utils/responseUtils';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -60,14 +63,12 @@ export const useMessageHandler = ({
       setLastProcessedQuestions(questionsKey);
     }
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      text: messageText,
-      timestamp: new Date(),
-      selectedQuestions: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedQuestionsFromCanvas : undefined,
-      selectedAction: !isAutoMessage && selectedQuestionsFromCanvas.length > 0 ? selectedAction : undefined,
-    };
+    const newMessage = createUserMessage(
+      messageText,
+      selectedQuestionsFromCanvas,
+      selectedAction,
+      isAutoMessage
+    );
 
     setMessages(prev => [...prev, newMessage]);
     setIsLoading(true);
@@ -94,45 +95,16 @@ export const useMessageHandler = ({
 
       if (error || data?.error) throw new Error(data?.error || error.message);
 
-      let assistantText = data.response;
-      const agentUsed = data.agentUsed;
-      const readyForFortu = data.readyForFortu;
-      const readyForFortuInstance = data.readyForFortuInstance;
-      const refinedChallenge = data.refinedChallenge;
-
-      console.log('🔄 Message Handler - Response data:', {
+      const {
+        assistantText,
         agentUsed,
         readyForFortu,
         readyForFortuInstance,
-        refinedChallenge,
-        hasQuestionSessions: !!questionSessions
-      });
+        refinedChallenge
+      } = processApiResponse(data);
 
-      // Create new session when ready for fortu search
-      if (readyForFortu && refinedChallenge && questionSessions) {
-        console.log('🚀 Creating new session for fortu search:', refinedChallenge);
-        const sessionId = questionSessions.createNewSession(refinedChallenge);
-        questionSessions.updateSession(sessionId, {
-          refinedChallenge,
-          status: 'searching'
-        });
-      }
-
-      // Update active session with refined challenge if we have one but session already exists
-      if (refinedChallenge && questionSessions?.activeSessionId && !readyForFortu) {
-        console.log('📝 Updating existing session with refined challenge:', refinedChallenge);
-        questionSessions.updateSession(questionSessions.activeSessionId, {
-          refinedChallenge
-        });
-      }
-
-      // Handle fortu.ai instance guidance (when user selects what to submit)
-      if (readyForFortuInstance && refinedChallenge) {
-        assistantText += `\n\n**🎯 Ready for fortu.ai Instance Setup**\n\n` +
-          "Perfect! Based on your selection, here's what you'll submit to your fortu.ai instance:\n\n" +
-          `**Your Challenge:** "${refinedChallenge}"\n\n` +
-          "**Next Step:** Take this to your fortu.ai instance to find specific, actionable solutions from organisations that have successfully tackled this exact challenge.";
-      }
+      // Handle session management
+      handleSessionManagement(readyForFortu, refinedChallenge, questionSessions);
 
       // Create canvas preview for all cases including fortu
       const canvasPreviewData = shouldCreateCanvasPreview(
@@ -146,31 +118,20 @@ export const useMessageHandler = ({
       
       if (canvasPreviewData) {
         setHasCanvasBeenTriggered(true);
-        
-        if (canvasPreviewData.type === 'fortuQuestions') {
-          assistantText += "\n\nI've opened the question explorer below where you can browse relevant approaches from our database. Select the questions that best align with your challenge to help me create the perfect refined statement for your fortu.ai instance.";
-        } else {
-          assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
-        }
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: assistantText,
-        timestamp: new Date(),
-        canvasData: canvasPreviewData || undefined
-      };
+      // Enhance assistant text with additional guidance
+      const enhancedAssistantText = enhanceAssistantText(
+        assistantText,
+        readyForFortuInstance,
+        refinedChallenge,
+        canvasPreviewData
+      );
 
+      const assistantMessage = createAssistantMessage(enhancedAssistantText, canvasPreviewData);
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        text: 'Right, hit a snag there. Technical hiccup on my end. Give it another go?',
-        timestamp: new Date(),
-      };
-
+      const errorMessage = createErrorMessage();
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
