@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { X, ArrowLeft, History } from 'lucide-react';
+import { PanelRightClose, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
@@ -207,7 +208,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
               size="sm"
               className="text-[#003079] hover:bg-white/50"
             >
-              <X className="w-4 h-4" />
+              <PanelRightClose className="w-4 h-4" />
             </Button>
           )}
         </div>
