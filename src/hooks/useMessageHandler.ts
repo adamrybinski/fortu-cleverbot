@@ -108,28 +108,14 @@ export const useMessageHandler = ({
         hasQuestionSessions: !!questionSessions
       });
 
-      // Create new session and trigger canvas when ready for fortu search
+      // Create new session when ready for fortu search
       if (readyForFortu && refinedChallenge && questionSessions) {
-        console.log('🚀 Creating new session and triggering canvas:', refinedChallenge);
+        console.log('🚀 Creating new session for fortu search:', refinedChallenge);
         const sessionId = questionSessions.createNewSession(refinedChallenge);
         questionSessions.updateSession(sessionId, {
           refinedChallenge,
           status: 'searching'
         });
-
-        // Trigger canvas immediately after session creation
-        if (onTriggerCanvas) {
-          console.log('🎯 Triggering canvas with search ready payload');
-          onTriggerCanvas({
-            type: 'fortuQuestions',
-            payload: {
-              refinedChallenge,
-              searchReady: true,
-              sessionId
-            }
-          });
-          setHasCanvasBeenTriggered(true);
-        }
       }
 
       // Update active session with refined challenge if we have one but session already exists
@@ -148,26 +134,23 @@ export const useMessageHandler = ({
           "**Next Step:** Take this to your fortu.ai instance to find specific, actionable solutions from organisations that have successfully tackled this exact challenge.";
       }
 
-      // Only create canvas preview for non-fortu cases (fortu is handled above)
-      let canvasPreviewData = null;
-      if (!readyForFortu) {
-        canvasPreviewData = shouldCreateCanvasPreview(
-          messageText, 
-          agentUsed, 
-          readyForFortu,
-          false, // No multi-challenge in simplified flow
-          refinedChallenge,
-          onTriggerCanvas
-        );
+      // Create canvas preview for all cases including fortu
+      const canvasPreviewData = shouldCreateCanvasPreview(
+        messageText, 
+        agentUsed, 
+        readyForFortu,
+        false, // No multi-challenge in simplified flow
+        refinedChallenge,
+        onTriggerCanvas
+      );
+      
+      if (canvasPreviewData) {
+        setHasCanvasBeenTriggered(true);
         
-        if (canvasPreviewData) {
-          setHasCanvasBeenTriggered(true);
-          
-          if (canvasPreviewData.type === 'fortuQuestions') {
-            assistantText += "\n\nI've opened the question explorer below where you can browse relevant approaches from our database. Select the questions that best align with your challenge to help me create the perfect refined statement for your fortu.ai instance.";
-          } else {
-            assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
-          }
+        if (canvasPreviewData.type === 'fortuQuestions') {
+          assistantText += "\n\nI've opened the question explorer below where you can browse relevant approaches from our database. Select the questions that best align with your challenge to help me create the perfect refined statement for your fortu.ai instance.";
+        } else {
+          assistantText += "\n\nI've set up a blank canvas for you. Click the expand button below to open it and start visualising your ideas.";
         }
       }
 
