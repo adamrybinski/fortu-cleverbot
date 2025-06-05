@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ChatUI } from './ChatUI';
 import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
 import { Button } from '@/components/ui/button';
-import { History, X } from 'lucide-react';
+import { PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import { CanvasTrigger } from './canvas/CanvasContainer';
 import { Question } from './canvas/modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
@@ -98,7 +98,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             size="sm"
             className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
           >
-            {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
+            {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
           </Button>
           {/* Show session count for debugging */}
           <span className="ml-2 text-xs text-gray-500">

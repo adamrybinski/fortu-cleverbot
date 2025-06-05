@@ -1,8 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { MessagesContainer } from './chat/MessagesContainer';
 import { ChatInput } from './chat/ChatInput';
+import { ChatHeader } from './chat/ChatHeader';
 import { useCanvasPreview } from '@/hooks/useCanvasPreview';
 import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
@@ -195,8 +195,22 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     };
   }, [isCanvasOpen]);
 
+  const handleCloseCanvas = () => {
+    // This will be handled by the parent component that manages canvas state
+    // For now, we'll just trigger the canvas with a close action
+    onTriggerCanvas?.({ type: 'close', payload: {} });
+  };
+
   return (
     <div className="flex flex-col h-full bg-white min-h-0">
+      <ChatHeader
+        onOpenCanvas={onOpenCanvas}
+        onCloseCanvas={handleCloseCanvas}
+        isCanvasOpen={isCanvasOpen}
+        hasCanvasBeenTriggered={hasCanvasBeenTriggered}
+        currentTrigger={currentTrigger}
+      />
+
       <MessagesContainer
         messages={messages}
         isLoading={isLoading}
