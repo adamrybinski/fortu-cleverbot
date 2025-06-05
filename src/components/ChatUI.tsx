@@ -30,6 +30,8 @@ interface ExtendedChatUIProps extends ChatUIProps {
   currentTrigger?: CanvasTrigger | null;
   activeSessionId?: string | null;
   onSessionChange?: (sessionId: string | null) => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 // Helper function to convert ChatMessage to Message
@@ -56,7 +58,9 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   onSendMessageToChat,
   currentTrigger,
   activeSessionId,
-  onSessionChange
+  onSessionChange,
+  isSidebarOpen,
+  onToggleSidebar
 }) => {
   const { 
     getActiveSession, 
@@ -209,6 +213,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         isCanvasOpen={isCanvasOpen}
         hasCanvasBeenTriggered={hasCanvasBeenTriggered}
         currentTrigger={currentTrigger}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={onToggleSidebar}
       />
 
       <MessagesContainer

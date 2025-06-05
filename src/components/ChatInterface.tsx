@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatUI } from './ChatUI';
 import { ChatHistorySidebar } from './chat/ChatHistorySidebar';
@@ -90,22 +89,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div className="flex flex-col h-full relative">
       {/* Chat UI - Always Full Width */}
       <div className="flex flex-col h-full">
-        {/* Sidebar Toggle Button */}
-        <div className="flex items-center p-2 border-b border-gray-200 bg-[#F1EDFF]/30">
-          <Button
-            onClick={handleToggleSidebar}
-            variant="outline"
-            size="sm"
-            className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-          >
-            {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-          </Button>
-          {/* Show session count for debugging */}
-          <span className="ml-2 text-xs text-gray-500">
-            Sessions: {sessions.length} | All: {allSessions.length}
-          </span>
-        </div>
-
         {/* Chat UI Component */}
         <div className="flex-1 min-h-0">
           <ChatUI 
@@ -120,6 +103,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             currentTrigger={currentTrigger}
             activeSessionId={activeSessionId}
             onSessionChange={onSessionChange}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={handleToggleSidebar}
           />
         </div>
       </div>
