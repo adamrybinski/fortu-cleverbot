@@ -5,17 +5,30 @@ import { BlankCanvas } from './modules/BlankCanvas';
 import { FortuQuestionsCanvas } from './modules/FortuQuestionsCanvas';
 import { ChallengeHistory } from './modules/ChallengeHistory';
 import { Question, ChallengeHistoryHook } from './modules/types';
+import { QuestionSession } from '@/hooks/useQuestionSessions';
+
+interface QuestionSessionsHook {
+  questionSessions: QuestionSession[];
+  activeSessionId: string | null;
+  getActiveSession: () => QuestionSession | null;
+  createNewSession: (question: string) => string;
+  updateSession: (sessionId: string, updates: Partial<QuestionSession>) => void;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+}
 
 interface CanvasModuleProps {
   trigger: CanvasTrigger;
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
+  questionSessions?: QuestionSessionsHook;
 }
 
 export const CanvasModule: React.FC<CanvasModuleProps> = ({ 
   trigger, 
   onSendQuestionsToChat,
-  challengeHistory
+  challengeHistory,
+  questionSessions
 }) => {
   console.log('Canvas triggered with:', trigger);
 
@@ -26,6 +39,7 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           payload={trigger.payload} 
           onSendQuestionsToChat={onSendQuestionsToChat}
           challengeHistory={challengeHistory}
+          questionSessions={questionSessions}
         />
       );
     
@@ -60,7 +74,7 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
       );
     
     case 'challengeMapping':
-      return <BlankCanvas payload={trigger.payload} />; // Use BlankCanvas for now, could be specialized later
+      return <BlankCanvas payload={trigger.payload} />;
     
     case 'blank':
     case 'canvas':

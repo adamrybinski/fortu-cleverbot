@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { X, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
 import { ChallengeHistory } from './modules/ChallengeHistory';
+import { CanvasQuestionMenu } from './CanvasQuestionMenu';
 import { useChallengeHistory } from '@/hooks/useChallengeHistory';
+import { useQuestionSessions } from '@/hooks/useQuestionSessions';
 import { Question } from './modules/types';
 
 // ShineBorder Component optimized for Lovable
@@ -87,11 +90,20 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     markSessionCompleted
   } = useChallengeHistory();
 
+  const {
+    questionSessions,
+    activeSessionId,
+    getActiveSession,
+    createNewSession: createNewQuestionSession,
+    updateSession: updateQuestionSession,
+    switchToSession: switchToQuestionSession,
+    deleteSession: deleteQuestionSession
+  } = useQuestionSessions();
+
   if (!isVisible || !trigger) return null;
 
   const handleStartNewChallenge = () => {
     setShowChallengeHistory(false);
-    // Trigger new challenge flow
     if (onSendQuestionsToChat) {
       onSendQuestionsToChat([], 'refine');
     }
@@ -107,11 +119,26 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     }
   };
 
+  const handleCreateNewQuestionSession = () => {
+    if (onSendQuestionsToChat) {
+      onSendQuestionsToChat([], 'refine');
+    }
+  };
+
   const content = (
     <div className="flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3] flex-shrink-0">
         <div className="flex items-center gap-3">
+          {/* Question Session Menu */}
+          <CanvasQuestionMenu
+            questionSessions={questionSessions}
+            activeSessionId={activeSessionId}
+            onSwitchToSession={switchToQuestionSession}
+            onCreateNewSession={handleCreateNewQuestionSession}
+            onDeleteSession={deleteQuestionSession}
+          />
+          
           {isMobile && (
             <Button
               onClick={onClose}
@@ -179,6 +206,15 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
                 deleteSession,
                 getUnselectedQuestions,
                 markSessionCompleted
+              }}
+              questionSessions={{
+                questionSessions,
+                activeSessionId,
+                getActiveSession,
+                createNewSession: createNewQuestionSession,
+                updateSession: updateQuestionSession,
+                switchToSession: switchToQuestionSession,
+                deleteSession: deleteQuestionSession
               }}
             />
           )}

@@ -10,17 +10,30 @@ import { QuestionSelectionToolbar } from './QuestionSelectionToolbar';
 import { FortuQuestionsHeader } from './FortuQuestionsHeader';
 import { ErrorDisplay } from './ErrorDisplay';
 import { Question, ChallengeHistoryHook } from './types';
+import { QuestionSession } from '@/hooks/useQuestionSessions';
+
+interface QuestionSessionsHook {
+  questionSessions: QuestionSession[];
+  activeSessionId: string | null;
+  getActiveSession: () => QuestionSession | null;
+  createNewSession: (question: string) => string;
+  updateSession: (sessionId: string, updates: Partial<QuestionSession>) => void;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+}
 
 interface FortuQuestionsCanvasProps {
   payload?: Record<string, any>;
   onSendQuestionsToChat?: (questions: Question[], action?: 'refine' | 'instance' | 'both') => void;
   challengeHistory?: ChallengeHistoryHook;
+  questionSessions?: QuestionSessionsHook;
 }
 
 export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({ 
   payload,
   onSendQuestionsToChat,
-  challengeHistory
+  challengeHistory,
+  questionSessions
 }) => {
   console.log('FortuQuestionsCanvas mounted with payload:', payload);
   
@@ -37,7 +50,6 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
-    // Summary functionality
     selectedQuestion,
     questionSummary,
     isLoadingSummary,
@@ -56,6 +68,17 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     aiQuestionsCount: aiQuestions.length
   });
 
+  // Create new question session when starting a new question
+  useEffect(() => {
+    if (refinedChallenge && questionSessions && !questionSessions.activeSessionId) {
+      const sessionId = questionSessions.createNewSession(refinedChallenge);
+      questionSessions.updateSession(sessionId, {
+        refinedChallenge,
+        status: 'searching'
+      });
+    }
+  }, [refinedChallenge, questionSessions]);
+
   // Auto-generate when search is ready
   useEffect(() => {
     console.log('useEffect triggered with:', {
@@ -68,15 +91,19 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     if (isSearchReady && refinedChallenge && fortuQuestions.length === 0 && aiQuestions.length === 0) {
       console.log('Conditions met, calling generateAllQuestions with:', refinedChallenge);
       generateAllQuestions(refinedChallenge);
-    } else {
-      console.log('Conditions not met for auto-generation:', {
-        isSearchReady: !!isSearchReady,
-        hasRefinedChallenge: !!refinedChallenge,
-        fortuQuestionsEmpty: fortuQuestions.length === 0,
-        aiQuestionsEmpty: aiQuestions.length === 0
-      });
     }
   }, [isSearchReady, refinedChallenge, fortuQuestions.length, aiQuestions.length, generateAllQuestions]);
+
+  // Update question session when questions are loaded
+  useEffect(() => {
+    if (questionSessions?.activeSessionId && (fortuQuestions.length > 0 || aiQuestions.length > 0)) {
+      questionSessions.updateSession(questionSessions.activeSessionId, {
+        fortuQuestions,
+        aiQuestions,
+        status: 'matches_found'
+      });
+    }
+  }, [fortuQuestions, aiQuestions, questionSessions]);
 
   const hasQuestions = fortuQuestions.length > 0 || aiQuestions.length > 0;
   const isLoading = isLoadingFortu || isLoadingAI;
@@ -86,12 +113,18 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     console.log('Manual generation triggered with challenge:', refinedChallenge);
     if (refinedChallenge) {
       generateAllQuestions(refinedChallenge);
-    } else {
-      console.warn('No refined challenge available for manual generation');
     }
   };
 
   const handleSendToChat = (questions: Question[], action: 'refine' | 'instance' | 'both') => {
+    // Update question session with selections
+    if (questionSessions?.activeSessionId) {
+      questionSessions.updateSession(questionSessions.activeSessionId, {
+        selectedQuestions: questions,
+        status: 'refined'
+      });
+    }
+
     if (onSendQuestionsToChat) {
       onSendQuestionsToChat(questions, action);
     }
