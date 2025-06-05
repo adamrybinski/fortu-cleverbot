@@ -1,4 +1,3 @@
-
 // Simplified detection functions for the 4-step flow
 
 export function isReadyForFortuQuestions(
@@ -13,18 +12,21 @@ export function isReadyForFortuQuestions(
   console.log('- Conversation history length:', conversationHistory.length);
   console.log('- User message:', userMessage);
   console.log('- Bot response contains fortu search promise:', 
-    lowerResponse.includes('search fortu') || 
-    lowerResponse.includes('find organisations') || 
-    lowerResponse.includes('searching our database')
+    lowerResponse.includes('i\'ve searched fortu') || 
+    lowerResponse.includes('searched fortu.ai and found') || 
+    lowerResponse.includes('found') && lowerResponse.includes('matched questions') ||
+    lowerResponse.includes('below in the canvas')
   );
 
-  // Auto-trigger after HDW confirmation - look for automatic search promises
-  const hasFortuSearchPromise = 
-    lowerResponse.includes('search fortu') ||
-    lowerResponse.includes('find organisations') ||
-    lowerResponse.includes('searching our database') ||
-    lowerResponse.includes('let me search') ||
-    lowerResponse.includes('i\'ll find');
+  // Auto-trigger after HDW confirmation - look for detailed canvas guidance
+  const hasFortuSearchComplete = 
+    lowerResponse.includes('i\'ve searched fortu') ||
+    lowerResponse.includes('searched fortu.ai and found') ||
+    (lowerResponse.includes('found') && lowerResponse.includes('matched questions')) ||
+    lowerResponse.includes('below in the canvas') ||
+    lowerResponse.includes('explore these questions') ||
+    lowerResponse.includes('select the ones that resonate') ||
+    lowerResponse.includes('generated') && lowerResponse.includes('additional suggested questions');
 
   // User confirmed HDW question (simple yes/no or confirmation)
   const userConfirmedHDW = 
@@ -42,7 +44,7 @@ export function isReadyForFortuQuestions(
     lowerMessage.includes('canvas for challenge refinement') ||
     lowerMessage.includes('from the canvas');
 
-  if (hasFortuSearchPromise && userConfirmedHDW && !isCanvasReturn) {
+  if (hasFortuSearchComplete && userConfirmedHDW && !isCanvasReturn) {
     console.log('Auto-triggering fortu search after HDW confirmation');
     return true;
   }
