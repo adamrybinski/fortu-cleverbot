@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
@@ -33,6 +32,32 @@ interface ExtendedChatUIProps extends ChatUIProps {
   onSessionChange?: (sessionId: string | null) => void;
 }
 
+// Helper function to convert ChatMessage to Message
+const convertChatMessageToMessage = (chatMessage: ChatMessage): Message => {
+  return {
+    id: chatMessage.id,
+    role: chatMessage.role,
+    text: chatMessage.text,
+    timestamp: chatMessage.timestamp,
+    selectedQuestions: chatMessage.selectedQuestions,
+    selectedAction: chatMessage.selectedAction,
+    canvasData: chatMessage.canvasData,
+  };
+};
+
+// Helper function to convert Message to ChatMessage
+const convertMessageToChatMessage = (message: Message): ChatMessage => {
+  return {
+    id: message.id,
+    role: message.role,
+    text: message.text,
+    timestamp: message.timestamp,
+    selectedQuestions: message.selectedQuestions,
+    selectedAction: message.selectedAction,
+    canvasData: message.canvasData,
+  };
+};
+
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
   onOpenCanvas, 
   onTriggerCanvas, 
@@ -55,7 +80,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
 
   // Get messages from active session or use default
   const activeSession = getActiveSession();
-  const messages = activeSession?.messages || [
+  const defaultMessages: Message[] = [
     {
       id: '1',
       role: 'bot' as const,
@@ -63,6 +88,10 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       timestamp: new Date(),
     },
   ];
+  
+  const messages: Message[] = activeSession?.messages 
+    ? activeSession.messages.map(convertChatMessageToMessage)
+    : defaultMessages;
 
   const setMessages = (newMessages: Message[] | ((prev: Message[]) => Message[])) => {
     if (!activeSession) return;
@@ -71,7 +100,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       ? newMessages(messages)
       : newMessages;
     
-    updateSessionMessages(activeSession.id, updatedMessages as ChatMessage[]);
+    const chatMessages = updatedMessages.map(convertMessageToChatMessage);
+    updateSessionMessages(activeSession.id, chatMessages);
   };
 
   const [inputValue, setInputValue] = useState('');

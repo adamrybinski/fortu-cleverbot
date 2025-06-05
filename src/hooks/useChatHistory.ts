@@ -1,16 +1,16 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Question } from '@/components/chat/types';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'bot';
   text: string;
   timestamp: Date;
-  selectedQuestions?: any[];
-  selectedAction?: string;
+  selectedQuestions?: Question[];
+  selectedAction?: 'refine' | 'instance' | 'both';
   isAutoMessage?: boolean;
-  canvasPreview?: any;
+  canvasData?: any;
 }
 
 export interface ChatSession {
