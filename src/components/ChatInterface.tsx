@@ -63,57 +63,60 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Check if mobile viewport
-  const isMobile = window.innerWidth < 768;
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex h-full min-w-0">
-        {/* Sidebar */}
-        <div
-          className={`transition-all duration-300 ease-in-out border-r border-gray-200 ${
-            isSidebarOpen 
-              ? 'w-full md:w-80' 
-              : 'w-0'
-          } ${
-            isSidebarOpen && isMobile ? 'absolute inset-0 z-20 bg-white' : ''
-          } overflow-hidden`}
-        >
-          <ChatHistorySidebar onNewChat={handleNewChat} />
+    <div className="flex flex-col h-full relative">
+      {/* Chat UI - Always Full Width */}
+      <div className="flex flex-col h-full">
+        {/* Sidebar Toggle Button */}
+        <div className="flex items-center p-2 border-b border-gray-200 bg-[#F1EDFF]/30">
+          <Button
+            onClick={handleToggleSidebar}
+            variant="outline"
+            size="sm"
+            className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
+          >
+            {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
+          </Button>
         </div>
 
-        {/* Chat UI */}
-        <div className={`flex-1 flex flex-col min-w-0 ${isSidebarOpen && isMobile ? 'hidden' : ''}`}>
-          {/* Sidebar Toggle Button */}
-          <div className="flex items-center p-2 border-b border-gray-200 bg-[#F1EDFF]/30">
-            <Button
-              onClick={handleToggleSidebar}
-              variant="outline"
-              size="sm"
-              className="border-[#6EFFC6] text-[#003079] hover:bg-[#6EFFC6]/20"
-            >
-              {isSidebarOpen ? <X className="w-4 h-4" /> : <History className="w-4 h-4" />}
-            </Button>
-          </div>
-
-          {/* Chat UI Component */}
-          <div className="flex-1 min-h-0">
-            <ChatUI 
-              onOpenCanvas={onOpenCanvas} 
-              onTriggerCanvas={onTriggerCanvas}
-              isCanvasOpen={isCanvasOpen}
-              selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
-              selectedAction={selectedAction}
-              onClearSelectedQuestions={onClearSelectedQuestions}
-              questionSessions={questionSessions}
-              onSendMessageToChat={onSendMessageToChat}
-              currentTrigger={currentTrigger}
-              activeSessionId={activeSessionId}
-              onSessionChange={onSessionChange}
-            />
-          </div>
+        {/* Chat UI Component */}
+        <div className="flex-1 min-h-0">
+          <ChatUI 
+            onOpenCanvas={onOpenCanvas} 
+            onTriggerCanvas={onTriggerCanvas}
+            isCanvasOpen={isCanvasOpen}
+            selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
+            selectedAction={selectedAction}
+            onClearSelectedQuestions={onClearSelectedQuestions}
+            questionSessions={questionSessions}
+            onSendMessageToChat={onSendMessageToChat}
+            currentTrigger={currentTrigger}
+            activeSessionId={activeSessionId}
+            onSessionChange={onSessionChange}
+          />
         </div>
       </div>
+
+      {/* Overlay Sidebar */}
+      <div
+        className={`absolute inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out ${
+          isSidebarOpen 
+            ? 'translate-x-0' 
+            : '-translate-x-full'
+        }`}
+      >
+        <div className="w-80 h-full shadow-lg">
+          <ChatHistorySidebar onNewChat={handleNewChat} />
+        </div>
+      </div>
+
+      {/* Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="absolute inset-0 bg-black/20 z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
