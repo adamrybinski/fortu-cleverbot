@@ -1,6 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/canvas/modules/types';
+import { useQuestionExpansion } from './useQuestionExpansion';
+import { useQuestionSelection } from './useQuestionSelection';
 
 export const useQuestionGeneration = () => {
   const [fortuQuestions, setFortuQuestions] = useState<Question[]>([]);
@@ -8,9 +11,27 @@ export const useQuestionGeneration = () => {
   const [isLoadingFortu, setIsLoadingFortu] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string | number>>(new Set());
-  const [questionSummaries, setQuestionSummaries] = useState<Record<string | number, string>>({});
-  const [loadingSummaries, setLoadingSummaries] = useState<Set<string | number>>(new Set());
+
+  const {
+    expandedQuestions,
+    questionSummaries,
+    loadingSummaries,
+    toggleQuestionExpansion,
+    generateQuestionSummary,
+    toggleExpandAllQuestions,
+    clearExpansionData
+  } = useQuestionExpansion();
+
+  const {
+    handleQuestionSelection,
+    getSelectedQuestions,
+    clearSelections
+  } = useQuestionSelection({
+    fortuQuestions,
+    aiQuestions,
+    setFortuQuestions,
+    setAiQuestions
+  });
 
   const generateFortuQuestions = async (challenge: string) => {
     setIsLoadingFortu(true);
@@ -91,11 +112,9 @@ export const useQuestionGeneration = () => {
     setFortuQuestions([]);
     setAiQuestions([]);
     setError(null);
-    setExpandedQuestions(new Set());
-    setQuestionSummaries({});
-    setLoadingSummaries(new Set());
+    clearExpansionData();
     clearSelections();
-  }, []);
+  }, [clearExpansionData, clearSelections]);
 
   const loadQuestionsFromSession = useCallback((
     sessionFortuQuestions: Question[],
@@ -126,130 +145,13 @@ export const useQuestionGeneration = () => {
     setAiQuestions(aiWithSelection);
   }, [clearQuestions]);
 
-  const handleQuestionSelection = (questionId: string | number) => {
-    const updateQuestions = (questions: Question[]) =>
-      questions.map(q => 
-        q.id === questionId ? { ...q, selected: !q.selected } : q
-      );
-
-    setFortuQuestions(prev => updateQuestions(prev));
-    setAiQuestions(prev => updateQuestions(prev));
-  };
-
-  const getSelectedQuestions = () => {
-    return [...fortuQuestions, ...aiQuestions].filter(q => q.selected);
-  };
-
-  const clearSelections = () => {
-    const clearSelected = (questions: Question[]) =>
-      questions.map(q => ({ ...q, selected: false }));
-    
-    setFortuQuestions(prev => clearSelected(prev));
-    setAiQuestions(prev => clearSelected(prev));
-  };
-
-  const toggleQuestionExpansion = useCallback((questionId: string | number) => {
-    setExpandedQuestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionId)) {
-        newSet.delete(questionId);
-      } else {
-        newSet.add(questionId);
-      }
-      return newSet;
-    });
-  }, []);
-
   const toggleExpandAllFortuQuestions = useCallback(() => {
-    const fortuIds = fortuQuestions.map(q => q.id);
-    const hasExpandedQuestions = fortuIds.some(id => expandedQuestions.has(id));
-    
-    if (hasExpandedQuestions) {
-      // Collapse all
-      setExpandedQuestions(prev => {
-        const newSet = new Set(prev);
-        fortuIds.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-    } else {
-      // Expand all and generate summaries
-      setExpandedQuestions(prev => {
-        const newSet = new Set(prev);
-        fortuIds.forEach(id => newSet.add(id));
-        return newSet;
-      });
-      
-      // Auto-generate summaries for questions that don't have them
-      fortuQuestions.forEach(question => {
-        if (!questionSummaries[question.id] && !loadingSummaries.has(question.id)) {
-          generateQuestionSummary(question);
-        }
-      });
-    }
-  }, [fortuQuestions, expandedQuestions, questionSummaries, loadingSummaries]);
+    toggleExpandAllQuestions(fortuQuestions);
+  }, [fortuQuestions, toggleExpandAllQuestions]);
 
   const toggleExpandAllAIQuestions = useCallback(() => {
-    const aiIds = aiQuestions.map(q => q.id);
-    const hasExpandedQuestions = aiIds.some(id => expandedQuestions.has(id));
-    
-    if (hasExpandedQuestions) {
-      // Collapse all
-      setExpandedQuestions(prev => {
-        const newSet = new Set(prev);
-        aiIds.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-    } else {
-      // Expand all and generate summaries
-      setExpandedQuestions(prev => {
-        const newSet = new Set(prev);
-        aiIds.forEach(id => newSet.add(id));
-        return newSet;
-      });
-      
-      // Auto-generate summaries for questions that don't have them
-      aiQuestions.forEach(question => {
-        if (!questionSummaries[question.id] && !loadingSummaries.has(question.id)) {
-          generateQuestionSummary(question);
-        }
-      });
-    }
-  }, [aiQuestions, expandedQuestions, questionSummaries, loadingSummaries]);
-
-  const generateQuestionSummary = async (question: Question) => {
-    if (loadingSummaries.has(question.id) || questionSummaries[question.id]) {
-      return;
-    }
-
-    setLoadingSummaries(prev => new Set(prev).add(question.id));
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-question-summary', {
-        body: { question: question.question, source: question.source }
-      });
-
-      if (error) throw error;
-
-      if (data && data.summary) {
-        setQuestionSummaries(prev => ({
-          ...prev,
-          [question.id]: data.summary
-        }));
-      }
-    } catch (error) {
-      console.error('Error generating question summary:', error);
-      setQuestionSummaries(prev => ({
-        ...prev,
-        [question.id]: 'Failed to generate summary. Please try again.'
-      }));
-    } finally {
-      setLoadingSummaries(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(question.id);
-        return newSet;
-      });
-    }
-  };
+    toggleExpandAllQuestions(aiQuestions);
+  }, [aiQuestions, toggleExpandAllQuestions]);
 
   return {
     fortuQuestions,
