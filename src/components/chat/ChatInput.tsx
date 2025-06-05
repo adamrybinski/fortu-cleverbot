@@ -2,7 +2,7 @@
 import React from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ChatInputProps {
   inputValue: string;
@@ -23,12 +23,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div className="p-4 border-t border-gray-200 bg-[#F1EDFF]/20 flex-shrink-0">
       <div className="flex gap-3 items-end">
         <div className="flex-1">
-          <Input
+          <Textarea
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyPress={onKeyPress}
             placeholder="What challenge are you looking to crack?"
-            className="border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white resize-none"
+            className="min-h-[72px] max-h-[144px] overflow-y-auto resize-none border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white"
+            rows={3}
             disabled={isLoading}
           />
         </div>

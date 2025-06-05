@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, ChatUIProps, Question } from './chat/types';
 import { ChatHeader } from './chat/ChatHeader';
@@ -8,6 +7,7 @@ import { useCanvasPreview } from '@/hooks/useCanvasPreview';
 import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
+import { CanvasTrigger } from './canvas/CanvasContainer';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -26,6 +26,7 @@ interface ExtendedChatUIProps extends ChatUIProps {
   onClearSelectedQuestions?: () => void;
   questionSessions?: QuestionSessionsHook;
   onSendMessageToChat?: (message: string) => void;
+  currentTrigger?: CanvasTrigger | null;
 }
 
 export const ChatUI: React.FC<ExtendedChatUIProps> = ({ 
@@ -36,7 +37,8 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   selectedAction = 'refine',
   onClearSelectedQuestions,
   questionSessions,
-  onSendMessageToChat
+  onSendMessageToChat,
+  currentTrigger
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -166,6 +168,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
         onOpenCanvas={onOpenCanvas}
         isCanvasOpen={isCanvasOpen}
         hasCanvasBeenTriggered={hasCanvasBeenTriggered}
+        currentTrigger={currentTrigger}
       />
       
       <MessagesContainer

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChatInterface } from './ChatInterface';
 import { CanvasContainer } from './canvas/CanvasContainer';
@@ -119,6 +118,7 @@ export const ChatCanvas: React.FC = () => {
               selectedQuestionsFromCanvas={selectedQuestionsFromCanvas}
               selectedAction={selectedAction}
               onClearSelectedQuestions={handleClearSelectedQuestions}
+              currentTrigger={currentTrigger}
               questionSessions={{
                 questionSessions,
                 activeSessionId,
