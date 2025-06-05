@@ -93,13 +93,11 @@ export const useMessageHandler = ({
     setIsLoading(true);
 
     try {
-      // Get or create active session - this ensures we always have a session before processing
+      // Get or create active session - simplified to be synchronous
       let activeSession = getActiveSession();
       if (!activeSession) {
         console.log('🆕 No active session found, creating new session');
-        const newSessionId = createNewSession();
-        // Wait a bit for the session to be created and state to update
-        await new Promise(resolve => setTimeout(resolve, 10));
+        createNewSession();
         activeSession = getActiveSession();
         
         if (!activeSession) {
@@ -215,7 +213,7 @@ export const useMessageHandler = ({
       // Ensure we have a session for the error message
       let activeSession = getActiveSession();
       if (!activeSession) {
-        const newSessionId = createNewSession();
+        createNewSession();
         activeSession = getActiveSession();
       }
       

@@ -94,15 +94,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     setInputValue('');
   };
 
-  const handleCloseCanvas = () => {
-    onTriggerCanvas?.({ type: 'close', payload: {} });
-  };
-
   return (
     <div className="flex flex-col h-full bg-white min-h-0">
       <ChatHeader
         onOpenCanvas={onOpenCanvas}
-        onCloseCanvas={handleCloseCanvas}
         isCanvasOpen={isCanvasOpen}
         hasCanvasBeenTriggered={hasCanvasBeenTriggered}
         currentTrigger={currentTrigger}
