@@ -38,6 +38,7 @@ interface UseMessageHandlerProps {
   setHasCanvasBeenTriggered: (value: boolean) => void;
   onTriggerCanvas?: (trigger: any) => void;
   questionSessions?: QuestionSessionsHook;
+  // Session management functions passed from parent
   addMessageToSession: (sessionId: string, message: ChatMessage) => void;
   getActiveSession: () => ChatSession | null;
   createNewSession: () => string;

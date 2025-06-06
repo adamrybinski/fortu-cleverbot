@@ -6,7 +6,7 @@ import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
 import { CanvasTrigger } from './canvas/CanvasContainer';
-import { useChatHistory } from '@/hooks/useChatHistory';
+import { ChatSession, ChatMessage } from '@/hooks/useChatHistory';
 import { useChatUIState } from '@/hooks/useChatUIState';
 import { useChatTransitions } from '@/hooks/useChatTransitions';
 import { ChatContainer } from './chat/ChatContainer';
@@ -33,6 +33,10 @@ interface ExtendedChatUIProps extends ChatUIProps {
   onSessionChange?: (sessionId: string | null) => void;
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
+  // Session management functions passed from ChatInterface
+  getActiveSession: () => ChatSession | null;
+  addMessageToSession: (sessionId: string, message: ChatMessage) => void;
+  createNewSession: () => string;
 }
 
 // Helper function to convert ChatMessage to Message
@@ -61,14 +65,12 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
   activeSessionId,
   onSessionChange,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  // Session management functions
+  getActiveSession,
+  addMessageToSession,
+  createNewSession
 }) => {
-  const { 
-    getActiveSession, 
-    addMessageToSession, 
-    createNewSession
-  } = useChatHistory();
-
   const {
     inputValue,
     setInputValue,

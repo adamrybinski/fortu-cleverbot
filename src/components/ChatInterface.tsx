@@ -47,13 +47,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSessionChange
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Single source of truth for chat history
   const { 
     createNewSession, 
     switchToSession, 
     allSessions, 
     activeSessionId: currentActiveSessionId,
     sessions,
-    getActiveSession
+    getActiveSession,
+    addMessageToSession
   } = useChatHistory();
 
   const handleNewChat = () => {
@@ -96,10 +99,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             questionSessions={questionSessions}
             onSendMessageToChat={onSendMessageToChat}
             currentTrigger={currentTrigger}
-            activeSessionId={activeSessionId}
+            activeSessionId={currentActiveSessionId}
             onSessionChange={onSessionChange}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={handleToggleSidebar}
+            // Pass session management functions to ChatUI
+            getActiveSession={getActiveSession}
+            addMessageToSession={addMessageToSession}
+            createNewSession={createNewSession}
           />
         </div>
       </div>
