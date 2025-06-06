@@ -93,17 +93,22 @@ export const useMessageHandler = ({
     setIsLoading(true);
 
     try {
-      // Get or create active session with better handling
+      // Get or create active session with improved handling
       let activeSession = getActiveSession();
-      console.log('🔍 Current active session:', activeSession?.id);
+      console.log('🔍 Current active session:', {
+        exists: !!activeSession,
+        id: activeSession?.id,
+        hasUserMessage: activeSession?.hasUserMessage,
+        isSaved: activeSession?.isSaved
+      });
       
       if (!activeSession) {
         console.log('🆕 No active session found, creating new session');
         const newSessionId = createNewSession();
         console.log('✅ Created new session:', newSessionId);
         
-        // Wait a brief moment for state to update and try again
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Wait for state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
         activeSession = getActiveSession();
         
         if (!activeSession) {
@@ -121,7 +126,11 @@ export const useMessageHandler = ({
         isAutoMessage
       );
 
-      console.log('💬 Created user message:', { id: newMessage.id, text: newMessage.text.substring(0, 50) + '...' });
+      console.log('💬 Created user message:', { 
+        id: newMessage.id, 
+        text: newMessage.text.substring(0, 50) + '...',
+        role: newMessage.role
+      });
 
       // Add user message to session immediately
       const userChatMessage = convertMessageToChatMessage(newMessage);
@@ -133,6 +142,9 @@ export const useMessageHandler = ({
         onClearSelectedQuestions();
       }
 
+      // Wait a moment for session state to update after adding user message
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       // Get the updated session after adding the message
       const updatedSession = getActiveSession();
       if (!updatedSession) {
@@ -140,7 +152,7 @@ export const useMessageHandler = ({
         throw new Error('Active session not found after adding message');
       }
 
-      console.log('📊 Updated session state:', {
+      console.log('📊 Updated session state after user message:', {
         id: updatedSession.id,
         hasUserMessage: updatedSession.hasUserMessage,
         isSaved: updatedSession.isSaved,
@@ -214,7 +226,10 @@ export const useMessageHandler = ({
 
       const assistantMessage = createAssistantMessage(enhancedAssistantText, canvasPreviewData);
       
-      console.log('🤖 Created assistant message:', { id: assistantMessage.id, text: assistantMessage.text.substring(0, 50) + '...' });
+      console.log('🤖 Created assistant message:', { 
+        id: assistantMessage.id, 
+        text: assistantMessage.text.substring(0, 50) + '...' 
+      });
 
       // Add assistant message to session
       const assistantChatMessage = convertMessageToChatMessage(assistantMessage);
@@ -230,6 +245,7 @@ export const useMessageHandler = ({
       if (!activeSession) {
         console.log('🆕 Creating session for error message');
         createNewSession();
+        await new Promise(resolve => setTimeout(resolve, 50));
         activeSession = getActiveSession();
       }
       

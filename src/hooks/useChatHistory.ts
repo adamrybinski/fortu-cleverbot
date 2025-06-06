@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/chat/types';
@@ -66,16 +67,24 @@ export const useChatHistory = () => {
     }
   }, []);
 
-  // Save only saved sessions to localStorage
+  // Save sessions to localStorage whenever sessions change
   useEffect(() => {
-    const savedSessions = sessions.filter(session => session.isSaved);
-    console.log('💾 Saving sessions to localStorage:', savedSessions.length);
+    const sessionsToSave = sessions.filter(session => session.isSaved && session.hasUserMessage);
+    console.log('💾 Saving sessions to localStorage:', {
+      totalSessions: sessions.length,
+      sessionsToSave: sessionsToSave.length,
+      sessionIds: sessionsToSave.map(s => s.id)
+    });
     
-    if (savedSessions.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedSessions));
+    if (sessionsToSave.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionsToSave));
     } else {
-      console.log('🗑️ No saved sessions, removing from localStorage');
-      localStorage.removeItem(STORAGE_KEY);
+      // Only remove if there are truly no sessions with user messages
+      const hasAnyUserSessions = sessions.some(s => s.hasUserMessage);
+      if (!hasAnyUserSessions) {
+        console.log('🗑️ No sessions with user messages, removing from localStorage');
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
   }, [sessions]);
 
@@ -131,39 +140,29 @@ export const useChatHistory = () => {
     return newSession.id;
   }, []);
 
-  const saveCurrentSession = useCallback(() => {
-    console.log('💾 Attempting to save current session:', activeSessionId);
-    const activeSession = sessions.find(session => session.id === activeSessionId);
-    if (activeSession && activeSession.hasUserMessage && !activeSession.isSaved) {
-      console.log('✅ Saving current session:', activeSessionId);
-      setSessions(prev =>
-        prev.map(session =>
-          session.id === activeSessionId
-            ? { ...session, isSaved: true }
-            : session
-        )
-      );
-    } else {
-      console.log('⏭️ Session not saved - conditions not met:', {
-        hasActiveSession: !!activeSession,
-        hasUserMessage: activeSession?.hasUserMessage,
-        isSaved: activeSession?.isSaved
-      });
-    }
-  }, [activeSessionId, sessions]);
-
   const getActiveSession = useCallback((): ChatSession | null => {
     if (!activeSessionId) {
       console.log('❌ No active session ID');
       return null;
     }
     const session = sessions.find(session => session.id === activeSessionId) || null;
-    console.log('🎯 Active session:', session?.id, 'Found:', !!session);
+    console.log('🎯 Active session lookup:', {
+      activeSessionId,
+      found: !!session,
+      sessionTitle: session?.title,
+      hasUserMessage: session?.hasUserMessage,
+      isSaved: session?.isSaved
+    });
     return session;
   }, [activeSessionId, sessions]);
 
   const addMessageToSession = useCallback(async (sessionId: string, message: ChatMessage) => {
-    console.log('📝 Adding message to session:', sessionId, 'Role:', message.role);
+    console.log('📝 Adding message to session:', {
+      sessionId,
+      role: message.role,
+      messageText: message.text.substring(0, 50) + '...'
+    });
+    
     setSessions(prev => 
       prev.map(session => {
         if (session.id === sessionId) {
@@ -175,6 +174,7 @@ export const useChatHistory = () => {
             messages: updatedMessages,
             lastActivity: new Date(),
             hasUserMessage: session.hasUserMessage || message.role === 'user',
+            // Immediately save session when user sends first message
             isSaved: session.isSaved || isFirstUserMessage
           };
 
@@ -183,7 +183,8 @@ export const useChatHistory = () => {
             hasUserMessage: updatedSession.hasUserMessage,
             isSaved: updatedSession.isSaved,
             messageCount: updatedSession.messages.length,
-            isFirstUserMessage
+            isFirstUserMessage,
+            shouldBeVisible: updatedSession.hasUserMessage && updatedSession.isSaved
           });
 
           // Generate title if this is the first user message and title is still "New Chat"
@@ -226,11 +227,11 @@ export const useChatHistory = () => {
       const filtered = prev.filter(session => session.id !== sessionId);
       console.log('📊 Sessions after deletion:', filtered.map(s => s.id));
       
-      // If we deleted the active session, switch to the most recent session or clear
+      // If we deleted the active session, switch to the most recent visible session or clear
       if (activeSessionId === sessionId) {
-        const savedSessions = filtered.filter(s => s.isSaved);
-        if (savedSessions.length > 0) {
-          setActiveSessionId(savedSessions[0].id);
+        const visibleSessions = filtered.filter(s => s.isSaved && s.hasUserMessage);
+        if (visibleSessions.length > 0) {
+          setActiveSessionId(visibleSessions[0].id);
         } else {
           setActiveSessionId(null);
         }
@@ -265,6 +266,7 @@ export const useChatHistory = () => {
     const shouldShow = session.isSaved && session.hasUserMessage;
     console.log('🔍 Session visibility check:', {
       id: session.id,
+      title: session.title,
       isSaved: session.isSaved,
       hasUserMessage: session.hasUserMessage,
       shouldShow
@@ -272,7 +274,12 @@ export const useChatHistory = () => {
     return shouldShow;
   });
 
-  console.log('📋 Visible sessions for sidebar:', visibleSessions.length);
+  console.log('📋 Chat history state:', {
+    totalSessions: sessions.length,
+    visibleSessions: visibleSessions.length,
+    activeSessionId,
+    activeSessionExists: !!getActiveSession()
+  });
 
   return {
     sessions: visibleSessions,
@@ -281,7 +288,6 @@ export const useChatHistory = () => {
     isGeneratingTitle,
     getActiveSession,
     createNewSession,
-    saveCurrentSession,
     addMessageToSession,
     updateSessionMessages,
     switchToSession,

@@ -19,11 +19,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
     deleteSession,
     renameSession,
     toggleStarSession,
-    getActiveSession
+    getActiveSession,
+    allSessions
   } = useChatHistory();
 
   console.log('🔍 ChatHistorySidebar render:', {
-    sessionsCount: sessions.length,
+    visibleSessions: sessions.length,
+    allSessions: allSessions.length,
     activeSessionId,
     sessionIds: sessions.map(s => s.id)
   });
@@ -36,14 +38,23 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
     onNewChat();
   };
 
-  // Check if we can create a new chat (current session has user messages)
+  // Check if we can create a new chat
+  // We can create a new chat if:
+  // 1. There's no active session, OR
+  // 2. The active session has user messages (indicating it's a real conversation)
   const currentSession = getActiveSession();
-  const canCreateNewChat = currentSession?.hasUserMessage || false;
+  const canCreateNewChat = !currentSession || (currentSession.hasUserMessage && currentSession.isSaved);
 
   console.log('🔍 New chat button state:', {
     currentSessionId: currentSession?.id,
     hasUserMessage: currentSession?.hasUserMessage,
-    canCreateNewChat
+    isSaved: currentSession?.isSaved,
+    canCreateNewChat,
+    reasoning: !currentSession 
+      ? 'No active session' 
+      : currentSession.hasUserMessage && currentSession.isSaved 
+        ? 'Active session has user messages and is saved' 
+        : 'Active session is empty or not saved'
   });
 
   return (
@@ -76,7 +87,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
         
         {!canCreateNewChat && (
           <p className="text-xs text-gray-500 mt-2 text-center font-['Montserrat']">
-            Send a message to save this chat
+            Send a message to start a new conversation
           </p>
         )}
       </div>
@@ -129,14 +140,15 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
           {/* Empty State */}
           {sessions.length === 0 && (
             <div className="text-center text-gray-500 py-8 font-['Montserrat']">
-              No chat history yet
+              <p>No chat history yet</p>
+              <p className="text-xs mt-2">Start a conversation to see your chats here</p>
             </div>
           )}
           
           {/* Debug Info */}
           {process.env.NODE_ENV === 'development' && (
             <div className="text-xs text-gray-400 p-2 border-t">
-              Debug: {sessions.length} sessions visible
+              Debug: {sessions.length} visible, {allSessions.length} total sessions
             </div>
           )}
         </div>
