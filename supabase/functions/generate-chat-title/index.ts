@@ -9,6 +9,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to detect if a conversation is just testing
+const isTestConversation = (messages: any[]): boolean => {
+  const userMessages = messages.filter(msg => msg.role === 'user');
+  if (userMessages.length === 0) return true;
+  
+  const firstUserMessage = userMessages[0].content.toLowerCase().trim();
+  
+  // Common test patterns
+  const testPatterns = [
+    /^test$/,
+    /^testing$/,
+    /^hello$/,
+    /^hi$/,
+    /^hey$/,
+    /^test\s*\d*$/,
+    /^1$/,
+    /^a$/,
+    /^abc$/,
+    /^123$/,
+    /^\w{1,3}$/,  // Very short single words
+  ];
+  
+  return testPatterns.some(pattern => pattern.test(firstUserMessage)) || 
+         firstUserMessage.length <= 3;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -26,6 +52,14 @@ serve(async (req) => {
       content: msg.text
     }));
 
+    // Check if this is a test conversation
+    if (isTestConversation(contextMessages)) {
+      console.log('Detected test conversation, using fallback title');
+      return new Response(JSON.stringify({ title: 'Test Chat' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,15 +71,32 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a helpful assistant that creates short, descriptive titles for chat conversations. Generate a concise title (2-6 words) that captures the main topic or challenge being discussed. Do not use quotes or special formatting. Examples: "Marketing Strategy Challenge", "Team Communication Issues", "Product Launch Planning"'
+            content: `You are a helpful assistant that creates short, descriptive titles for chat conversations. 
+
+IMPORTANT RULES:
+1. Generate a concise title (2-6 words) that captures the main topic or challenge being discussed
+2. Do NOT use quotes or special formatting
+3. If the conversation appears to be testing (words like "test", "hello", very short responses), return "Test Chat"
+4. Only generate meaningful titles for conversations with substantial content
+5. Focus on the actual user's challenge or topic, not generic business terms
+
+Examples of good titles:
+- "Marketing Strategy Challenge"
+- "Team Communication Issues"  
+- "Product Launch Planning"
+- "Test Chat" (for test conversations)
+
+Examples of bad titles:
+- "Understanding Customer Satisfaction" (when user just said "test")
+- Generic business phrases unrelated to user input`
           },
           { 
             role: 'user', 
-            content: `Generate a short title for this conversation:\n\n${contextMessages.map(m => `${m.role}: ${m.content}`).join('\n')}`
+            content: `Generate a short title for this conversation. If this appears to be a test conversation or lacks substantial content, respond with "Test Chat":\n\n${contextMessages.map(m => `${m.role}: ${m.content}`).join('\n')}`
           }
         ],
         max_tokens: 50,
-        temperature: 0.7,
+        temperature: 0.3, // Lower temperature for more consistent results
       }),
     });
 
@@ -55,7 +106,16 @@ serve(async (req) => {
       throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
     }
 
-    const title = data.choices[0].message.content.trim();
+    let title = data.choices[0].message.content.trim();
+    
+    // Additional fallback check - if the generated title seems inappropriate for simple input
+    const userMessages = contextMessages.filter(m => m.role === 'user');
+    if (userMessages.length > 0) {
+      const firstUserMessage = userMessages[0].content.toLowerCase().trim();
+      if (firstUserMessage.length <= 5 && !title.toLowerCase().includes('test')) {
+        title = 'Test Chat';
+      }
+    }
     
     console.log('Generated title:', title);
 

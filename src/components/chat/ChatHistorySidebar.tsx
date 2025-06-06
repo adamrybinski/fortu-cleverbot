@@ -4,25 +4,34 @@ import { Plus, History, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatHistoryItem } from './ChatHistoryItem';
-import { useChatHistory } from '@/hooks/useChatHistory';
+import { ChatSession } from '@/hooks/useChatHistory';
 
 interface ChatHistorySidebarProps {
   onNewChat: () => void;
   onClose: () => void;
+  // Session management props passed from ChatInterface
+  sessions: ChatSession[];
+  allSessions: ChatSession[];
+  activeSessionId: string | null;
+  getActiveSession: () => ChatSession | null;
+  switchToSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  renameSession: (sessionId: string, newTitle: string) => void;
+  toggleStarSession: (sessionId: string) => void;
 }
 
-export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewChat, onClose }) => {
-  const {
-    sessions,
-    activeSessionId,
-    switchToSession,
-    deleteSession,
-    renameSession,
-    toggleStarSession,
-    getActiveSession,
-    allSessions
-  } = useChatHistory();
-
+export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ 
+  onNewChat, 
+  onClose,
+  sessions,
+  allSessions,
+  activeSessionId,
+  getActiveSession,
+  switchToSession,
+  deleteSession,
+  renameSession,
+  toggleStarSession
+}) => {
   console.log('🔍 ChatHistorySidebar render:', {
     visibleSessions: sessions.length,
     allSessions: allSessions.length,

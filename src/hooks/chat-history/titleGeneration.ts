@@ -23,6 +23,10 @@ export const generateChatTitle = async (messages: ChatMessage[]): Promise<string
 };
 
 export const shouldGenerateTitle = (session: any, message: ChatMessage): boolean => {
+  // Only generate title when:
+  // 1. Current title is "New Chat" (hasn't been generated yet)
+  // 2. This is a user message
+  // 3. This is the first user message in the conversation
   return (
     session.title === 'New Chat' && 
     message.role === 'user' && 

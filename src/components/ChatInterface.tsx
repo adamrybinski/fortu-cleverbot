@@ -55,6 +55,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const { 
     createNewSession, 
     switchToSession, 
+    deleteSession,
+    renameSession,
+    toggleStarSession,
     allSessions, 
     activeSessionId: currentActiveSessionId,
     sessions,
@@ -150,6 +153,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <ChatHistorySidebar 
             onNewChat={handleNewChat} 
             onClose={handleCloseSidebar}
+            // Pass all session management props
+            sessions={sessions}
+            allSessions={allSessions}
+            activeSessionId={currentActiveSessionId}
+            getActiveSession={getActiveSession}
+            switchToSession={handleSessionChange}
+            deleteSession={deleteSession}
+            renameSession={renameSession}
+            toggleStarSession={toggleStarSession}
           />
         </div>
       </div>
