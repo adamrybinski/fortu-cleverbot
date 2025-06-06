@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { ChatSession, ChatMessage } from './chat-history/types';
 import { 
@@ -32,7 +31,8 @@ export const useChatHistory = () => {
       setActiveSessionId(loadedSessions[0].id);
       console.log('🎯 Set active session to:', loadedSessions[0].id);
     } else {
-      console.log('📭 No saved sessions, starting fresh');
+      console.log('📭 No saved sessions found, will create on first message');
+      // Don't create a session automatically - wait for user's first message
     }
   }, []);
 
@@ -71,6 +71,15 @@ export const useChatHistory = () => {
       const updatedSessions = prev.map(session => {
         if (session.id === sessionId) {
           const updatedSession = updateSessionWithMessage(session, message);
+
+          // If this is the first user message, immediately force state update
+          if (message.role === 'user' && !session.hasUserMessage) {
+            console.log('🎯 First user message - session will become visible');
+            // Force immediate re-render and storage update
+            setTimeout(() => {
+              forceStorageUpdate([updatedSession, ...prev.filter(s => s.id !== sessionId)]);
+            }, 0);
+          }
 
           // Generate title if needed (but only for user messages that make it a real conversation)
           if (shouldGenerateTitle(session, message)) {

@@ -17,14 +17,15 @@ export const ensureActiveSession = async (sessionManager: SessionManager): Promi
     isSaved: activeSession?.isSaved
   });
   
-  // If no active session exists, create one
+  // Only create a new session if no active session exists at all
+  // This ensures we create a session specifically for the user's first message
   if (!activeSession) {
-    console.log('🆕 No active session found, creating new session');
+    console.log('🆕 No active session found, creating new session for first message');
     const newSessionId = sessionManager.createNewSession();
     console.log('✅ Created new session:', newSessionId);
     
     // Wait for state to update
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 50));
     activeSession = sessionManager.getActiveSession();
     
     if (!activeSession) {
