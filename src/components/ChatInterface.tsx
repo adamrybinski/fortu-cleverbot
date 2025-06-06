@@ -52,20 +52,34 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     switchToSession, 
     allSessions, 
     activeSessionId: currentActiveSessionId,
-    sessions
+    sessions,
+    saveCurrentSession,
+    getActiveSession
   } = useChatHistory();
-
-  // Remove the automatic session creation effect that was causing the race condition
-  // Session creation will now be handled only by useMessageHandler when a message is sent
 
   const handleNewChat = () => {
     console.log('Creating new chat from sidebar...');
+    
+    // Save current session if it has user messages
+    const currentSession = getActiveSession();
+    if (currentSession && currentSession.hasUserMessage && !currentSession.isSaved) {
+      saveCurrentSession();
+    }
+    
+    // Create new session
     const newSessionId = createNewSession();
     setIsSidebarOpen(false);
   };
 
   const handleSessionChange = (sessionId: string) => {
     console.log('Switching to session from sidebar:', sessionId);
+    
+    // Save current session before switching if needed
+    const currentSession = getActiveSession();
+    if (currentSession && currentSession.hasUserMessage && !currentSession.isSaved) {
+      saveCurrentSession();
+    }
+    
     switchToSession(sessionId);
     setIsSidebarOpen(false);
   };

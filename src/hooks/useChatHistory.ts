@@ -22,6 +22,7 @@ export interface ChatSession {
   lastActivity: Date;
   isStarred?: boolean;
   isSaved?: boolean;
+  hasUserMessage?: boolean;
 }
 
 const STORAGE_KEY = 'cleverbot_chat_history';
@@ -43,6 +44,7 @@ export const useChatHistory = () => {
           createdAt: new Date(session.createdAt),
           lastActivity: new Date(session.lastActivity),
           isSaved: true,
+          hasUserMessage: session.hasUserMessage || false,
           messages: session.messages.map((msg: any) => ({
             ...msg,
             timestamp: new Date(msg.timestamp)
@@ -58,7 +60,6 @@ export const useChatHistory = () => {
         }
       } catch (error) {
         console.error('Error loading chat history:', error);
-        // Clear corrupted data
         localStorage.removeItem(STORAGE_KEY);
       }
     } else {
@@ -116,7 +117,8 @@ export const useChatHistory = () => {
       createdAt: new Date(),
       lastActivity: new Date(),
       isStarred: false,
-      isSaved: false
+      isSaved: false,
+      hasUserMessage: false
     };
 
     setSessions(prev => {
@@ -127,6 +129,20 @@ export const useChatHistory = () => {
     console.log('Set active session to new session:', newSession.id);
     return newSession.id;
   }, []);
+
+  const saveCurrentSession = useCallback(() => {
+    const activeSession = sessions.find(session => session.id === activeSessionId);
+    if (activeSession && activeSession.hasUserMessage && !activeSession.isSaved) {
+      console.log('Saving current session:', activeSessionId);
+      setSessions(prev =>
+        prev.map(session =>
+          session.id === activeSessionId
+            ? { ...session, isSaved: true }
+            : session
+        )
+      );
+    }
+  }, [activeSessionId, sessions]);
 
   const getActiveSession = useCallback((): ChatSession | null => {
     if (!activeSessionId) {
@@ -144,12 +160,13 @@ export const useChatHistory = () => {
       prev.map(session => {
         if (session.id === sessionId) {
           const updatedMessages = [...session.messages, message];
-          const isFirstUserMessage = message.role === 'user' && !session.isSaved;
+          const isFirstUserMessage = message.role === 'user' && !session.hasUserMessage;
           
           const updatedSession = {
             ...session,
             messages: updatedMessages,
             lastActivity: new Date(),
+            hasUserMessage: session.hasUserMessage || message.role === 'user',
             isSaved: session.isSaved || isFirstUserMessage
           };
 
@@ -196,10 +213,14 @@ export const useChatHistory = () => {
       const filtered = prev.filter(session => session.id !== sessionId);
       console.log('Sessions after deletion:', filtered.map(s => s.id));
       
-      // If we deleted the active session, reset active session ID
+      // If we deleted the active session, switch to the most recent session or clear
       if (activeSessionId === sessionId) {
-        console.log('Deleted active session, resetting active session ID');
-        setActiveSessionId(null);
+        const savedSessions = filtered.filter(s => s.isSaved);
+        if (savedSessions.length > 0) {
+          setActiveSessionId(savedSessions[0].id);
+        } else {
+          setActiveSessionId(null);
+        }
       }
       
       return filtered;
@@ -226,13 +247,17 @@ export const useChatHistory = () => {
     );
   }, []);
 
+  // Return sessions that should be visible in the sidebar (saved sessions with user messages)
+  const visibleSessions = sessions.filter(session => session.isSaved && session.hasUserMessage);
+
   return {
-    sessions: sessions.filter(session => session.isSaved),
+    sessions: visibleSessions,
     allSessions: sessions,
     activeSessionId,
     isGeneratingTitle,
     getActiveSession,
     createNewSession,
+    saveCurrentSession,
     addMessageToSession,
     updateSessionMessages,
     switchToSession,

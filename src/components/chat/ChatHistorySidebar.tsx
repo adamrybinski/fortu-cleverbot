@@ -13,12 +13,13 @@ interface ChatHistorySidebarProps {
 
 export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewChat, onClose }) => {
   const {
-    sessions, // This now only returns saved sessions
+    sessions,
     activeSessionId,
     switchToSession,
     deleteSession,
     renameSession,
-    toggleStarSession
+    toggleStarSession,
+    getActiveSession
   } = useChatHistory();
 
   const starredSessions = sessions.filter(session => session.isStarred);
@@ -27,6 +28,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
   const handleNewChat = () => {
     onNewChat();
   };
+
+  // Check if we can create a new chat (current session has user messages)
+  const currentSession = getActiveSession();
+  const canCreateNewChat = currentSession?.hasUserMessage || false;
 
   return (
     <div className="h-full flex flex-col bg-[#F1EDFF] border-r border-gray-200">
@@ -49,11 +54,18 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
         
         <Button
           onClick={handleNewChat}
-          className="w-full bg-[#753BBD] hover:bg-[#753BBD]/90 text-white"
+          disabled={!canCreateNewChat}
+          className="w-full bg-[#753BBD] hover:bg-[#753BBD]/90 text-white disabled:bg-gray-300 disabled:text-gray-500"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Chat
         </Button>
+        
+        {!canCreateNewChat && (
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Send a message to save this chat
+          </p>
+        )}
       </div>
 
       {/* Chat List */}

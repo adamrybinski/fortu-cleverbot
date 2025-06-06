@@ -93,7 +93,7 @@ export const useMessageHandler = ({
     setIsLoading(true);
 
     try {
-      // Get or create active session - simplified to be synchronous
+      // Get or create active session
       let activeSession = getActiveSession();
       if (!activeSession) {
         console.log('🆕 No active session found, creating new session');
