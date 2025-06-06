@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/chat/types';
@@ -34,7 +33,7 @@ export const useChatHistory = () => {
 
   // Load sessions from localStorage on mount
   useEffect(() => {
-    console.log('Loading sessions from localStorage...');
+    console.log('🔄 Loading sessions from localStorage...');
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
@@ -50,32 +49,32 @@ export const useChatHistory = () => {
             timestamp: new Date(msg.timestamp)
           }))
         }));
-        console.log('Loaded sessions:', sessionsWithDates);
+        console.log('✅ Loaded sessions from storage:', sessionsWithDates.length);
         setSessions(sessionsWithDates);
         
         // Set the most recent session as active if none is set
         if (sessionsWithDates.length > 0) {
           setActiveSessionId(sessionsWithDates[0].id);
-          console.log('Set active session to:', sessionsWithDates[0].id);
+          console.log('🎯 Set active session to:', sessionsWithDates[0].id);
         }
       } catch (error) {
-        console.error('Error loading chat history:', error);
+        console.error('❌ Error loading chat history:', error);
         localStorage.removeItem(STORAGE_KEY);
       }
     } else {
-      console.log('No stored sessions found');
+      console.log('📭 No stored sessions found');
     }
   }, []);
 
   // Save only saved sessions to localStorage
   useEffect(() => {
     const savedSessions = sessions.filter(session => session.isSaved);
-    console.log('Saving sessions to localStorage:', savedSessions);
+    console.log('💾 Saving sessions to localStorage:', savedSessions.length);
     
     if (savedSessions.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedSessions));
     } else {
-      console.log('No saved sessions, removing from localStorage');
+      console.log('🗑️ No saved sessions, removing from localStorage');
       localStorage.removeItem(STORAGE_KEY);
     }
   }, [sessions]);
@@ -104,7 +103,7 @@ export const useChatHistory = () => {
   };
 
   const createNewSession = useCallback((): string => {
-    console.log('Creating new session...');
+    console.log('🆕 Creating new session...');
     const newSession: ChatSession = {
       id: `session_${Date.now()}`,
       title: 'New Chat',
@@ -122,18 +121,21 @@ export const useChatHistory = () => {
     };
 
     setSessions(prev => {
-      console.log('Adding new session to sessions:', newSession.id);
-      return [newSession, ...prev];
+      console.log('📋 Adding new session to sessions:', newSession.id);
+      const newSessions = [newSession, ...prev];
+      console.log('📊 Total sessions after creation:', newSessions.length);
+      return newSessions;
     });
     setActiveSessionId(newSession.id);
-    console.log('Set active session to new session:', newSession.id);
+    console.log('🎯 Set active session to new session:', newSession.id);
     return newSession.id;
   }, []);
 
   const saveCurrentSession = useCallback(() => {
+    console.log('💾 Attempting to save current session:', activeSessionId);
     const activeSession = sessions.find(session => session.id === activeSessionId);
     if (activeSession && activeSession.hasUserMessage && !activeSession.isSaved) {
-      console.log('Saving current session:', activeSessionId);
+      console.log('✅ Saving current session:', activeSessionId);
       setSessions(prev =>
         prev.map(session =>
           session.id === activeSessionId
@@ -141,21 +143,27 @@ export const useChatHistory = () => {
             : session
         )
       );
+    } else {
+      console.log('⏭️ Session not saved - conditions not met:', {
+        hasActiveSession: !!activeSession,
+        hasUserMessage: activeSession?.hasUserMessage,
+        isSaved: activeSession?.isSaved
+      });
     }
   }, [activeSessionId, sessions]);
 
   const getActiveSession = useCallback((): ChatSession | null => {
     if (!activeSessionId) {
-      console.log('No active session ID');
+      console.log('❌ No active session ID');
       return null;
     }
     const session = sessions.find(session => session.id === activeSessionId) || null;
-    console.log('Active session:', session?.id);
+    console.log('🎯 Active session:', session?.id, 'Found:', !!session);
     return session;
   }, [activeSessionId, sessions]);
 
   const addMessageToSession = useCallback(async (sessionId: string, message: ChatMessage) => {
-    console.log('Adding message to session:', sessionId);
+    console.log('📝 Adding message to session:', sessionId, 'Role:', message.role);
     setSessions(prev => 
       prev.map(session => {
         if (session.id === sessionId) {
@@ -170,12 +178,17 @@ export const useChatHistory = () => {
             isSaved: session.isSaved || isFirstUserMessage
           };
 
-          if (isFirstUserMessage) {
-            console.log('First user message, marking session as saved:', sessionId);
-          }
+          console.log('📊 Session updated:', {
+            id: sessionId,
+            hasUserMessage: updatedSession.hasUserMessage,
+            isSaved: updatedSession.isSaved,
+            messageCount: updatedSession.messages.length,
+            isFirstUserMessage
+          });
 
           // Generate title if this is the first user message and title is still "New Chat"
           if (session.title === 'New Chat' && message.role === 'user' && updatedMessages.filter(m => m.role === 'user').length === 1) {
+            console.log('🏷️ Generating title for session:', sessionId);
             generateChatTitle(updatedMessages).then(title => {
               setSessions(prevSessions =>
                 prevSessions.map(s =>
@@ -203,15 +216,15 @@ export const useChatHistory = () => {
   }, []);
 
   const switchToSession = useCallback((sessionId: string) => {
-    console.log('Switching to session:', sessionId);
+    console.log('🔄 Switching to session:', sessionId);
     setActiveSessionId(sessionId);
   }, []);
 
   const deleteSession = useCallback((sessionId: string) => {
-    console.log('Deleting session:', sessionId);
+    console.log('🗑️ Deleting session:', sessionId);
     setSessions(prev => {
       const filtered = prev.filter(session => session.id !== sessionId);
-      console.log('Sessions after deletion:', filtered.map(s => s.id));
+      console.log('📊 Sessions after deletion:', filtered.map(s => s.id));
       
       // If we deleted the active session, switch to the most recent session or clear
       if (activeSessionId === sessionId) {
@@ -247,8 +260,19 @@ export const useChatHistory = () => {
     );
   }, []);
 
-  // Return sessions that should be visible in the sidebar (saved sessions with user messages)
-  const visibleSessions = sessions.filter(session => session.isSaved && session.hasUserMessage);
+  // Return sessions that should be visible in the sidebar
+  const visibleSessions = sessions.filter(session => {
+    const shouldShow = session.isSaved && session.hasUserMessage;
+    console.log('🔍 Session visibility check:', {
+      id: session.id,
+      isSaved: session.isSaved,
+      hasUserMessage: session.hasUserMessage,
+      shouldShow
+    });
+    return shouldShow;
+  });
+
+  console.log('📋 Visible sessions for sidebar:', visibleSessions.length);
 
   return {
     sessions: visibleSessions,

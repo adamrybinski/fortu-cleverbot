@@ -22,16 +22,29 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
     getActiveSession
   } = useChatHistory();
 
+  console.log('🔍 ChatHistorySidebar render:', {
+    sessionsCount: sessions.length,
+    activeSessionId,
+    sessionIds: sessions.map(s => s.id)
+  });
+
   const starredSessions = sessions.filter(session => session.isStarred);
   const recentSessions = sessions.filter(session => !session.isStarred);
 
   const handleNewChat = () => {
+    console.log('🆕 New chat requested from sidebar');
     onNewChat();
   };
 
   // Check if we can create a new chat (current session has user messages)
   const currentSession = getActiveSession();
   const canCreateNewChat = currentSession?.hasUserMessage || false;
+
+  console.log('🔍 New chat button state:', {
+    currentSessionId: currentSession?.id,
+    hasUserMessage: currentSession?.hasUserMessage,
+    canCreateNewChat
+  });
 
   return (
     <div className="h-full flex flex-col bg-[#F1EDFF] border-r border-gray-200">
@@ -40,7 +53,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-[#003079]" />
-            <h2 className="text-lg font-semibold text-[#003079]">Chat History</h2>
+            <h2 className="text-lg font-semibold text-[#003079] font-['Montserrat']">Chat History</h2>
           </div>
           <Button
             onClick={onClose}
@@ -55,14 +68,14 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
         <Button
           onClick={handleNewChat}
           disabled={!canCreateNewChat}
-          className="w-full bg-[#753BBD] hover:bg-[#753BBD]/90 text-white disabled:bg-gray-300 disabled:text-gray-500"
+          className="w-full bg-[#753BBD] hover:bg-[#753BBD]/90 text-white disabled:bg-gray-300 disabled:text-gray-500 font-['Montserrat']"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Chat
         </Button>
         
         {!canCreateNewChat && (
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-gray-500 mt-2 text-center font-['Montserrat']">
             Send a message to save this chat
           </p>
         )}
@@ -117,6 +130,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
           {sessions.length === 0 && (
             <div className="text-center text-gray-500 py-8 font-['Montserrat']">
               No chat history yet
+            </div>
+          )}
+          
+          {/* Debug Info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-400 p-2 border-t">
+              Debug: {sessions.length} sessions visible
             </div>
           )}
         </div>

@@ -93,15 +93,21 @@ export const useMessageHandler = ({
     setIsLoading(true);
 
     try {
-      // Get or create active session
+      // Get or create active session with better handling
       let activeSession = getActiveSession();
+      console.log('🔍 Current active session:', activeSession?.id);
+      
       if (!activeSession) {
         console.log('🆕 No active session found, creating new session');
-        createNewSession();
+        const newSessionId = createNewSession();
+        console.log('✅ Created new session:', newSessionId);
+        
+        // Wait a brief moment for state to update and try again
+        await new Promise(resolve => setTimeout(resolve, 50));
         activeSession = getActiveSession();
         
         if (!activeSession) {
-          console.error('❌ Failed to create new session');
+          console.error('❌ Failed to create or retrieve new session');
           throw new Error('Failed to create new session');
         }
       }
@@ -119,6 +125,7 @@ export const useMessageHandler = ({
 
       // Add user message to session immediately
       const userChatMessage = convertMessageToChatMessage(newMessage);
+      console.log('📝 Adding user message to session:', activeSession.id);
       addMessageToSession(activeSession.id, userChatMessage);
 
       // Clear selected questions after sending (only for manual messages)
@@ -126,14 +133,22 @@ export const useMessageHandler = ({
         onClearSelectedQuestions();
       }
 
-      // Get the current session with the newly added message
-      const currentSession = getActiveSession();
-      if (!currentSession) {
+      // Get the updated session after adding the message
+      const updatedSession = getActiveSession();
+      if (!updatedSession) {
+        console.error('❌ Session not found after adding message');
         throw new Error('Active session not found after adding message');
       }
 
+      console.log('📊 Updated session state:', {
+        id: updatedSession.id,
+        hasUserMessage: updatedSession.hasUserMessage,
+        isSaved: updatedSession.isSaved,
+        messageCount: updatedSession.messages.length
+      });
+
       // Build conversation history from session messages
-      const conversationHistory = currentSession.messages.map(msg => ({
+      const conversationHistory = updatedSession.messages.map(msg => ({
         role: msg.role === 'bot' ? 'assistant' : 'user',
         text: msg.text
       }));
@@ -203,7 +218,7 @@ export const useMessageHandler = ({
 
       // Add assistant message to session
       const assistantChatMessage = convertMessageToChatMessage(assistantMessage);
-      addMessageToSession(currentSession.id, assistantChatMessage);
+      addMessageToSession(updatedSession.id, assistantChatMessage);
 
       console.log('✅ Message handling completed successfully');
 
@@ -213,6 +228,7 @@ export const useMessageHandler = ({
       // Ensure we have a session for the error message
       let activeSession = getActiveSession();
       if (!activeSession) {
+        console.log('🆕 Creating session for error message');
         createNewSession();
         activeSession = getActiveSession();
       }
