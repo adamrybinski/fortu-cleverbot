@@ -38,23 +38,23 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
     onNewChat();
   };
 
-  // Check if we can create a new chat
-  // We can create a new chat if:
-  // 1. There's no active session, OR
-  // 2. The active session has user messages (indicating it's a real conversation)
+  // Simplified logic for New Chat button
   const currentSession = getActiveSession();
-  const canCreateNewChat = !currentSession || (currentSession.hasUserMessage && currentSession.isSaved);
+  
+  // We can create a new chat if:
+  // 1. No active session exists, OR
+  // 2. The active session has user messages (is a real conversation)
+  const canCreateNewChat = !currentSession || currentSession.hasUserMessage;
 
-  console.log('🔍 New chat button state:', {
+  console.log('🔍 New chat button state (simplified):', {
     currentSessionId: currentSession?.id,
     hasUserMessage: currentSession?.hasUserMessage,
-    isSaved: currentSession?.isSaved,
     canCreateNewChat,
     reasoning: !currentSession 
       ? 'No active session' 
-      : currentSession.hasUserMessage && currentSession.isSaved 
-        ? 'Active session has user messages and is saved' 
-        : 'Active session is empty or not saved'
+      : currentSession.hasUserMessage 
+        ? 'Active session has user messages' 
+        : 'Active session is empty'
   });
 
   return (
@@ -145,10 +145,15 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ onNewCha
             </div>
           )}
           
-          {/* Debug Info */}
+          {/* Enhanced Debug Info */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-400 p-2 border-t">
-              Debug: {sessions.length} visible, {allSessions.length} total sessions
+            <div className="text-xs text-gray-400 p-2 border-t space-y-1">
+              <div>Debug: {sessions.length} visible, {allSessions.length} total sessions</div>
+              <div>Active: {activeSessionId || 'none'}</div>
+              <div>Can create new: {canCreateNewChat ? 'yes' : 'no'}</div>
+              {currentSession && (
+                <div>Current session: hasUser={currentSession.hasUserMessage ? 'yes' : 'no'}, saved={currentSession.isSaved ? 'yes' : 'no'}</div>
+              )}
             </div>
           )}
         </div>

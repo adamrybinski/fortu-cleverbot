@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/chat/types';
@@ -67,10 +66,26 @@ export const useChatHistory = () => {
     }
   }, []);
 
+  // Immediate localStorage save helper
+  const saveToStorage = useCallback((sessionsToSave: ChatSession[]) => {
+    const validSessions = sessionsToSave.filter(session => session.isSaved && session.hasUserMessage);
+    console.log('💾 Immediate save to localStorage:', {
+      totalSessions: sessionsToSave.length,
+      validSessions: validSessions.length,
+      sessionIds: validSessions.map(s => s.id)
+    });
+    
+    if (validSessions.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(validSessions));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
   // Save sessions to localStorage whenever sessions change
   useEffect(() => {
     const sessionsToSave = sessions.filter(session => session.isSaved && session.hasUserMessage);
-    console.log('💾 Saving sessions to localStorage:', {
+    console.log('💾 Auto-saving sessions to localStorage:', {
       totalSessions: sessions.length,
       sessionsToSave: sessionsToSave.length,
       sessionIds: sessionsToSave.map(s => s.id)
@@ -163,8 +178,8 @@ export const useChatHistory = () => {
       messageText: message.text.substring(0, 50) + '...'
     });
     
-    setSessions(prev => 
-      prev.map(session => {
+    setSessions(prev => {
+      const updatedSessions = prev.map(session => {
         if (session.id === sessionId) {
           const updatedMessages = [...session.messages, message];
           const isFirstUserMessage = message.role === 'user' && !session.hasUserMessage;
@@ -191,19 +206,34 @@ export const useChatHistory = () => {
           if (session.title === 'New Chat' && message.role === 'user' && updatedMessages.filter(m => m.role === 'user').length === 1) {
             console.log('🏷️ Generating title for session:', sessionId);
             generateChatTitle(updatedMessages).then(title => {
-              setSessions(prevSessions =>
-                prevSessions.map(s =>
+              setSessions(prevSessions => {
+                const newSessions = prevSessions.map(s =>
                   s.id === sessionId ? { ...s, title } : s
-                )
-              );
+                );
+                // Immediate save after title update
+                const validSessions = newSessions.filter(s => s.isSaved && s.hasUserMessage);
+                if (validSessions.length > 0) {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(validSessions));
+                }
+                return newSessions;
+              });
             });
           }
 
           return updatedSession;
         }
         return session;
-      })
-    );
+      });
+
+      // Immediate save to localStorage for sessions with user messages
+      const sessionsToSave = updatedSessions.filter(session => session.isSaved && session.hasUserMessage);
+      if (sessionsToSave.length > 0) {
+        console.log('💾 Immediate localStorage update after message');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionsToSave));
+      }
+
+      return updatedSessions;
+    });
   }, []);
 
   const updateSessionMessages = useCallback((sessionId: string, messages: ChatMessage[]) => {
@@ -261,9 +291,9 @@ export const useChatHistory = () => {
     );
   }, []);
 
-  // Return sessions that should be visible in the sidebar
+  // Return sessions that should be visible in the sidebar - simplified logic
   const visibleSessions = sessions.filter(session => {
-    const shouldShow = session.isSaved && session.hasUserMessage;
+    const shouldShow = session.hasUserMessage && session.isSaved;
     console.log('🔍 Session visibility check:', {
       id: session.id,
       title: session.title,
