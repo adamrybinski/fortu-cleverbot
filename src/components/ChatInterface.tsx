@@ -53,20 +53,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     allSessions, 
     activeSessionId: currentActiveSessionId,
     sessions,
-    saveCurrentSession,
     getActiveSession
   } = useChatHistory();
 
   const handleNewChat = () => {
     console.log('Creating new chat from sidebar...');
     
-    // Save current session if it has user messages
-    const currentSession = getActiveSession();
-    if (currentSession && currentSession.hasUserMessage && !currentSession.isSaved) {
-      saveCurrentSession();
-    }
-    
-    // Create new session
+    // Create new session - saving is now handled automatically
     const newSessionId = createNewSession();
     setIsSidebarOpen(false);
   };
@@ -74,12 +67,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSessionChange = (sessionId: string) => {
     console.log('Switching to session from sidebar:', sessionId);
     
-    // Save current session before switching if needed
-    const currentSession = getActiveSession();
-    if (currentSession && currentSession.hasUserMessage && !currentSession.isSaved) {
-      saveCurrentSession();
-    }
-    
+    // Switch to session - saving is now handled automatically
     switchToSession(sessionId);
     setIsSidebarOpen(false);
   };
