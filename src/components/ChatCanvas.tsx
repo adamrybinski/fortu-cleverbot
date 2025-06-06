@@ -127,6 +127,7 @@ export const ChatCanvas: React.FC = () => {
               currentTrigger={currentTrigger}
               activeSessionId={activeSessionId}
               onSessionChange={handleSessionChange}
+              closeCanvas={closeCanvas}
               questionSessions={{
                 questionSessions,
                 activeSessionId: questionSessionId,

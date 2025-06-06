@@ -31,6 +31,8 @@ interface ChatInterfaceProps {
   currentTrigger?: CanvasTrigger | null;
   activeSessionId?: string | null;
   onSessionChange?: (sessionId: string | null) => void;
+  // Canvas control functions
+  closeCanvas?: () => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -44,7 +46,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessageToChat,
   currentTrigger,
   activeSessionId,
-  onSessionChange
+  onSessionChange,
+  closeCanvas
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -64,6 +67,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     // Create new session - saving is now handled automatically
     const newSessionId = createNewSession();
+    
+    // Clear canvas state when creating new chat
+    if (closeCanvas) {
+      console.log('🧹 Clearing canvas state for new chat');
+      closeCanvas();
+    }
+    
+    // Clear selected questions from canvas
+    if (onClearSelectedQuestions) {
+      onClearSelectedQuestions();
+    }
+    
     setIsSidebarOpen(false);
   };
 
@@ -72,6 +87,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     // Switch to session - saving is now handled automatically
     switchToSession(sessionId);
+    
+    // Clear canvas state when switching sessions
+    if (closeCanvas) {
+      console.log('🧹 Clearing canvas state for session switch');
+      closeCanvas();
+    }
+    
+    // Clear selected questions from canvas
+    if (onClearSelectedQuestions) {
+      onClearSelectedQuestions();
+    }
+    
     setIsSidebarOpen(false);
   };
 

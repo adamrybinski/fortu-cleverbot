@@ -17,6 +17,7 @@ export const ensureActiveSession = async (sessionManager: SessionManager): Promi
     isSaved: activeSession?.isSaved
   });
   
+  // If no active session exists, create one
   if (!activeSession) {
     console.log('🆕 No active session found, creating new session');
     const newSessionId = sessionManager.createNewSession();
@@ -36,7 +37,8 @@ export const ensureActiveSession = async (sessionManager: SessionManager): Promi
   return activeSession;
 };
 
-export const waitForSessionUpdate = async (sessionManager: SessionManager, timeoutMs = 50): Promise<ChatSession> => {
+export const waitForSessionUpdate = async (sessionManager: SessionManager, timeoutMs = 100): Promise<ChatSession> => {
+  // Give more time for state updates to propagate
   await new Promise(resolve => setTimeout(resolve, timeoutMs));
   
   const updatedSession = sessionManager.getActiveSession();
@@ -44,6 +46,13 @@ export const waitForSessionUpdate = async (sessionManager: SessionManager, timeo
     console.error('❌ Session not found after adding message');
     throw new Error('Active session not found after adding message');
   }
+
+  console.log('📊 Session state after update:', {
+    id: updatedSession.id,
+    hasUserMessage: updatedSession.hasUserMessage,
+    isSaved: updatedSession.isSaved,
+    messageCount: updatedSession.messages.length
+  });
 
   return updatedSession;
 };

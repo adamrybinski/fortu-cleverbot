@@ -27,10 +27,12 @@ export const useChatHistory = () => {
     const loadedSessions = loadSessionsFromStorage();
     setSessions(loadedSessions);
     
-    // Set the most recent session as active if none is set
+    // Only set active session if there are actually saved sessions
     if (loadedSessions.length > 0) {
       setActiveSessionId(loadedSessions[0].id);
       console.log('🎯 Set active session to:', loadedSessions[0].id);
+    } else {
+      console.log('📭 No saved sessions, starting fresh');
     }
   }, []);
 
@@ -70,7 +72,7 @@ export const useChatHistory = () => {
         if (session.id === sessionId) {
           const updatedSession = updateSessionWithMessage(session, message);
 
-          // Generate title if needed
+          // Generate title if needed (but only for user messages that make it a real conversation)
           if (shouldGenerateTitle(session, message)) {
             console.log('🏷️ Generating title for session:', sessionId);
             setIsGeneratingTitle(true);
