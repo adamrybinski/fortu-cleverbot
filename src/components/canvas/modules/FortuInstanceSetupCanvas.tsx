@@ -1,15 +1,13 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Upload, Palette, Check } from 'lucide-react';
+import { Upload, Palette, Check, X, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const colorPalettes = [
   { name: 'Ocean Blue', colors: ['#003079', '#6EFFC6', '#F1EDFF'] },
@@ -21,8 +19,6 @@ const colorPalettes = [
 
 const fortuInstanceSchema = z.object({
   clientName: z.string().min(1, 'Client name is required'),
-  primaryLogo: z.any().optional(),
-  dropdownLogo: z.any().optional(),
   logoBackgroundColour: z.string().default('#FFFFFF'),
   sidebarGradientStart: z.string().default('#F1EDFF'),
   sidebarGradientEnd: z.string().default('#EEFFF3'),
@@ -32,6 +28,11 @@ const fortuInstanceSchema = z.object({
 });
 
 type FortuInstanceFormData = z.infer<typeof fortuInstanceSchema>;
+
+interface LogoFile {
+  file: File;
+  preview: string;
+}
 
 interface FortuInstanceSetupCanvasProps {
   payload?: {
@@ -48,6 +49,8 @@ export const FortuInstanceSetupCanvas: React.FC<FortuInstanceSetupCanvasProps> =
 }) => {
   const [selectedPaletteIndex, setSelectedPaletteIndex] = useState<number | null>(null);
   const [customColors, setCustomColors] = useState(false);
+  const [primaryLogo, setPrimaryLogo] = useState<LogoFile | null>(null);
+  const [dropdownLogo, setDropdownLogo] = useState<LogoFile | null>(null);
 
   const form = useForm<FortuInstanceFormData>({
     resolver: zodResolver(fortuInstanceSchema),
@@ -61,12 +64,50 @@ export const FortuInstanceSetupCanvas: React.FC<FortuInstanceSetupCanvasProps> =
     }
   });
 
+  const handleFileUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setLogo: React.Dispatch<React.SetStateAction<LogoFile | null>>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a PNG or JPG file.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      alert('File size must be less than 2MB.');
+      return;
+    }
+
+    // Create preview URL
+    const preview = URL.createObjectURL(file);
+    setLogo({ file, preview });
+  };
+
+  const removeLogo = (
+    setLogo: React.Dispatch<React.SetStateAction<LogoFile | null>>,
+    logo: LogoFile | null
+  ) => {
+    if (logo?.preview) {
+      URL.revokeObjectURL(logo.preview);
+    }
+    setLogo(null);
+  };
+
   const onSubmit = (data: FortuInstanceFormData) => {
     console.log('Fortu.ai instance setup data:', data);
     
-    // Prepare the instance data with challenge context
+    // Prepare the instance data with challenge context and logos
     const instanceData = {
       ...data,
+      primaryLogo: primaryLogo?.file,
+      dropdownLogo: dropdownLogo?.file,
       challenge: payload?.refinedChallenge,
       selectedQuestions: payload?.selectedQuestions,
       createdAt: new Date().toISOString()
@@ -97,6 +138,60 @@ export const FortuInstanceSetupCanvas: React.FC<FortuInstanceSetupCanvasProps> =
     setSelectedPaletteIndex(null);
     form.setValue('selectedPalette', 'Custom');
   };
+
+  // Clean up object URLs on unmount
+  React.useEffect(() => {
+    return () => {
+      if (primaryLogo?.preview) URL.revokeObjectURL(primaryLogo.preview);
+      if (dropdownLogo?.preview) URL.revokeObjectURL(dropdownLogo.preview);
+    };
+  }, []);
+
+  const LogoUploadArea: React.FC<{
+    title: string;
+    logo: LogoFile | null;
+    onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onRemove: () => void;
+  }> = ({ title, logo, onFileSelect, onRemove }) => (
+    <div className="space-y-2">
+      <Label className="text-[#003079]">{title}</Label>
+      {logo ? (
+        <div className="relative border border-[#6EFFC6]/30 rounded-lg p-4 bg-gray-50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-[#003079] font-medium">{logo.file.name}</span>
+            <Button
+              type="button"
+              onClick={onRemove}
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-700 p-1"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-center">
+            <img
+              src={logo.preview}
+              alt="Logo preview"
+              className="max-w-32 max-h-20 object-contain"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="relative border-2 border-dashed border-[#6EFFC6]/50 rounded-lg p-8 text-center hover:border-[#6EFFC6] transition-colors cursor-pointer">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg"
+            onChange={onFileSelect}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          <Upload className="w-8 h-8 text-[#753BBD] mx-auto mb-2" />
+          <p className="text-sm text-[#1D253A]">Upload {title.toLowerCase()}</p>
+          <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full">
@@ -150,24 +245,20 @@ export const FortuInstanceSetupCanvas: React.FC<FortuInstanceSetupCanvasProps> =
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Primary Logo */}
-                  <div className="space-y-2">
-                    <Label className="text-[#003079]">Primary Logo</Label>
-                    <div className="border-2 border-dashed border-[#6EFFC6]/50 rounded-lg p-8 text-center hover:border-[#6EFFC6] transition-colors">
-                      <Upload className="w-8 h-8 text-[#753BBD] mx-auto mb-2" />
-                      <p className="text-sm text-[#1D253A]">Upload primary logo</p>
-                      <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
-                    </div>
-                  </div>
+                  <LogoUploadArea
+                    title="Primary Logo"
+                    logo={primaryLogo}
+                    onFileSelect={(e) => handleFileUpload(e, setPrimaryLogo)}
+                    onRemove={() => removeLogo(setPrimaryLogo, primaryLogo)}
+                  />
 
                   {/* Dropdown Logo */}
-                  <div className="space-y-2">
-                    <Label className="text-[#003079]">Dropdown Logo</Label>
-                    <div className="border-2 border-dashed border-[#6EFFC6]/50 rounded-lg p-8 text-center hover:border-[#6EFFC6] transition-colors">
-                      <Upload className="w-8 h-8 text-[#753BBD] mx-auto mb-2" />
-                      <p className="text-sm text-[#1D253A]">Upload dropdown logo</p>
-                      <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
-                    </div>
-                  </div>
+                  <LogoUploadArea
+                    title="Dropdown Logo"
+                    logo={dropdownLogo}
+                    onFileSelect={(e) => handleFileUpload(e, setDropdownLogo)}
+                    onRemove={() => removeLogo(setDropdownLogo, dropdownLogo)}
+                  />
                 </div>
 
                 {/* Logo Background Colour */}

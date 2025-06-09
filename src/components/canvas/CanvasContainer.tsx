@@ -93,6 +93,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   onSendMessageToChat
 }) => {
   const [showChallengeHistory, setShowChallengeHistory] = useState(false);
+  const [activeModule, setActiveModule] = useState<'questions' | 'setup'>('questions');
   const [toolbarState, setToolbarState] = useState({
     showSelection: false,
     selectedQuestions: [] as Question[],
@@ -112,6 +113,15 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   } = useChallengeHistory();
 
   if (!isVisible || !trigger) return null;
+
+  // Determine active module based on trigger type
+  React.useEffect(() => {
+    if (trigger?.type === 'fortuInstanceSetup') {
+      setActiveModule('setup');
+    } else if (trigger?.type === 'fortuQuestions') {
+      setActiveModule('questions');
+    }
+  }, [trigger?.type]);
 
   const handleStartNewChallenge = () => {
     setShowChallengeHistory(false);
@@ -159,12 +169,32 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     setToolbarState(prev => ({ ...prev, selectedQuestions: [] }));
   };
 
+  const handleModuleSwitch = (moduleType: 'questions' | 'setup') => {
+    setActiveModule(moduleType);
+    setShowChallengeHistory(false);
+  };
+
+  // Create appropriate trigger based on active module
+  const getActiveTrigger = (): CanvasTrigger => {
+    if (activeModule === 'setup') {
+      return {
+        type: 'fortuInstanceSetup',
+        payload: trigger?.payload || {}
+      };
+    } else {
+      return {
+        type: 'fortuQuestions',
+        payload: trigger?.payload || {}
+      };
+    }
+  };
+
   const content = (
     <div className="relative flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3] flex-shrink-0">
         <div className="flex items-center gap-3">
-          {/* Question Session Menu - only show if questionSessions is provided and there are multiple sessions */}
+          {/* Canvas Menu - show if questionSessions is provided and menu should be visible */}
           {questionSessions && (
             <CanvasQuestionMenu
               questionSessions={questionSessions.questionSessions}
@@ -173,6 +203,9 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
               onCreateNewSession={handleCreateNewQuestionSession}
               onDeleteSession={questionSessions.deleteSession}
               onSendMessageToChat={onSendMessageToChat}
+              currentTriggerType={trigger?.type}
+              onSwitchToModule={handleModuleSwitch}
+              activeModule={activeModule}
             />
           )}
           
@@ -187,7 +220,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
             </Button>
           )}
           <h2 className="text-lg font-semibold text-[#003079]">
-            {showChallengeHistory ? 'Challenge History' : 'Canvas'}
+            {showChallengeHistory ? 'Challenge History' : 
+             activeModule === 'setup' ? 'Fortu.ai Setup' : 'Canvas'}
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -231,7 +265,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
             />
           ) : (
             <CanvasModule 
-              trigger={trigger} 
+              trigger={getActiveTrigger()} 
               onSendQuestionsToChat={onSendQuestionsToChat}
               challengeHistory={{
                 challengeHistory,
@@ -255,7 +289,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         </ScrollArea>
 
         {/* Floating Question Selection Toolbar - positioned outside ScrollArea */}
-        {!showChallengeHistory && toolbarState.hasQuestions && (
+        {!showChallengeHistory && toolbarState.hasQuestions && activeModule === 'questions' && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative h-full w-full">
               <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6 pointer-events-auto">

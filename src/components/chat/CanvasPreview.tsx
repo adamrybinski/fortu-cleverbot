@@ -2,7 +2,7 @@
 import React from 'react';
 import { CanvasPreviewData } from './types';
 import { Button } from '@/components/ui/button';
-import { Expand, Square, HelpCircle, Target } from 'lucide-react';
+import { Expand, Square, HelpCircle, Target, Settings } from 'lucide-react';
 
 interface CanvasPreviewProps {
   canvasData: CanvasPreviewData;
@@ -14,6 +14,8 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
     switch (canvasData.type) {
       case 'fortuQuestions':
         return <HelpCircle className="w-5 h-5 text-[#753BBD]" />;
+      case 'fortuInstanceSetup':
+        return <Settings className="w-5 h-5 text-[#753BBD]" />;
       case 'challengeMapping':
         return <Target className="w-5 h-5 text-[#003079]" />;
       case 'blank':
@@ -26,6 +28,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
   const getCanvasColor = () => {
     switch (canvasData.type) {
       case 'fortuQuestions':
+      case 'fortuInstanceSetup':
         return 'border-[#753BBD]/20 bg-gradient-to-r from-[#753BBD]/5 to-[#F1EDFF]/20';
       case 'challengeMapping':
         return 'border-[#003079]/20 bg-gradient-to-r from-[#003079]/5 to-[#F1EDFF]/20';
@@ -40,6 +43,8 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
     switch (canvasData.type) {
       case 'fortuQuestions':
         return 'Question Search added to Canvas';
+      case 'fortuInstanceSetup':
+        return 'Fortu.ai Setup added to Canvas';
       default:
         return canvasData.title;
     }
@@ -49,6 +54,8 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({ canvasData, onExpa
     switch (canvasData.type) {
       case 'fortuQuestions':
         return 'Browse relevant questions and select the ones that best match your challenge.';
+      case 'fortuInstanceSetup':
+        return 'Configure your personalised fortu.ai workspace with branding and settings.';
       default:
         return canvasData.description;
     }
