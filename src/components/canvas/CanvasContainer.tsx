@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ShineBorder } from './components/ShineBorder';
 import { CanvasHeader } from './components/CanvasHeader';
@@ -43,8 +42,14 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   questionSessions,
   onSendMessageToChat
 }) => {
+  // Determine initial active module based on trigger type
+  const getInitialModule = () => {
+    if (!trigger) return 'questions';
+    return trigger.type === 'fortuInstanceSetup' ? 'setup' : 'questions';
+  };
+
   const [showChallengeHistory, setShowChallengeHistory] = useState(false);
-  const [activeModule, setActiveModule] = useState<'questions' | 'setup'>('questions');
+  const [activeModule, setActiveModule] = useState<'questions' | 'setup'>(getInitialModule);
   const [toolbarState, setToolbarState] = useState({
     showSelection: false,
     selectedQuestions: [] as Question[],
@@ -63,9 +68,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     markSessionCompleted
   } = useChallengeHistory();
 
-  if (!isVisible || !trigger) return null;
-
-  // Determine active module based on trigger type
+  // Update active module when trigger changes - using useEffect properly
   React.useEffect(() => {
     if (trigger?.type === 'fortuInstanceSetup') {
       setActiveModule('setup');
@@ -73,6 +76,9 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       setActiveModule('questions');
     }
   }, [trigger?.type]);
+
+  // Early return after all hooks have been called
+  if (!isVisible || !trigger) return null;
 
   const handleCreateNewQuestionSession = () => {
     if (onSendMessageToChat) {
