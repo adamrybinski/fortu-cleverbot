@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,15 +29,14 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Show menu if there are multiple sessions with refined challenges OR if fortu instance setup is available
+  // Show menu if there are multiple sessions with refined challenges
   const sessionsWithRefinedChallenges = questionSessions.filter(session => 
     session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
   );
 
-  // Show setup module if there are any sessions with refined challenges (making it available as a module)
+  // Only show setup module if there are refined challenges (removes the currentTriggerType condition)
   const hasRefinedChallenges = sessionsWithRefinedChallenges.length > 0;
-  const shouldShowSetupModule = hasRefinedChallenges || currentTriggerType === 'fortuInstanceSetup';
-  const shouldShowMenu = sessionsWithRefinedChallenges.length > 0 || shouldShowSetupModule;
+  const shouldShowMenu = sessionsWithRefinedChallenges.length > 0 || hasRefinedChallenges;
 
   if (!shouldShowMenu) {
     return null;
@@ -84,6 +82,15 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
   };
 
   const handleModuleSwitch = (moduleType: 'questions' | 'setup') => {
+    // Only allow setup module if there are refined challenges
+    if (moduleType === 'setup' && !hasRefinedChallenges) {
+      if (onSendMessageToChat) {
+        onSendMessageToChat("To access fortu.ai setup, please first refine at least one challenge by exploring questions.");
+      }
+      setIsOpen(false);
+      return;
+    }
+    
     if (onSwitchToModule) {
       onSwitchToModule(moduleType);
     }
@@ -159,8 +166,8 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
                   </div>
                 ))}
 
-                {/* Fortu.ai Setup Module - Always show if there are refined challenges */}
-                {shouldShowSetupModule && (
+                {/* Fortu.ai Setup Module - Only show if there are refined challenges */}
+                {hasRefinedChallenges && (
                   <div
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       activeModule === 'setup'

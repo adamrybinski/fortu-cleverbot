@@ -42,10 +42,21 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   questionSessions,
   onSendMessageToChat
 }) => {
-  // Determine initial active module based on trigger type
+  // Determine initial active module based on trigger type and available refined challenges
   const getInitialModule = () => {
     if (!trigger) return 'questions';
-    return trigger.type === 'fortuInstanceSetup' ? 'setup' : 'questions';
+    
+    // Check if there are any refined challenges available
+    const hasRefinedChallenges = questionSessions?.questionSessions.some(session => 
+      session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
+    ) || false;
+    
+    // Only allow setup module if there are refined challenges
+    if (trigger.type === 'fortuInstanceSetup' && hasRefinedChallenges) {
+      return 'setup';
+    }
+    
+    return 'questions';
   };
 
   const [showChallengeHistory, setShowChallengeHistory] = useState(false);
@@ -68,14 +79,24 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     markSessionCompleted
   } = useChallengeHistory();
 
-  // Update active module when trigger changes - using useEffect properly
+  // Update active module when trigger changes - with refined challenge validation
   React.useEffect(() => {
-    if (trigger?.type === 'fortuInstanceSetup') {
+    const hasRefinedChallenges = questionSessions?.questionSessions.some(session => 
+      session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
+    ) || false;
+
+    if (trigger?.type === 'fortuInstanceSetup' && hasRefinedChallenges) {
       setActiveModule('setup');
     } else if (trigger?.type === 'fortuQuestions') {
       setActiveModule('questions');
+    } else if (trigger?.type === 'fortuInstanceSetup' && !hasRefinedChallenges) {
+      // If setup is requested but no refined challenges exist, guide user to questions first
+      setActiveModule('questions');
+      if (onSendMessageToChat) {
+        onSendMessageToChat("To access fortu.ai setup, please first refine at least one challenge by exploring questions.");
+      }
     }
-  }, [trigger?.type]);
+  }, [trigger?.type, questionSessions?.questionSessions, onSendMessageToChat]);
 
   // Early return after all hooks have been called
   if (!isVisible || !trigger) return null;
@@ -110,6 +131,20 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   };
 
   const handleModuleSwitch = (moduleType: 'questions' | 'setup') => {
+    // Validate access to setup module
+    if (moduleType === 'setup') {
+      const hasRefinedChallenges = questionSessions?.questionSessions.some(session => 
+        session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
+      ) || false;
+      
+      if (!hasRefinedChallenges) {
+        if (onSendMessageToChat) {
+          onSendMessageToChat("To access fortu.ai setup, please first refine at least one challenge by exploring questions.");
+        }
+        return;
+      }
+    }
+    
     setActiveModule(moduleType);
     setShowChallengeHistory(false);
   };
