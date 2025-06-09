@@ -136,23 +136,10 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   };
 
   const handleSetupFortuInstance = (questions: Question[]) => {
-    const activeSession = questionSessions?.getActiveSession();
-    
-    const setupPayload = {
-      refinedChallenge: activeSession?.refinedChallenge,
-      fortuQuestions: [], // Will be populated from current canvas state
-      aiQuestions: [], // Will be populated from current canvas state
-      selectedQuestions: questions
-    };
-
-    // Create new trigger for fortu instance setup
-    const newTrigger = {
-      type: 'fortuInstanceSetup',
-      payload: setupPayload
-    };
-
-    // Update the current trigger to switch to setup view
-    setCurrentTrigger(newTrigger);
+    // Send the selected questions to chat for fortu instance setup
+    if (onSendQuestionsToChat) {
+      onSendQuestionsToChat(questions, 'instance');
+    }
   };
 
   const handleAddAnotherChallenge = () => {
