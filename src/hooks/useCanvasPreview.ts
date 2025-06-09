@@ -42,13 +42,9 @@ export const useCanvasPreview = () => {
     if (readyForFortu && agentUsed === 'prospect') {
       console.log('Auto-triggering canvas for fortu questions search');
       
-      setPendingCanvasGuidance(
-        "Perfect! I've found relevant questions and approaches from organisations that have tackled similar challenges.\n\n" +
-        "**Your Next Step:**\n\n" +
-        "Browse through the matched questions from fortu.ai and AI suggestions. Select the ones that resonate most with your situation - these will help me create a refined, ultra-specific challenge statement for your fortu.ai instance.\n\n" +
-        "Take your time exploring the options and select the questions that best align with your goals."
-      );
-
+      // Remove the duplicative pending guidance since the canvas UI provides sufficient guidance
+      // setPendingCanvasGuidance is no longer needed here
+      
       const canvasData = createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge,
         searchReady: true,
