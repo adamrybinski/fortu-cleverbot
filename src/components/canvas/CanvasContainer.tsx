@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PanelRightClose, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -136,6 +135,33 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     }
   };
 
+  const handleSetupFortuInstance = (questions: Question[]) => {
+    const activeSession = questionSessions?.getActiveSession();
+    
+    const setupPayload = {
+      refinedChallenge: activeSession?.refinedChallenge,
+      fortuQuestions: [], // Will be populated from current canvas state
+      aiQuestions: [], // Will be populated from current canvas state
+      selectedQuestions: questions
+    };
+
+    // Create new trigger for fortu instance setup
+    const newTrigger = {
+      type: 'fortuInstanceSetup',
+      payload: setupPayload
+    };
+
+    // Update the current trigger to switch to setup view
+    setCurrentTrigger(newTrigger);
+  };
+
+  const handleAddAnotherChallenge = () => {
+    if (onSendMessageToChat) {
+      onSendMessageToChat("I'd like to explore another challenge. Can you help me identify and refine it?");
+    }
+    setToolbarState(prev => ({ ...prev, showSelection: false, selectedQuestions: [] }));
+  };
+
   const handleSelectionStateChange = (state: {
     showSelection: boolean;
     selectedQuestions: Question[];
@@ -265,6 +291,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
                   onToggleSelection={handleToggleSelection}
                   onSendToChat={handleSendToChat}
                   onClearSelections={handleClearSelections}
+                  onSetupFortuInstance={handleSetupFortuInstance}
+                  onAddAnotherChallenge={handleAddAnotherChallenge}
                 />
               </div>
             </div>

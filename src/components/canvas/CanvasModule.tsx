@@ -3,6 +3,7 @@ import React from 'react';
 import { CanvasTrigger } from './CanvasContainer';
 import { BlankCanvas } from './modules/BlankCanvas';
 import { FortuQuestionsCanvas } from './modules/FortuQuestionsCanvas';
+import { FortuInstanceSetup } from './modules/FortuInstanceSetup';
 import { ChallengeHistory } from './modules/ChallengeHistory';
 import { Question, ChallengeHistoryHook } from './modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
@@ -59,6 +60,27 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           onToggleSelection={onToggleSelection}
           onClearSelections={onClearSelections}
           showSelection={showSelection}
+        />
+      );
+
+    case 'fortuInstanceSetup':
+      return (
+        <FortuInstanceSetup
+          payload={trigger.payload}
+          onComplete={(instanceData) => {
+            console.log('fortu.ai instance created:', instanceData);
+            // Handle instance creation completion
+            if (onSendQuestionsToChat) {
+              onSendQuestionsToChat([], 'refine');
+            }
+          }}
+          onCancel={() => {
+            console.log('fortu.ai instance setup cancelled');
+            // Return to previous view or close canvas
+            if (onSendQuestionsToChat) {
+              onSendQuestionsToChat([], 'refine');
+            }
+          }}
         />
       );
     

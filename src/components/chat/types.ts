@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   role: 'user' | 'bot';
@@ -14,7 +13,7 @@ export interface Question {
   question: string;
   source: 'fortu' | 'openai';
   selected?: boolean;
-  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
+  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI' | 'Pre-approved';
 }
 
 export interface CanvasPreviewData {

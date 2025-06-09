@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Database, Bot } from 'lucide-react';
@@ -30,6 +29,8 @@ interface FortuQuestionsCanvasProps {
     showSelection: boolean;
     selectedQuestions: Question[];
     hasQuestions: boolean;
+    onSetupFortuInstance: (questions: Question[]) => void;
+    onAddAnotherChallenge: () => void;
   }) => void;
   onSendToChat?: (questions: Question[]) => void;
   onToggleSelection?: () => void;
@@ -213,7 +214,9 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
       onSelectionStateChange({
         showSelection,
         selectedQuestions,
-        hasQuestions
+        hasQuestions,
+        onSetupFortuInstance: handleSetupFortuInstance,
+        onAddAnotherChallenge: handleAddAnotherChallenge
       });
     }
   }, [showSelection, selectedQuestions, hasQuestions, onSelectionStateChange]);
@@ -255,6 +258,44 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
   const handleToggleSelection = () => {
     if (onToggleSelection) {
       onToggleSelection();
+    }
+  };
+
+  const handleSetupFortuInstance = (questions: Question[]) => {
+    const activeSession = questionSessions?.getActiveSession();
+    
+    // Create payload for fortu instance setup
+    const setupPayload = {
+      refinedChallenge: activeSession?.refinedChallenge || payload?.refinedChallenge,
+      fortuQuestions,
+      aiQuestions,
+      selectedQuestions: questions
+    };
+
+    // Trigger the fortu instance setup canvas
+    if (onSendQuestionsToChat) {
+      // Use a special trigger to indicate fortu instance setup
+      console.log('🏗️ Setting up fortu.ai instance with payload:', setupPayload);
+      
+      // Create a custom trigger for the fortu instance setup
+      const trigger = {
+        type: 'fortuInstanceSetup',
+        payload: setupPayload
+      };
+      
+      // We need to communicate this trigger to the parent
+      // For now, we'll use the existing onSendQuestionsToChat but modify it
+      // This is a workaround - ideally we'd have a dedicated onTriggerCanvas prop
+      if (window.parent && window.parent.postMessage) {
+        window.parent.postMessage({ type: 'TRIGGER_CANVAS', trigger }, '*');
+      }
+    }
+  };
+
+  const handleAddAnotherChallenge = () => {
+    console.log('🔄 Starting another challenge flow');
+    if (onSendQuestionsToChat) {
+      onSendQuestionsToChat([], 'refine');
     }
   };
 
