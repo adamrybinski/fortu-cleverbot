@@ -1,11 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Database, Bot } from 'lucide-react';
+import { useQuestionGeneration } from '@/hooks/useQuestionGeneration';
+import { QuestionSection } from './QuestionSection';
+import { MainEmptyState } from './MainEmptyState';
+import { FortuQuestionsHeader } from './FortuQuestionsHeader';
+import { ErrorDisplay } from './ErrorDisplay';
 import { Question, ChallengeHistoryHook } from './types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
-import { useFortuQuestionsCanvas } from './hooks/useFortuQuestionsCanvas';
-import { QuestionGenerationManager } from './components/QuestionGenerationManager';
-import { QuestionCanvasContent } from './components/QuestionCanvasContent';
 
 interface QuestionSessionsHook {
   questionSessions: QuestionSession[];
@@ -27,8 +30,6 @@ interface FortuQuestionsCanvasProps {
     showSelection: boolean;
     selectedQuestions: Question[];
     hasQuestions: boolean;
-    onSetupFortuInstance: (questions: Question[]) => void;
-    onAddAnotherChallenge: () => void;
   }) => void;
   onSendToChat?: (questions: Question[]) => void;
   onToggleSelection?: () => void;
@@ -50,41 +51,161 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
 }) => {
   console.log('🎨 FortuQuestionsCanvas mounted with payload:', payload);
   
+  // Add ref to track when we're loading from session to prevent loops
+  const loadingFromSessionRef = useRef(false);
+  const lastSessionIdRef = useRef<string | null>(null);
+  const hasTriggeredGenerationRef = useRef(false);
+  
   const {
-    // State
     fortuQuestions,
     aiQuestions,
     isLoadingFortu,
     isLoadingAI,
     error,
-    hasQuestions,
-    isLoading,
-    selectedQuestions,
-    expandedQuestions,
-    questionSummaries,
-    loadingSummaries,
-    activeSession,
-    refinedChallenge,
-    isSearchReady,
-    
-    // Refs
-    loadingFromSessionRef,
-    lastSessionIdRef,
-    hasTriggeredGenerationRef,
-    
-    // Actions
     generateAllQuestions,
     setError,
     handleQuestionSelection,
     getSelectedQuestions,
     clearSelections,
     clearQuestions,
+    expandedQuestions,
+    questionSummaries,
+    loadingSummaries,
     toggleQuestionExpansion,
     generateQuestionSummary,
     loadQuestionsFromSession,
     toggleExpandAllFortuQuestions,
     toggleExpandAllAIQuestions
-  } = useFortuQuestionsCanvas({ payload, questionSessions });
+  } = useQuestionGeneration();
+
+  const activeSession = questionSessions?.getActiveSession();
+  const refinedChallenge = activeSession?.refinedChallenge || payload?.refinedChallenge;
+  const isSearchReady = payload?.searchReady;
+  const payloadSessionId = payload?.sessionId;
+  
+  console.log('🔍 Canvas state analysis:', {
+    activeSessionId: activeSession?.id,
+    payloadSessionId,
+    refinedChallenge,
+    isSearchReady,
+    fortuQuestionsCount: fortuQuestions.length,
+    aiQuestionsCount: aiQuestions.length,
+    isLoadingFortu,
+    isLoadingAI,
+    hasSessionQuestions: activeSession ? (activeSession.fortuQuestions.length + activeSession.aiQuestions.length) : 0,
+    hasTriggeredGeneration: hasTriggeredGenerationRef.current
+  });
+
+  // Handle immediate generation when canvas loads with searchReady payload
+  useEffect(() => {
+    if (isSearchReady && refinedChallenge && !hasTriggeredGenerationRef.current && !isLoadingFortu && !isLoadingAI) {
+      console.log('🚀 IMMEDIATE GENERATION - SearchReady payload detected:', refinedChallenge);
+      hasTriggeredGenerationRef.current = true;
+      generateAllQuestions(refinedChallenge);
+    }
+  }, [isSearchReady, refinedChallenge, isLoadingFortu, isLoadingAI, generateAllQuestions]);
+
+  // Handle session switching - clear questions and load from new session
+  useEffect(() => {
+    if (activeSession && activeSession.id !== lastSessionIdRef.current) {
+      console.log('📋 Session changed to:', activeSession.id);
+      lastSessionIdRef.current = activeSession.id;
+      
+      // Reset generation trigger when switching sessions
+      hasTriggeredGenerationRef.current = false;
+      
+      // Set loading flag to prevent save effect from running
+      loadingFromSessionRef.current = true;
+      
+      // If session has questions, load them; otherwise clear questions
+      if (activeSession.fortuQuestions.length > 0 || activeSession.aiQuestions.length > 0) {
+        console.log('📥 Loading existing questions from session:', activeSession.id);
+        loadQuestionsFromSession(activeSession.fortuQuestions, activeSession.aiQuestions, activeSession.selectedQuestions);
+      } else {
+        console.log('🧹 Clearing questions for new/empty session:', activeSession.id);
+        clearQuestions();
+      }
+      
+      // Reset loading flag after a brief delay to allow state updates
+      setTimeout(() => {
+        loadingFromSessionRef.current = false;
+      }, 100);
+    }
+  }, [activeSession?.id, loadQuestionsFromSession, clearQuestions]);
+
+  // Auto-generate questions for sessions with refined challenges but no questions
+  useEffect(() => {
+    // Skip if we're loading from session, already loading, no session, or already triggered
+    if (loadingFromSessionRef.current || isLoadingFortu || isLoadingAI || !activeSession || hasTriggeredGenerationRef.current) {
+      console.log('⏸️ Skipping auto-generation:', {
+        loadingFromSession: loadingFromSessionRef.current,
+        isLoadingFortu,
+        isLoadingAI,
+        hasActiveSession: !!activeSession,
+        hasTriggeredGeneration: hasTriggeredGenerationRef.current
+      });
+      return;
+    }
+
+    // Check if we need to generate questions
+    const hasNoQuestions = activeSession.fortuQuestions.length === 0 && 
+                          activeSession.aiQuestions.length === 0 &&
+                          fortuQuestions.length === 0 && 
+                          aiQuestions.length === 0;
+
+    const shouldGenerate = activeSession.refinedChallenge && hasNoQuestions;
+
+    console.log('🤔 Auto-generation decision:', {
+      sessionId: activeSession.id,
+      refinedChallenge: activeSession.refinedChallenge,
+      sessionFortuCount: activeSession.fortuQuestions.length,
+      sessionAiCount: activeSession.aiQuestions.length,
+      localFortuCount: fortuQuestions.length,
+      localAiCount: aiQuestions.length,
+      hasNoQuestions,
+      shouldGenerate
+    });
+
+    if (shouldGenerate) {
+      console.log('🚀 AUTO-GENERATION - Generating questions for challenge:', activeSession.refinedChallenge);
+      hasTriggeredGenerationRef.current = true;
+      generateAllQuestions(activeSession.refinedChallenge);
+    }
+  }, [
+    activeSession?.id, 
+    activeSession?.refinedChallenge, 
+    activeSession?.fortuQuestions.length,
+    activeSession?.aiQuestions.length,
+    fortuQuestions.length, 
+    aiQuestions.length, 
+    isLoadingFortu, 
+    isLoadingAI, 
+    generateAllQuestions
+  ]);
+
+  // Save generated questions to active session - only when not loading from session
+  useEffect(() => {
+    // Don't save if we're currently loading from session or if there are no questions
+    if (loadingFromSessionRef.current || (!fortuQuestions.length && !aiQuestions.length)) {
+      return;
+    }
+
+    if (questionSessions?.activeSessionId) {
+      console.log('💾 Saving questions to session:', questionSessions.activeSessionId, {
+        fortuCount: fortuQuestions.length,
+        aiCount: aiQuestions.length
+      });
+      questionSessions.updateSession(questionSessions.activeSessionId, {
+        fortuQuestions,
+        aiQuestions,
+        status: 'matches_found'
+      });
+    }
+  }, [fortuQuestions, aiQuestions, questionSessions?.activeSessionId, questionSessions?.updateSession]);
+
+  const hasQuestions = fortuQuestions.length > 0 || aiQuestions.length > 0;
+  const isLoading = isLoadingFortu || isLoadingAI;
+  const selectedQuestions = getSelectedQuestions();
 
   // Expose selection state to parent
   useEffect(() => {
@@ -92,9 +213,7 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
       onSelectionStateChange({
         showSelection,
         selectedQuestions,
-        hasQuestions,
-        onSetupFortuInstance: handleSetupFortuInstance,
-        onAddAnotherChallenge: handleAddAnotherChallenge
+        hasQuestions
       });
     }
   }, [showSelection, selectedQuestions, hasQuestions, onSelectionStateChange]);
@@ -139,90 +258,69 @@ export const FortuQuestionsCanvas: React.FC<FortuQuestionsCanvasProps> = ({
     }
   };
 
-  const handleSetupFortuInstance = (questions: Question[]) => {
-    const activeSession = questionSessions?.getActiveSession();
-    
-    // Create payload for fortu instance setup
-    const setupPayload = {
-      refinedChallenge: activeSession?.refinedChallenge || payload?.refinedChallenge,
-      fortuQuestions,
-      aiQuestions,
-      selectedQuestions: questions
-    };
-
-    // Trigger the fortu instance setup canvas
-    if (onSendQuestionsToChat) {
-      // Use a special trigger to indicate fortu instance setup
-      console.log('🏗️ Setting up fortu.ai instance with payload:', setupPayload);
-      
-      // Create a custom trigger for the fortu instance setup
-      const trigger = {
-        type: 'fortuInstanceSetup',
-        payload: setupPayload
-      };
-      
-      // We need to communicate this trigger to the parent
-      // For now, we'll use the existing onSendQuestionsToChat but modify it
-      // This is a workaround - ideally we'd have a dedicated onTriggerCanvas prop
-      if (window.parent && window.parent.postMessage) {
-        window.parent.postMessage({ type: 'TRIGGER_CANVAS', trigger }, '*');
-      }
-    }
-  };
-
-  const handleAddAnotherChallenge = () => {
-    console.log('🔄 Starting another challenge flow');
-    if (onSendQuestionsToChat) {
-      onSendQuestionsToChat([], 'refine');
-    }
-  };
-
   return (
     <ScrollArea className="h-full w-full">
       <div className={`p-6 bg-gradient-to-br from-[#F1EDFF] to-[#EEFFF3] min-h-full ${
         showSelection && hasQuestions ? 'pb-32' : ''
       }`}>
-        {/* Question Generation Manager - handles all generation logic */}
-        <QuestionGenerationManager
-          isSearchReady={isSearchReady}
-          refinedChallenge={refinedChallenge}
-          hasTriggeredGenerationRef={hasTriggeredGenerationRef}
-          isLoadingFortu={isLoadingFortu}
-          isLoadingAI={isLoadingAI}
-          activeSession={activeSession}
-          loadingFromSessionRef={loadingFromSessionRef}
-          lastSessionIdRef={lastSessionIdRef}
-          fortuQuestions={fortuQuestions}
-          aiQuestions={aiQuestions}
-          generateAllQuestions={generateAllQuestions}
-          loadQuestionsFromSession={loadQuestionsFromSession}
-          clearQuestions={clearQuestions}
-          questionSessions={questionSessions}
-        />
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <FortuQuestionsHeader
+            refinedChallenge={refinedChallenge}
+            isSearchReady={isSearchReady}
+            isLoading={isLoading}
+            hasQuestions={hasQuestions}
+            onGenerateQuestions={handleGenerateQuestions}
+            showSelection={showSelection}
+            onToggleSelection={handleToggleSelection}
+          />
 
-        {/* Question Canvas Content - handles all UI rendering */}
-        <QuestionCanvasContent
-          refinedChallenge={refinedChallenge}
-          isSearchReady={isSearchReady}
-          isLoading={isLoading}
-          hasQuestions={hasQuestions}
-          showSelection={showSelection}
-          onGenerateQuestions={handleGenerateQuestions}
-          onToggleSelection={handleToggleSelection}
-          error={error}
-          fortuQuestions={fortuQuestions}
-          aiQuestions={aiQuestions}
-          isLoadingFortu={isLoadingFortu}
-          isLoadingAI={isLoadingAI}
-          onSelectionChange={showSelection ? handleQuestionSelection : undefined}
-          expandedQuestions={expandedQuestions}
-          questionSummaries={questionSummaries}
-          loadingSummaries={loadingSummaries}
-          onToggleExpansion={toggleQuestionExpansion}
-          onGenerateSummary={generateQuestionSummary}
-          onToggleExpandAllFortu={toggleExpandAllFortuQuestions}
-          onToggleExpandAllAI={toggleExpandAllAIQuestions}
-        />
+          {/* Error Display */}
+          <ErrorDisplay error={error} />
+
+          {/* Section 1: Matched Questions from fortu.ai */}
+          <QuestionSection
+            title="Matched Questions from fortu.ai"
+            icon={Database}
+            questions={fortuQuestions}
+            isLoading={isLoadingFortu}
+            emptyMessage="No fortu.ai questions generated yet"
+            borderColor="border-[#6EFFC6]/30"
+            iconColor="text-[#753BBD]"
+            emptyIconColor="text-[#6EFFC6]"
+            onSelectionChange={showSelection ? handleQuestionSelection : undefined}
+            showSelection={showSelection}
+            expandedQuestions={expandedQuestions}
+            questionSummaries={questionSummaries}
+            loadingSummaries={loadingSummaries}
+            onToggleExpansion={toggleQuestionExpansion}
+            onGenerateSummary={generateQuestionSummary}
+            onToggleExpandAll={toggleExpandAllFortuQuestions}
+          />
+
+          {/* Section 2: Suggested Questions from CleverBot */}
+          <QuestionSection
+            title="Suggested Questions from CleverBot"
+            icon={Bot}
+            questions={aiQuestions}
+            isLoading={isLoadingAI}
+            emptyMessage="No AI suggestions generated yet"
+            borderColor="border-[#753BBD]/20"
+            iconColor="text-[#753BBD]"
+            emptyIconColor="text-[#753BBD]"
+            onSelectionChange={showSelection ? handleQuestionSelection : undefined}
+            showSelection={showSelection}
+            expandedQuestions={expandedQuestions}
+            questionSummaries={questionSummaries}
+            loadingSummaries={loadingSummaries}
+            onToggleExpansion={toggleQuestionExpansion}
+            onGenerateSummary={generateQuestionSummary}
+            onToggleExpandAll={toggleExpandAllAIQuestions}
+          />
+
+          {/* Empty State - only show if no questions and not loading */}
+          {!hasQuestions && !isLoading && !error && <MainEmptyState />}
+        </div>
       </div>
     </ScrollArea>
   );

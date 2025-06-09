@@ -1,3 +1,4 @@
+
 import { ChallengeSession } from '@/hooks/useChallengeHistory';
 
 export interface Question {
@@ -5,7 +6,7 @@ export interface Question {
   question: string;
   source: 'fortu' | 'openai';
   selected?: boolean;
-  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI' | 'Pre-approved';
+  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
 }
 
 export interface ChallengeHistoryHook {

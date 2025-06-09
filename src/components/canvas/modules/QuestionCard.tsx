@@ -24,8 +24,6 @@ const getStatusColor = (status: string) => {
       return 'bg-purple-100 text-purple-800 border-purple-200';
     case 'AI':
       return 'bg-[#753BBD]/10 text-[#753BBD] border-[#753BBD]/20';
-    case 'Pre-approved':
-      return 'bg-[#6EFFC6]/20 text-[#003079] border-[#6EFFC6]/50';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }

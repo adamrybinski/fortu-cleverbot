@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
+import { PanelRightClose, ArrowLeft, History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CanvasModule } from './CanvasModule';
 import { ChallengeHistory } from './modules/ChallengeHistory';
+import { CanvasQuestionMenu } from './CanvasQuestionMenu';
 import { SimpleQuestionToolbar } from './modules/SimpleQuestionToolbar';
-import { CanvasHeader } from './components/CanvasHeader';
-import { CanvasFloatingToolbar } from './components/CanvasFloatingToolbar';
-import { ShineBorder } from './components/ShineBorder';
 import { useChallengeHistory } from '@/hooks/useChallengeHistory';
 import { Question } from './modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
@@ -19,6 +19,51 @@ interface QuestionSessionsHook {
   updateSession: (sessionId: string, updates: Partial<QuestionSession>) => void;
   switchToSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
+}
+
+// ShineBorder Component optimized for Lovable
+interface ShineBorderProps {
+  borderRadius?: number;
+  borderWidth?: number;
+  duration?: number;
+  color?: string | string[];
+  className?: string;
+  children: React.ReactNode;
+}
+
+function ShineBorder({
+  borderRadius = 8,
+  borderWidth = 1,
+  duration = 14,
+  color = "#000000",
+  className = "",
+  children,
+}: ShineBorderProps) {
+  const colorGradient = Array.isArray(color) ? color.join(",") : color;
+  
+  return (
+    <div
+      className={`relative h-full w-full rounded-xl bg-white p-3 ${className}`}
+      style={{
+        borderRadius: `${borderRadius}px`,
+      }}
+    >
+      <div
+        className="absolute inset-0 rounded-xl opacity-75"
+        style={{
+          background: `conic-gradient(from 0deg, transparent, ${colorGradient}, transparent)`,
+          animation: `spin ${duration}s linear infinite`,
+          padding: `${borderWidth}px`,
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          maskComposite: 'exclude',
+        }}
+      />
+      <div className="relative z-10 h-full w-full">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export interface CanvasTrigger {
@@ -91,20 +136,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     }
   };
 
-  const handleSetupFortuInstance = (questions: Question[]) => {
-    // Send the selected questions to chat for fortu instance setup
-    if (onSendQuestionsToChat) {
-      onSendQuestionsToChat(questions, 'instance');
-    }
-  };
-
-  const handleAddAnotherChallenge = () => {
-    if (onSendMessageToChat) {
-      onSendMessageToChat("I'd like to explore another challenge. Can you help me identify and refine it?");
-    }
-    setToolbarState(prev => ({ ...prev, showSelection: false, selectedQuestions: [] }));
-  };
-
   const handleSelectionStateChange = (state: {
     showSelection: boolean;
     selectedQuestions: Question[];
@@ -131,16 +162,57 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   const content = (
     <div className="relative flex flex-col h-full w-full bg-white border-l border-[#6EFFC6]/30">
       {/* Header */}
-      <CanvasHeader
-        showChallengeHistory={showChallengeHistory}
-        challengeHistoryLength={challengeHistory.length}
-        isMobile={isMobile}
-        questionSessions={questionSessions}
-        onClose={onClose}
-        onShowChallengeHistory={() => setShowChallengeHistory(true)}
-        onCreateNewQuestionSession={handleCreateNewQuestionSession}
-        onSendMessageToChat={onSendMessageToChat}
-      />
+      <div className="flex items-center justify-between p-4 border-b border-[#6EFFC6]/20 bg-gradient-to-r from-[#F1EDFF] to-[#EEFFF3] flex-shrink-0">
+        <div className="flex items-center gap-3">
+          {/* Question Session Menu - only show if questionSessions is provided and there are multiple sessions */}
+          {questionSessions && (
+            <CanvasQuestionMenu
+              questionSessions={questionSessions.questionSessions}
+              activeSessionId={questionSessions.activeSessionId}
+              onSwitchToSession={questionSessions.switchToSession}
+              onCreateNewSession={handleCreateNewQuestionSession}
+              onDeleteSession={questionSessions.deleteSession}
+              onSendMessageToChat={onSendMessageToChat}
+            />
+          )}
+          
+          {isMobile && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-[#003079] hover:bg-white/50 p-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+          <h2 className="text-lg font-semibold text-[#003079]">
+            {showChallengeHistory ? 'Challenge History' : 'Canvas'}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {!showChallengeHistory && challengeHistory.length > 0 && (
+            <Button
+              onClick={() => setShowChallengeHistory(true)}
+              variant="ghost"
+              size="sm"
+              className="text-[#003079] hover:bg-white/50"
+            >
+              <History className="w-4 h-4" />
+            </Button>
+          )}
+          {!isMobile && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-[#003079] hover:bg-white/50"
+            >
+              <PanelRightClose className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
       
       {/* Canvas Content Area with ScrollArea */}
       <div className="flex-1 min-h-0 relative">
@@ -183,17 +255,21 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         </ScrollArea>
 
         {/* Floating Question Selection Toolbar - positioned outside ScrollArea */}
-        <CanvasFloatingToolbar
-          showChallengeHistory={showChallengeHistory}
-          hasQuestions={toolbarState.hasQuestions}
-          showSelection={toolbarState.showSelection}
-          selectedQuestions={toolbarState.selectedQuestions}
-          onToggleSelection={handleToggleSelection}
-          onSendToChat={handleSendToChat}
-          onClearSelections={handleClearSelections}
-          onSetupFortuInstance={handleSetupFortuInstance}
-          onAddAnotherChallenge={handleAddAnotherChallenge}
-        />
+        {!showChallengeHistory && toolbarState.hasQuestions && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="relative h-full w-full">
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6 pointer-events-auto">
+                <SimpleQuestionToolbar
+                  showSelection={toolbarState.showSelection}
+                  selectedQuestions={toolbarState.selectedQuestions}
+                  onToggleSelection={handleToggleSelection}
+                  onSendToChat={handleSendToChat}
+                  onClearSelections={handleClearSelections}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
