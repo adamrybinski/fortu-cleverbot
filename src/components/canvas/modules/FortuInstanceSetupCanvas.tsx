@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -140,10 +139,10 @@ export const FortuInstanceSetupCanvas: React.FC<FortuInstanceSetupCanvasProps> =
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#003079] mb-2" style={{ fontFamily: 'Montserrat' }}>
-            Set Up Your fortu.ai Instance
+            fortu.ai Setup
           </h1>
           <p className="text-[#1D253A]">
-            Configure your personalised fortu.ai workspace to tackle your challenge: "{payload?.refinedChallenge}"
+            Configure your personalised fortu.ai workspace to tackle your challenge.
           </p>
         </div>
 

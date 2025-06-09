@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Menu, X, Plus, Database, Bot, Check, Settings } from 'lucide-react';
+import { Menu, X, Plus, Database, Settings, Check } from 'lucide-react';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
 
 interface CanvasQuestionMenuProps {
@@ -35,7 +35,7 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
     session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
   );
 
-  const shouldShowMenu = sessionsWithRefinedChallenges.length > 1 || currentTriggerType === 'fortuInstanceSetup';
+  const shouldShowMenu = sessionsWithRefinedChallenges.length > 0 || currentTriggerType === 'fortuInstanceSetup';
 
   if (!shouldShowMenu) {
     return null;
@@ -87,6 +87,11 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
     setIsOpen(false);
   };
 
+  const handleSessionSwitch = (sessionId: string) => {
+    onSwitchToSession(sessionId);
+    handleModuleSwitch('questions');
+  };
+
   return (
     <div className="relative">
       {/* Menu Button */}
@@ -111,7 +116,7 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
           {/* Menu Panel */}
           <div className="absolute top-10 left-0 z-50 w-80 bg-white rounded-lg shadow-lg border border-[#6EFFC6]/20 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-[#003079]">Canvas Modules</h3>
+              <h3 className="font-medium text-[#003079]">Canvas</h3>
               <Button
                 onClick={() => setIsOpen(false)}
                 variant="ghost"
@@ -122,81 +127,58 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
               </Button>
             </div>
 
-            {/* Module Navigation */}
-            {currentTriggerType === 'fortuInstanceSetup' && (
-              <div className="mb-4 p-2 bg-[#F1EDFF] rounded-lg">
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleModuleSwitch('questions')}
-                    variant={activeModule === 'questions' ? 'default' : 'ghost'}
-                    size="sm"
-                    className={`w-full justify-start ${
-                      activeModule === 'questions'
-                        ? 'bg-[#753BBD] text-white'
-                        : 'text-[#003079] hover:bg-white/50'
+            <ScrollArea className="max-h-60 mb-4">
+              <div className="space-y-2">
+                {/* Question Sessions */}
+                {sessionsWithRefinedChallenges.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      session.id === activeSessionId && activeModule === 'questions'
+                        ? 'border-[#6EFFC6] bg-[#EEFFF3]'
+                        : 'border-gray-200 hover:border-[#6EFFC6]/50 hover:bg-gray-50'
                     }`}
+                    onClick={() => handleSessionSwitch(session.id)}
                   >
-                    <Database className="w-4 h-4 mr-2" />
-                    Question Search
-                  </Button>
-                  <Button
-                    onClick={() => handleModuleSwitch('setup')}
-                    variant={activeModule === 'setup' ? 'default' : 'ghost'}
-                    size="sm"
-                    className={`w-full justify-start ${
-                      activeModule === 'setup'
-                        ? 'bg-[#753BBD] text-white'
-                        : 'text-[#003079] hover:bg-white/50'
-                    }`}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Fortu.ai Setup
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Question Sessions */}
-            {sessionsWithRefinedChallenges.length > 1 && (
-              <>
-                <div className="mb-2">
-                  <h4 className="text-sm font-medium text-[#003079] mb-2">Question Sessions</h4>
-                </div>
-
-                <ScrollArea className="max-h-60 mb-4">
-                  <div className="space-y-2">
-                    {sessionsWithRefinedChallenges.map((session) => (
-                      <div
-                        key={session.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          session.id === activeSessionId
-                            ? 'border-[#6EFFC6] bg-[#EEFFF3]'
-                            : 'border-gray-200 hover:border-[#6EFFC6]/50 hover:bg-gray-50'
-                        }`}
-                        onClick={() => {
-                          onSwitchToSession(session.id);
-                          handleModuleSwitch('questions');
-                        }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#003079] truncate">
-                              {getDisplayTitle(session)}
-                            </p>
-                            <div className="flex items-center justify-between mt-1">
-                              {getStatusBadge(session)}
-                              <span className="text-xs text-gray-500">
-                                {session.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          </div>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#003079] truncate">
+                          {getDisplayTitle(session)}
+                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          {getStatusBadge(session)}
+                          <span className="text-xs text-gray-500">
+                            {session.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </ScrollArea>
-              </>
-            )}
+                ))}
+
+                {/* Fortu.ai Setup Option */}
+                {currentTriggerType === 'fortuInstanceSetup' && (
+                  <div
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      activeModule === 'setup'
+                        ? 'border-[#6EFFC6] bg-[#EEFFF3]'
+                        : 'border-gray-200 hover:border-[#6EFFC6]/50 hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleModuleSwitch('setup')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-[#753BBD]" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#003079]">
+                          fortu.ai Setup
+                        </p>
+                        <p className="text-xs text-gray-500">Configure your instance</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
 
             {/* New Question Button */}
             <Button

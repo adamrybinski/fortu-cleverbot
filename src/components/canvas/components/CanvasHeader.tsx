@@ -72,8 +72,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
           </Button>
         )}
         <h2 className="text-lg font-semibold text-[#003079]">
-          {showChallengeHistory ? 'Challenge History' : 
-           activeModule === 'setup' ? 'Fortu.ai Setup' : 'Canvas'}
+          {showChallengeHistory ? 'Challenge History' : 'Canvas'}
         </h2>
       </div>
       <div className="flex items-center gap-2">
