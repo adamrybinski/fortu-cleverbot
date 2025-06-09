@@ -38,8 +38,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F1EDFF]/30 flex-shrink-0">
       <div className="flex items-center gap-3">
-        {/* Left Panel Toggle - Only show when there are visible sessions */}
-        {onToggleSidebar && hasVisibleSessions && (
+        {/* Left Panel Toggle - Always show when sidebar functionality is available */}
+        {onToggleSidebar && (
           <Button
             onClick={onToggleSidebar}
             variant="outline"
