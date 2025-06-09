@@ -6,7 +6,7 @@ import { useSelectedQuestions } from '@/hooks/useSelectedQuestions';
 import { useMessageHandler } from '@/hooks/useMessageHandler';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
 import { CanvasTrigger } from './canvas/CanvasContainer';
-import { ChatSession, ChatMessage } from '@/hooks/useChatHistory';
+import { ChatSession, ChatMessage, useChatHistory } from '@/hooks/useChatHistory';
 import { useChatUIState } from '@/hooks/useChatUIState';
 import { useChatTransitions } from '@/hooks/useChatTransitions';
 import { ChatContainer } from './chat/ChatContainer';
@@ -92,6 +92,10 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
     shouldCreateCanvasPreview
   } = useCanvasPreview();
 
+  // Get visible sessions count from useChatHistory hook
+  const { sessions } = useChatHistory();
+  const hasVisibleSessions = sessions.length > 0;
+
   // Handle canvas transitions
   useChatTransitions({
     isCanvasOpen,
@@ -170,6 +174,7 @@ export const ChatUI: React.FC<ExtendedChatUIProps> = ({
       setPendingCanvasGuidance={setPendingCanvasGuidance}
       activeSession={activeSession}
       addMessageToSession={addMessageToSession}
+      hasVisibleSessions={hasVisibleSessions}
     />
   );
 };

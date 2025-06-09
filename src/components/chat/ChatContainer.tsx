@@ -30,6 +30,7 @@ interface ChatContainerProps {
   setPendingCanvasGuidance: (value: string | null) => void;
   activeSession: any;
   addMessageToSession: (sessionId: string, message: ChatMessage) => void;
+  hasVisibleSessions?: boolean;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
@@ -55,6 +56,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   setPendingCanvasGuidance,
   activeSession,
   addMessageToSession,
+  hasVisibleSessions = false,
 }) => {
   // Handle canvas guidance when canvas opens
   useEffect(() => {
@@ -103,6 +105,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         currentTrigger={currentTrigger}
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={onToggleSidebar}
+        hasVisibleSessions={hasVisibleSessions}
       />
 
       <MessagesContainer

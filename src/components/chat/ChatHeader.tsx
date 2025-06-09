@@ -11,6 +11,7 @@ interface ChatHeaderProps {
   currentTrigger?: CanvasTrigger | null;
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
+  hasVisibleSessions?: boolean;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ 
@@ -19,7 +20,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   hasCanvasBeenTriggered,
   currentTrigger,
   isSidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  hasVisibleSessions = false
 }) => {
   const handleCanvasOpen = () => {
     if (!isCanvasOpen) {
@@ -36,8 +38,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F1EDFF]/30 flex-shrink-0">
       <div className="flex items-center gap-3">
-        {/* Left Panel Toggle */}
-        {onToggleSidebar && (
+        {/* Left Panel Toggle - Only show when there are visible sessions */}
+        {onToggleSidebar && hasVisibleSessions && (
           <Button
             onClick={onToggleSidebar}
             variant="outline"
