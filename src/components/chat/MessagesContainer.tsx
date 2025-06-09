@@ -25,13 +25,14 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
     <div className="flex-1 min-h-0 relative">
       <div 
         ref={messagesContainerRef}
-        className={`h-full overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 transition-opacity duration-300 ${
+        className={`h-full overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 transition-opacity duration-300 touch-auto ${
           isTransitioning ? 'opacity-0' : 'opacity-100'
         }`}
         id="chat-messages"
         style={{ 
           scrollbarWidth: 'thin',
-          scrollbarColor: '#d1d5db #f3f4f6'
+          scrollbarColor: '#d1d5db #f3f4f6',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {messages.map((message) => (
@@ -45,7 +46,7 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
         {isLoading && <LoadingIndicator />}
 
         {/* Scroll target with proper bottom padding to ensure consistent bottom spacing */}
-        <div ref={scrollRef} className="h-20" />
+        <div ref={scrollRef} className="h-16 sm:h-20" />
       </div>
 
       {/* White overlay during transitions */}

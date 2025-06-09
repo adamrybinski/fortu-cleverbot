@@ -20,30 +20,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onKeyPress,
 }) => {
   return (
-    <div className="p-4 border-t border-gray-200 bg-[#F1EDFF]/20 flex-shrink-0">
-      <div className="flex gap-3 items-end">
+    <div className="p-3 sm:p-4 border-t border-gray-200 bg-[#F1EDFF]/20 flex-shrink-0">
+      <div className="flex gap-2 sm:gap-3 items-end">
         <div className="flex-1">
           <Textarea
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyPress={onKeyPress}
             placeholder="What challenge are you looking to crack?"
-            className="min-h-[72px] max-h-[144px] overflow-y-auto resize-none border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white"
-            rows={3}
+            className="min-h-[60px] sm:min-h-[72px] max-h-[120px] sm:max-h-[144px] overflow-y-auto resize-none border-[#6EFFC6]/30 focus:border-[#6EFFC6] bg-white text-sm sm:text-base"
+            rows={2}
             disabled={isLoading}
           />
         </div>
         <Button
           onClick={onSendMessage}
-          className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white px-4 py-2 h-10"
+          className="bg-[#753BBD] hover:bg-[#753BBD]/90 text-white px-3 sm:px-4 py-2 h-9 sm:h-10 min-w-[44px] touch-manipulation"
           disabled={!inputValue.trim() || isLoading}
         >
           <Send className="w-4 h-4" />
         </Button>
       </div>
-      <p className="text-xs text-gray-500 mt-2 text-center">
-        Press Enter to send • Shift+Enter for new line
-      </p>
     </div>
   );
 };

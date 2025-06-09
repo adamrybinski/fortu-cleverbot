@@ -143,7 +143,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Overlay Sidebar */}
+      {/* Overlay Sidebar - Mobile responsive width */}
       <div
         className={`absolute inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out ${
           isSidebarOpen 
@@ -151,7 +151,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             : '-translate-x-full'
         }`}
       >
-        <div className="w-80 h-full shadow-lg">
+        <div className="h-full shadow-lg">
           <ChatHistorySidebar 
             onNewChat={handleNewChat} 
             onClose={handleCloseSidebar}
@@ -168,10 +168,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Backdrop */}
+      {/* Backdrop - Touch friendly for mobile */}
       {isSidebarOpen && (
         <div
-          className="absolute inset-0 bg-black/20 z-40"
+          className="absolute inset-0 bg-black/20 z-40 touch-manipulation"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
