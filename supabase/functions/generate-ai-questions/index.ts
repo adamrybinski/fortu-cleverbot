@@ -102,10 +102,17 @@ Generate 3 additional strategic questions that explore different angles or innov
       throw new Error('Failed to generate questions in proper format');
     }
 
-    console.log('Generated AI questions:', questions);
+    // Add AI status to all generated questions
+    const questionsWithStatus = questions.map((question, index) => ({
+      question,
+      status: 'AI',
+      id: `ai-${Date.now()}-${index}`
+    }));
+
+    console.log('Generated AI questions:', questionsWithStatus);
 
     return new Response(JSON.stringify({ 
-      questions: questions,
+      questions: questionsWithStatus,
       usage: data.usage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

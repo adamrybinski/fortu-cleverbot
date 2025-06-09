@@ -6,7 +6,7 @@ export interface Question {
   question: string;
   source: 'fortu' | 'openai';
   selected?: boolean;
-  status?: string;
+  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
 }
 
 export interface ChallengeHistoryHook {

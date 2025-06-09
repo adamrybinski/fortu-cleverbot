@@ -2,14 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-
-interface Question {
-  id: string | number;
-  question: string;
-  status?: 'Discovery' | 'Explore' | 'Journey' | 'Equip' | 'AI';
-  source: 'fortu' | 'openai';
-  selected?: boolean;
-}
+import { Question } from './types';
 
 interface QuestionCardProps {
   question: Question;

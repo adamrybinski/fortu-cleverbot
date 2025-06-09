@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Question } from '@/components/canvas/modules/types';
@@ -53,12 +52,14 @@ export const useQuestionGeneration = () => {
         const questionsWithIds = data.questions.map((q: any, index: number) => {
           // If q is an object with a question property, extract it; otherwise treat as string
           const questionText = typeof q === 'object' && q.question ? q.question : q;
+          const status = typeof q === 'object' && q.status ? q.status : 'Discovery';
           
           return {
             id: `fortu-${Date.now()}-${index}`,
             question: questionText,
             source: 'fortu' as const,
-            selected: false
+            selected: false,
+            status: status
           };
         });
         
@@ -91,12 +92,18 @@ export const useQuestionGeneration = () => {
       }
 
       if (data && data.questions) {
-        const questionsWithIds = data.questions.map((q: string, index: number) => ({
-          id: `ai-${Date.now()}-${index}`,
-          question: q,
-          source: 'openai' as const,
-          selected: false
-        }));
+        const questionsWithIds = data.questions.map((q: any, index: number) => {
+          // Handle both old string format and new object format
+          const questionText = typeof q === 'object' ? q.question : q;
+          
+          return {
+            id: `ai-${Date.now()}-${index}`,
+            question: questionText,
+            source: 'openai' as const,
+            selected: false,
+            status: 'AI' as const
+          };
+        });
         
         console.log('Generated AI questions:', questionsWithIds);
         setAiQuestions(questionsWithIds);
