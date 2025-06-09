@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CLEVERBOT_SYSTEM_PROMPT, PROSPECT_AGENT_PROMPT } from './prompts/index.ts';
@@ -51,7 +52,7 @@ serve(async (req) => {
       }))
     ];
 
-    // Add selected questions context with simplified action guidance
+    // Add selected questions context with simplified binary choice guidance
     if (selectedQuestions.length > 0 && selectedAction) {
       const selectedQuestionsText = selectedQuestions.map((q: any) => 
         `- ${q.question} (from ${q.source})`
@@ -59,12 +60,12 @@ serve(async (req) => {
       
       const themes = selectedQuestions.map((q: any) => q.source).join(', ');
       
-      // Simplified action guidance for step 4
-      const actionGuidance = `The user has selected these questions from the canvas and wants to proceed to step 4. Create a refined challenge statement that blends their original challenge with insights from these selected questions. Then present the 3 options for what to submit to their fortu.ai instance: (1) refined challenge, (2) selected questions, or (3) both.`;
+      // Simplified binary choice guidance
+      const actionGuidance = `The user has selected these questions from the canvas and wants to proceed. Present them with a simple choice: either continue exploring new challenges/questions, or set up a fortu.ai instance with their current progress.`;
       
       messages.push({
         role: 'system',
-        content: `The user has returned from the canvas and selected the following questions:\n${selectedQuestionsText}\n\nUser's selected action: ${selectedAction}\n\n${actionGuidance}\n\nBased on their selections from ${themes}, create the refined challenge and present the fortu.ai instance options.`
+        content: `The user has returned from the canvas and selected the following questions:\n${selectedQuestionsText}\n\nUser's selected action: ${selectedAction}\n\n${actionGuidance}\n\nBased on their selections from ${themes}, present the simplified binary choice.`
       });
     }
 
