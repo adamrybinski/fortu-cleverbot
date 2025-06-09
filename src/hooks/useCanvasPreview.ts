@@ -41,16 +41,38 @@ export const useCanvasPreview = () => {
     readyForFortu?: boolean, 
     readyForMultiChallenge?: boolean,
     refinedChallenge?: string,
-    onTriggerCanvas?: (trigger: any) => void
+    onTriggerCanvas?: (trigger: any) => void,
+    readyForFortuInstance?: boolean
   ): CanvasPreviewData | null => {
     const lowerInput = message.toLowerCase();
+    
+    // Auto-trigger fortu instance setup (step 5)
+    if (readyForFortuInstance && agentUsed === 'prospect') {
+      console.log('Auto-triggering canvas for fortu instance setup');
+      
+      const canvasData = createCanvasPreviewData('fortuInstanceSetup', {
+        refinedChallenge: refinedChallenge,
+        timestamp: new Date().toISOString()
+      });
+
+      // Auto-open the canvas for instance setup
+      if (onTriggerCanvas) {
+        console.log('Auto-opening canvas for fortu instance setup');
+        setShouldAutoOpenCanvas(true);
+        setTimeout(() => {
+          onTriggerCanvas({
+            type: 'fortuInstanceSetup',
+            payload: canvasData.payload
+          });
+        }, 100);
+      }
+
+      return canvasData;
+    }
     
     // Auto-trigger fortu questions search (simplified flow step 3)
     if (readyForFortu && agentUsed === 'prospect') {
       console.log('Auto-triggering canvas for fortu questions search');
-      
-      // Remove the duplicative pending guidance since the canvas UI provides sufficient guidance
-      // setPendingCanvasGuidance is no longer needed here
       
       const canvasData = createCanvasPreviewData('fortuQuestions', {
         refinedChallenge: refinedChallenge,
@@ -73,11 +95,11 @@ export const useCanvasPreview = () => {
       return canvasData;
     }
 
-    // Check for fortu instance setup trigger
+    // Manual triggers - only for phrases that don't have automatic detection
     if (lowerInput.includes('set up fortu.ai instance') || 
         lowerInput.includes('setup fortu') || 
         lowerInput.includes('create fortu.ai instance')) {
-      console.log('Triggering canvas for fortu instance setup');
+      console.log('Manual trigger for fortu instance setup');
       
       const canvasData = createCanvasPreviewData('fortuInstanceSetup', {
         refinedChallenge: refinedChallenge,

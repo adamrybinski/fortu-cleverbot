@@ -26,7 +26,8 @@ export interface MessageProcessingParams {
     readyForFortu?: boolean, 
     readyForMultiChallenge?: boolean,
     refinedChallenge?: string,
-    onTriggerCanvas?: (trigger: any) => void
+    onTriggerCanvas?: (trigger: any) => void,
+    readyForFortuInstance?: boolean
   ) => CanvasPreviewData | null;
   setHasCanvasBeenTriggered: (value: boolean) => void;
   onTriggerCanvas?: (trigger: any) => void;
@@ -71,20 +72,22 @@ export const processApiResponseData = (
     assistantTextLength: assistantText.length,
     agentUsed,
     readyForFortu,
+    readyForFortuInstance,
     refinedChallenge: refinedChallenge?.substring(0, 50) + '...'
   });
 
   // Handle session management
   handleSessionManagement(readyForFortu, refinedChallenge, params.questionSessions);
 
-  // Create canvas preview for all cases including fortu
+  // Create canvas preview - pass both fortu flags
   const canvasPreviewData = params.shouldCreateCanvasPreview(
     params.messageText, 
     agentUsed, 
     readyForFortu,
     false, // No multi-challenge in simplified flow
     refinedChallenge,
-    params.onTriggerCanvas
+    params.onTriggerCanvas,
+    readyForFortuInstance // Pass the fortu instance flag
   );
   
   if (canvasPreviewData) {
