@@ -16,6 +16,13 @@ export const useCanvasPreview = () => {
           description: 'Discover relevant questions and insights from our database of business challenges. Select the most relevant ones to refine your challenge.',
           payload
         };
+      case 'fortuInstanceSetup':
+        return {
+          type: 'fortuInstanceSetup',
+          title: 'fortu.ai Instance Setup',
+          description: 'Configure your personalised fortu.ai workspace with branding, colours, and settings tailored to your organisation.',
+          payload
+        };
       case 'blank':
       case 'canvas':
       default:
@@ -58,6 +65,32 @@ export const useCanvasPreview = () => {
         setTimeout(() => {
           onTriggerCanvas({
             type: 'fortuQuestions',
+            payload: canvasData.payload
+          });
+        }, 100);
+      }
+
+      return canvasData;
+    }
+
+    // Check for fortu instance setup trigger
+    if (lowerInput.includes('set up fortu.ai instance') || 
+        lowerInput.includes('setup fortu') || 
+        lowerInput.includes('create fortu.ai instance')) {
+      console.log('Triggering canvas for fortu instance setup');
+      
+      const canvasData = createCanvasPreviewData('fortuInstanceSetup', {
+        refinedChallenge: refinedChallenge,
+        timestamp: new Date().toISOString()
+      });
+
+      // Auto-open the canvas for setup
+      if (onTriggerCanvas) {
+        console.log('Auto-opening canvas for fortu instance setup');
+        setShouldAutoOpenCanvas(true);
+        setTimeout(() => {
+          onTriggerCanvas({
+            type: 'fortuInstanceSetup',
             payload: canvasData.payload
           });
         }, 100);

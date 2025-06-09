@@ -53,50 +53,37 @@ export function isReadyForFortuQuestions(
   return false;
 }
 
-export function isReadyForFortuInstanceGuidance(
-  response: string,
-  conversationHistory: any[],
+export const isReadyForFortuInstanceGuidance = (
+  aiResponse: string, 
+  conversationHistory: any[], 
   userMessage: string
-): boolean {
-  const lowerResponse = response.toLowerCase();
-  const lowerMessage = userMessage.toLowerCase();
+): boolean => {
+  const lowerResponse = aiResponse.toLowerCase();
+  const lowerUserMessage = userMessage.toLowerCase();
   
-  console.log('Checking readiness for fortu.ai instance guidance:');
+  // Check if user is requesting fortu.ai instance setup
+  const instanceSetupPhrases = [
+    'set up fortu.ai instance',
+    'setup fortu',
+    'create fortu.ai instance',
+    'fortu.ai instance',
+    'create instance'
+  ];
   
-  // Check if response contains refined challenge and instance options
-  const hasRefinedChallenge = 
-    lowerResponse.includes('refined challenge') ||
-    lowerResponse.includes('here\'s your refined') ||
-    lowerResponse.includes('blended challenge');
-
-  const hasInstanceOptions = 
-    lowerResponse.includes('submit to your fortu.ai instance') ||
-    lowerResponse.includes('what to submit') ||
-    lowerResponse.includes('choose what to submit');
-
-  // User is responding to the refined challenge options (not initial canvas return)
-  const userSelectsOption = 
-    (lowerMessage.includes('option') && !lowerMessage.includes('canvas')) ||
-    lowerMessage.includes('refined challenge') ||
-    lowerMessage.includes('both') ||
-    lowerMessage.includes('submit');
-
-  // Don't trigger if this is the canvas return message (contains selected questions list)
-  const isCanvasReturn = 
-    lowerMessage.includes('canvas for challenge refinement') ||
-    lowerMessage.includes('• ') || // Contains bullet points from selected questions
-    lowerMessage.includes('selected these');
-
-  console.log('- Response contains refined challenge:', hasRefinedChallenge);
-  console.log('- Response contains instance options:', hasInstanceOptions);
-  console.log('- User selects option:', userSelectsOption);
-  console.log('- Is canvas return:', isCanvasReturn);
-
-  const ready = hasRefinedChallenge && hasInstanceOptions && userSelectsOption && !isCanvasReturn;
-  console.log('Ready for fortu.ai instance guidance:', ready);
+  const userRequestsInstance = instanceSetupPhrases.some(phrase => 
+    lowerUserMessage.includes(phrase)
+  );
   
-  return ready;
-}
+  // Check if AI is responding about instance setup
+  const aiMentionsInstanceSetup = [
+    'set up your personalised fortu.ai instance',
+    'setup canvas',
+    'configure your workspace',
+    'organisation\'s branding'
+  ].some(phrase => lowerResponse.includes(phrase));
+  
+  return userRequestsInstance || aiMentionsInstanceSetup;
+};
 
 // Simplified - no multi-challenge complexity
 export function isReadyForMultiChallengeExploration(

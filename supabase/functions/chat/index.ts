@@ -101,7 +101,7 @@ serve(async (req) => {
     const readyForFortu = useProspectAgent && isReadyForFortuQuestions(aiResponse, conversationHistory, message) && selectedQuestions.length === 0;
     console.log('Ready for fortu questions:', readyForFortu);
 
-    // Check if ready for fortu.ai instance guidance (step 4)
+    // Check if ready for fortu.ai instance guidance (step 5)
     const readyForFortuInstance = useProspectAgent && isReadyForFortuInstanceGuidance(aiResponse, conversationHistory, message);
     console.log('Ready for fortu.ai instance guidance:', readyForFortuInstance);
 

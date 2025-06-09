@@ -3,6 +3,7 @@ import React from 'react';
 import { CanvasTrigger } from './CanvasContainer';
 import { BlankCanvas } from './modules/BlankCanvas';
 import { FortuQuestionsCanvas } from './modules/FortuQuestionsCanvas';
+import { FortuInstanceSetupCanvas } from './modules/FortuInstanceSetupCanvas';
 import { ChallengeHistory } from './modules/ChallengeHistory';
 import { Question, ChallengeHistoryHook } from './modules/types';
 import { QuestionSession } from '@/hooks/useQuestionSessions';
@@ -59,6 +60,14 @@ export const CanvasModule: React.FC<CanvasModuleProps> = ({
           onToggleSelection={onToggleSelection}
           onClearSelections={onClearSelections}
           showSelection={showSelection}
+        />
+      );
+
+    case 'fortuInstanceSetup':
+      return (
+        <FortuInstanceSetupCanvas 
+          payload={trigger.payload} 
+          onSendQuestionsToChat={onSendQuestionsToChat}
         />
       );
     
