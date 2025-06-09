@@ -30,12 +30,15 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Show menu if there are multiple sessions with refined challenges OR if fortu instance setup is active
+  // Show menu if there are multiple sessions with refined challenges OR if fortu instance setup is available
   const sessionsWithRefinedChallenges = questionSessions.filter(session => 
     session.refinedChallenge && (session.status === 'searching' || session.status === 'matches_found' || session.status === 'refined')
   );
 
-  const shouldShowMenu = sessionsWithRefinedChallenges.length > 0 || currentTriggerType === 'fortuInstanceSetup';
+  // Show setup module if there are any sessions with refined challenges (making it available as a module)
+  const hasRefinedChallenges = sessionsWithRefinedChallenges.length > 0;
+  const shouldShowSetupModule = hasRefinedChallenges || currentTriggerType === 'fortuInstanceSetup';
+  const shouldShowMenu = sessionsWithRefinedChallenges.length > 0 || shouldShowSetupModule;
 
   if (!shouldShowMenu) {
     return null;
@@ -156,8 +159,8 @@ export const CanvasQuestionMenu: React.FC<CanvasQuestionMenuProps> = ({
                   </div>
                 ))}
 
-                {/* Fortu.ai Setup Option */}
-                {currentTriggerType === 'fortuInstanceSetup' && (
+                {/* Fortu.ai Setup Module - Always show if there are refined challenges */}
+                {shouldShowSetupModule && (
                   <div
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       activeModule === 'setup'

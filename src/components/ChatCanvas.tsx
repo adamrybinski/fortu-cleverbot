@@ -19,7 +19,7 @@ export const ChatCanvas: React.FC = () => {
   const [activeView, setActiveView] = useState<'chat' | 'canvas'>('chat');
   const [selectedQuestionsFromCanvas, setSelectedQuestionsFromCanvas] = useState<Question[]>([]);
   const [selectedAction, setSelectedAction] = useState<'refine' | 'instance' | 'both'>('refine');
-  const { isCanvasOpen, currentTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
+  const { isCanvasOpen, currentTrigger, lastTrigger, triggerCanvas, closeCanvas, openCanvas } = useCanvas();
   
   // Chat history management
   const { activeSessionId, switchToSession } = useChatHistory();
@@ -60,6 +60,9 @@ export const ChatCanvas: React.FC = () => {
 
   // Check if mobile viewport
   const isMobile = window.innerWidth < 768;
+
+  // Use lastTrigger for determining hasCanvasBeenTriggered to maintain state
+  const hasCanvasBeenTriggered = Boolean(lastTrigger || currentTrigger);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F1EDFF] via-[#EEFFF3] to-[#FFFFFF] p-4">
@@ -137,6 +140,7 @@ export const ChatCanvas: React.FC = () => {
                 switchToSession: switchToQuestionSession,
                 deleteSession: deleteQuestionSession
               }}
+              hasCanvasBeenTriggered={hasCanvasBeenTriggered}
             />
           </div>
 
