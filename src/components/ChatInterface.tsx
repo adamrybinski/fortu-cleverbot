@@ -31,6 +31,7 @@ interface ChatInterfaceProps {
   currentTrigger?: CanvasTrigger | null;
   activeSessionId?: string | null;
   onSessionChange?: (sessionId: string | null) => void;
+  hasCanvasBeenTriggered?: boolean;
   // Canvas control functions
   closeCanvas?: () => void;
 }
@@ -47,6 +48,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentTrigger,
   activeSessionId,
   onSessionChange,
+  hasCanvasBeenTriggered = false,
   closeCanvas
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
